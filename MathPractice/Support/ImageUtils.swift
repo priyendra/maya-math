@@ -20,16 +20,6 @@ enum ImageUtils {
         return resized.jpegData(compressionQuality: quality)
     }
 
-    /// A landscape image of a book is almost always a two-page spread: split it into left and right pages.
-    static func splitSpread(_ image: UIImage) -> [UIImage] {
-        let upright = uprightImage(image)
-        guard let cg = upright.cgImage, cg.width > Int(Double(cg.height) * 1.2) else { return [upright] }
-        let half = cg.width / 2
-        let left = CGRect(x: 0, y: 0, width: half, height: cg.height)
-        let right = CGRect(x: half, y: 0, width: cg.width - half, height: cg.height)
-        return [left, right].compactMap { cg.cropping(to: $0).map { UIImage(cgImage: $0) } }
-    }
-
     static func rotated90(_ data: Data) -> Data? {
         guard let image = UIImage(data: data) else { return nil }
         let size = CGSize(width: image.size.height, height: image.size.width)

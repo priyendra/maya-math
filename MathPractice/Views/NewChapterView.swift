@@ -21,7 +21,6 @@ struct NewChapterView: View {
     @State private var showPDFImporter = false
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var title = ""
-    @State private var splitSpreads = true
     @State private var importing = false
     @State private var previewID: UUID?
 
@@ -45,10 +44,6 @@ struct NewChapterView: View {
                         .buttonStyle(.bordered)
                 }
                 .padding(.top)
-
-                Toggle("Split two-page spreads into left and right pages", isOn: $splitSpreads)
-                    .font(.subheadline)
-                    .frame(maxWidth: 520)
 
                 TextField("Chapter name (optional — Claude will suggest one)", text: $title)
                     .textFieldStyle(.roundedBorder)
@@ -86,7 +81,7 @@ struct NewChapterView: View {
                 .ignoresSafeArea()
             }
             .fileImporter(isPresented: $showPDFImporter, allowedContentTypes: [.pdf]) { result in
-                if case let .success(url) = result { add(PDFPages.images(from: url), split: false) }
+                if case let .success(url) = result { add(PDFPages.images(from: url)) }
             }
             .onChange(of: photoItems) { _, items in
                 guard !items.isEmpty else { return }
@@ -129,22 +124,19 @@ struct NewChapterView: View {
         }
     }
 
-    /// Compresses new pages off the main thread (splitting spreads if enabled) and appends them.
-    private func add(_ images: [UIImage], split: Bool? = nil) {
+    /// Compresses new pages off the main thread and appends them.
+    private func add(_ images: [UIImage]) {
         guard !images.isEmpty else { return }
-        let shouldSplit = split ?? splitSpreads
         importing = true
         Task.detached(priority: .userInitiated) {
             var drafts: [DraftPage] = []
             for image in images {
                 autoreleasepool {
-                    let parts = shouldSplit ? ImageUtils.splitSpread(image) : [ImageUtils.uprightImage(image)]
-                    for part in parts {
-                        guard let jpeg = ImageUtils.jpeg(part, maxEdge: 2400, quality: 0.85),
-                              let thumbData = ImageUtils.jpeg(part, maxEdge: 400, quality: 0.7),
-                              let thumb = UIImage(data: thumbData) else { continue }
-                        drafts.append(DraftPage(jpeg: jpeg, thumbnail: thumb))
-                    }
+                    let page = ImageUtils.uprightImage(image)
+                    guard let jpeg = ImageUtils.jpeg(page, maxEdge: 2400, quality: 0.85),
+                          let thumbData = ImageUtils.jpeg(page, maxEdge: 400, quality: 0.7),
+                          let thumb = UIImage(data: thumbData) else { return }
+                    drafts.append(DraftPage(jpeg: jpeg, thumbnail: thumb))
                 }
             }
             await MainActor.run {

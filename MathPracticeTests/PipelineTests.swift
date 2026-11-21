@@ -31,23 +31,3 @@ final class PipelineTests: XCTestCase {
     }
 }
 
-@MainActor
-final class ImageUtilsTests: XCTestCase {
-    private func image(_ w: CGFloat, _ h: CGFloat) -> UIImage {
-        let format = UIGraphicsImageRendererFormat(); format.scale = 1
-        return UIGraphicsImageRenderer(size: CGSize(width: w, height: h), format: format).image { ctx in
-            UIColor.white.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
-        }
-    }
-
-    func testSpreadIsSplitIntoTwoPortraitPages() {
-        let parts = ImageUtils.splitSpread(image(3000, 2000))
-        XCTAssertEqual(parts.count, 2)
-        XCTAssertEqual(parts[0].cgImage?.width, 1500)
-        XCTAssertEqual(parts[1].cgImage?.height, 2000)
-    }
-
-    func testPortraitPageIsNotSplit() {
-        XCTAssertEqual(ImageUtils.splitSpread(image(1500, 2000)).count, 1)
-    }
-}
