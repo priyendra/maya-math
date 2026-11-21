@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Bundles everything needed to diagnose a problem (text, Claude's replies, images) into one .zip
-/// that the parent can AirDrop to a Mac.
+/// that can be AirDropped to a Mac.
 @MainActor
 enum ProblemReport {
     enum Subject {
@@ -28,7 +28,7 @@ enum ProblemReport {
 
         var report: [String: Any] = [
             "report_type": subject.kind,
-            "parent_note": note,
+            "note": note,
             "created_at": ISO8601DateFormatter().string(from: Date()),
             "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?",
             "model": ClaudeClient.defaultModel,
@@ -110,7 +110,7 @@ enum ProblemReport {
             "started_at": ISO8601DateFormatter().string(from: a.startedAt),
             "active_seconds": a.activeSeconds,
             "verdict": a.verdictRaw,
-            "parent_override": a.parentOverrideRaw ?? "",
+            "corrected_to": a.correctionRaw ?? "",
             "mistake_type": a.mistakeTypeRaw ?? "",
             "transcribed_answer": a.transcribedAnswer,
             "error_step": a.errorStep,
@@ -194,16 +194,16 @@ private struct ReportProblemSheet: View {
     private var placeholder: String {
         switch subject {
         case .question: return "e.g. The question text is wrong / the answer is wrong / the figure is cut off"
-        case .attempt: return "e.g. Her answer 1/2 is right but it was marked wrong"
+        case .attempt: return "e.g. My answer 1/2 is right but it was marked wrong"
         case .chapter: return "e.g. Questions 12–15 on page 3 are missing / concepts are mixed up"
         }
     }
 
     private var footer: String {
         switch subject {
-        case .question: return "Includes the question, its answer and solution, the figure, the original page and her answers to it."
-        case .attempt: return "Includes the question, her handwritten work, Claude's full grading reply and the original page."
-        case .chapter: return "Includes every scanned page, all extracted questions and answers, the concepts and her progress."
+        case .question: return "Includes the question, its answer and solution, the figure, the original page and your answers to it."
+        case .attempt: return "Includes the question, your handwritten work, Claude's full grading reply and the original page."
+        case .chapter: return "Includes every scanned page, all extracted questions and answers, the concepts and your progress."
         }
     }
 

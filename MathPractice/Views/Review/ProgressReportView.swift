@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 
-/// Parent view: mastery grid, mistake patterns, speed, and daily activity.
+/// Your progress: mastery grid, mistake patterns, speed, and daily activity.
 struct ProgressReportView: View {
     let chapter: Chapter
 
@@ -34,7 +34,7 @@ struct ProgressReportView: View {
                 }
             }
         }
-        .navigationTitle("Progress")
+        .navigationTitle("My progress")
     }
 }
 
@@ -50,7 +50,7 @@ private struct MistakeChart: View {
             }
             .frame(height: 180)
             if carelessShare >= 0.4 {
-                Text("Most mistakes are careless slips — she likely understands the material; focus on checking work and not rushing.")
+                Text("Most mistakes are careless slips — you probably understand the material. Focus on checking your work and not rushing.")
                     .font(.callout).foregroundStyle(.secondary)
             }
         }

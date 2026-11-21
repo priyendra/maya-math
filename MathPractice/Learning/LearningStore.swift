@@ -49,7 +49,7 @@ enum LearningStore {
                                             seconds: attempt.activeSeconds, to: skill.progress, now: attempt.startedAt)
     }
 
-    /// Replays all graded attempts from scratch (used after a parent overrides a grade or edits categories).
+    /// Replays all graded attempts from scratch (used after a grade is corrected or a question is recategorized).
     static func rebuild(_ chapter: Chapter, context: ModelContext) {
         for s in chapter.skills { s.progress = SkillProgress() }
         let attempts = chapter.allAttempts.filter { $0.isGraded }.sorted { $0.startedAt < $1.startedAt }

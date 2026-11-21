@@ -1,12 +1,12 @@
 import SwiftUI
 import SwiftData
 
-struct ParentChapterView: View {
+struct ChapterReviewView: View {
     @Bindable var chapter: Chapter
     @Environment(\.modelContext) private var context
 
     private var questionsToCheck: [Question] {
-        chapter.questions.filter { $0.status == .needsParentReview }.sorted { $0.createdAt < $1.createdAt }
+        chapter.questions.filter { $0.status == .needsCheck }.sorted { $0.createdAt < $1.createdAt }
     }
     private var gradingsToCheck: [Attempt] {
         chapter.allAttempts.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.sorted { $0.startedAt > $1.startedAt }
@@ -17,13 +17,6 @@ struct ParentChapterView: View {
 
     var body: some View {
         List {
-            Section("Chapter") {
-                TextField("Title", text: $chapter.title)
-                Stepper("Exam length: \(chapter.examMinutes) min", value: $chapter.examMinutes, in: 5...120, step: 5)
-                NavigationLink("Progress report") { ProgressReportView(chapter: chapter) }
-                ReportProblemButton(subject: .chapter(chapter))
-            }
-
             if !questionsToCheck.isEmpty {
                 Section {
                     ForEach(questionsToCheck) { q in
@@ -32,36 +25,46 @@ struct ParentChapterView: View {
                 } header: {
                     Text("Questions to check (\(questionsToCheck.count))")
                 } footer: {
-                    Text("Claude wasn't sure of the answer to these. They're held back from practice until you approve or fix them.")
+                    Text("Claude wasn't sure of the answer to these, so they're held back from practice. Open one, check the answer, and approve or fix it.")
                 }
             }
 
             if !gradingsToCheck.isEmpty {
-                Section("Gradings to check (\(gradingsToCheck.count))") {
+                Section {
                     ForEach(gradingsToCheck) { a in
+                        NavigationLink { AttemptReviewView(attempt: a) } label: { attemptRow(a) }
+                    }
+                } header: {
+                    Text("Gradings to check (\(gradingsToCheck.count))")
+                } footer: {
+                    Text("Claude wasn't sure how to grade these. Open one and decide whether your answer was right.")
+                }
+            }
+
+            if !recentAttempts.isEmpty {
+                Section("My recent answers") {
+                    ForEach(recentAttempts) { a in
                         NavigationLink { AttemptReviewView(attempt: a) } label: { attemptRow(a) }
                     }
                 }
             }
 
             ForEach(chapter.sortedConcepts) { concept in
-                Section(concept.name) {
-                    ForEach(concept.questions.filter { $0.status != .needsParentReview }
+                Section("Questions · \(concept.name)") {
+                    ForEach(concept.questions.filter { $0.status != .needsCheck }
                         .sorted { ($0.difficulty, $0.createdAt) < ($1.difficulty, $1.createdAt) }) { q in
                         NavigationLink { QuestionEditView(question: q) } label: { questionRow(q, showNote: false) }
                     }
                 }
             }
 
-            if !recentAttempts.isEmpty {
-                Section("Recent answers") {
-                    ForEach(recentAttempts) { a in
-                        NavigationLink { AttemptReviewView(attempt: a) } label: { attemptRow(a) }
-                    }
-                }
+            Section("Chapter") {
+                TextField("Title", text: $chapter.title)
+                Stepper("Exam length: \(chapter.examMinutes) min", value: $chapter.examMinutes, in: 5...120, step: 5)
+                ReportProblemButton(subject: .chapter(chapter))
             }
         }
-        .navigationTitle(chapter.title)
+        .navigationTitle("Questions & answers")
         .onDisappear { try? context.save() }
     }
 
@@ -112,8 +115,8 @@ struct QuestionEditView: View {
 
     var body: some View {
         Form {
-            if let note = question.reviewNote, question.status == .needsParentReview {
-                Section("Why this needs a check") { Text(note).foregroundStyle(.orange) }
+            if let note = question.reviewNote, question.status == .needsCheck {
+                Section("Why this needs checking") { Text(note).foregroundStyle(.orange) }
             }
             Section("Question") {
                 MathText(markdown: question.text, fontSize: 18)
@@ -196,7 +199,7 @@ struct QuestionEditView: View {
                 question.referenceSolution = s.solution
                 question.referenceAnswer = s.finalAnswer
                 question.reviewNote = s.note
-                if s.trusted && question.status == .needsParentReview { question.status = .ok }
+                if s.trusted && question.status == .needsCheck { question.status = .ok }
                 try? context.save()
             } catch {
                 self.error = error.localizedDescription

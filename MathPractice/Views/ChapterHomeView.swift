@@ -16,9 +16,11 @@ struct ChapterHomeView: View {
                 .disabled(chapter.activeQuestions.isEmpty)
 
                 if chapter.activeQuestions.isEmpty {
-                    Text("No questions are ready yet. A parent needs to check the questions Claude wasn't sure about.")
+                    Text("No questions are ready yet. Open \"Questions & answers\" below and check the ones Claude wasn't sure about.")
                         .foregroundStyle(.secondary)
                 }
+
+                reviewLinks
 
                 Text("Your skills").font(.title2.bold())
                 MasteryGrid(chapter: chapter)
@@ -61,6 +63,38 @@ struct ChapterHomeView: View {
             .foregroundStyle(.white)
         }
         .buttonStyle(.plain)
+    }
+
+    private var reviewLinks: some View {
+        let questionsToCheck = chapter.questions.filter { $0.status == .needsCheck }.count
+        let gradingsToCheck = chapter.allAttempts.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.count
+        let toCheck = questionsToCheck + gradingsToCheck
+        return HStack(spacing: 12) {
+            NavigationLink { ChapterReviewView(chapter: chapter) } label: {
+                linkTile("Questions & answers",
+                         subtitle: toCheck > 0 ? "\(toCheck) to check" : "Review your answers and the questions",
+                         icon: "list.bullet.rectangle", highlight: toCheck > 0)
+            }
+            NavigationLink { ProgressReportView(chapter: chapter) } label: {
+                linkTile("My progress", subtitle: "Mistake patterns, speed, practice days", icon: "chart.bar.xaxis", highlight: false)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func linkTile(_ title: String, subtitle: String, icon: String, highlight: Bool) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.title2).foregroundStyle(highlight ? .orange : .accentColor)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline)
+                Text(subtitle).font(.caption).foregroundStyle(highlight ? .orange : .secondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
     }
 
     private func stat(_ value: String, _ label: String) -> some View {

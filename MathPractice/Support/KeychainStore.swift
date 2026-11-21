@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-/// Stores small secrets (the Claude API key, the parent PIN) in the iOS Keychain.
+/// Stores the Claude API key in the iOS Keychain.
 enum KeychainStore {
     private static let service = "com.family.mathpractice"
 
@@ -35,7 +35,6 @@ enum KeychainStore {
     }
 
     static let apiKeyAccount = "claude-api-key"
-    static let pinAccount = "parent-pin"
 
     static var apiKey: String? { KeychainStore.get(apiKeyAccount) }
 }

@@ -203,7 +203,7 @@ struct ExamView: View {
                             a.graderLog = r.graderLog
                         } else {
                             a.verdict = .needsReview
-                            a.feedback = "Couldn't be graded automatically; a parent will check it."
+                            a.feedback = "Couldn't be graded automatically. Check it under Questions & answers → Gradings to check."
                         }
                         a.isGraded = true
                         LearningStore.apply(a, context: context)

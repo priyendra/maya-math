@@ -6,7 +6,7 @@ struct ChapterListView: View {
     @Query(sort: \Chapter.createdAt, order: .reverse) private var chapters: [Chapter]
     @ObservedObject private var processor = ChapterProcessor.shared
     @State private var showNewChapter = false
-    @State private var showParent = false
+    @State private var showSettings = false
     @State private var path: [Chapter] = []
 
     var body: some View {
@@ -39,14 +39,14 @@ struct ChapterListView: View {
             .navigationDestination(for: Chapter.self) { ChapterHomeView(chapter: $0) }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { showParent = true } label: { Label("Parent", systemImage: "lock.shield") }
+                    Button { showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button { showNewChapter = true } label: { Label("New chapter", systemImage: "plus") }
                 }
             }
             .sheet(isPresented: $showNewChapter) { NewChapterView() }
-            .sheet(isPresented: $showParent) { ParentGateView() }
+            .sheet(isPresented: $showSettings) { SettingsView() }
             .onAppear(perform: resumeInterrupted)
         }
     }
@@ -63,11 +63,12 @@ struct ChapterListView: View {
                     Text(chapter.errorMessage ?? "Something went wrong.").font(.caption).foregroundStyle(.red)
                     Spacer()
                     Button("Retry") { processor.start(chapter, context: context) }.buttonStyle(.bordered)
+                    ReportProblemButton(subject: .chapter(chapter)).buttonStyle(.bordered)
                 }
             case .ready:
-                let review = chapter.questions.filter { $0.status == .needsParentReview }.count
+                let review = chapter.questions.filter { $0.status == .needsCheck }.count
                 Text("\(chapter.activeQuestions.count) questions · \(chapter.concepts.count) concepts"
-                     + (review > 0 ? " · \(review) need a parent check" : ""))
+                     + (review > 0 ? " · \(review) to check" : ""))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

@@ -13,8 +13,8 @@ enum QuestionSource: String, Codable {
 
 enum QuestionStatus: String, Codable {
     case ok                 // trusted, available for practice
-    case needsParentReview  // solvers disagreed / answer-key mismatch
-    case retired            // removed by parent
+    case needsCheck         // solvers disagreed / answer-key mismatch; held back until checked
+    case retired            // removed from practice
 }
 
 enum AttemptMode: String, Codable {
@@ -48,7 +48,7 @@ final class Chapter {
     var progressMessage: String = ""
     var progressFraction: Double = 0
     var errorMessage: String?
-    /// Exam length in minutes (configurable by parent).
+    /// Exam length in minutes (configurable per chapter).
     var examMinutes: Int = 30
 
     @Relationship(deleteRule: .cascade, inverse: \PageImage.chapter) var pages: [PageImage] = []
@@ -173,8 +173,8 @@ final class Attempt {
     var graderConfidence: Double = 0
     /// Claude's full grading reply (JSON), for problem reports.
     var graderLog: String = ""
-    /// Parent's override of the verdict, if any.
-    var parentOverrideRaw: String?
+    /// The student's own correction of the verdict, if any.
+    var correctionRaw: String?
     var isGraded: Bool = false
     var examSessionID: UUID?
     var question: Question?
@@ -196,13 +196,13 @@ final class Attempt {
         set { mistakeTypeRaw = newValue?.rawValue }
     }
 
-    var parentOverride: Verdict? {
-        get { parentOverrideRaw.flatMap(Verdict.init(rawValue:)) }
-        set { parentOverrideRaw = newValue?.rawValue }
+    var correction: Verdict? {
+        get { correctionRaw.flatMap(Verdict.init(rawValue:)) }
+        set { correctionRaw = newValue?.rawValue }
     }
 
-    /// Verdict used everywhere: parent override wins over the grader.
-    var effectiveVerdict: Verdict { parentOverride ?? verdict }
+    /// Verdict used everywhere: a correction wins over the grader.
+    var effectiveVerdict: Verdict { correction ?? verdict }
 }
 
 @Model

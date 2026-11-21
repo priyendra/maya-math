@@ -20,7 +20,7 @@ struct ClaudeClient: Sendable {
 
         var errorDescription: String? {
             switch self {
-            case .missingAPIKey: return "No Claude API key is set. Add one in Parent settings."
+            case .missingAPIKey: return "No Claude API key is set. Add one in Settings."
             case let .http(status, message): return "Claude API error \(status): \(message)"
             case let .refusal(category): return "Claude declined this request (\(category))."
             case .truncated: return "Claude's response was cut off (max_tokens)."

@@ -189,11 +189,11 @@ final class ChapterProcessor: ObservableObject {
                     case let .success(s):
                         q.referenceSolution = s.solution
                         q.referenceAnswer = s.finalAnswer
-                        q.status = s.trusted ? .ok : .needsParentReview
+                        q.status = s.trusted ? .ok : .needsCheck
                         q.reviewNote = s.note
                     case let .failure(error):
                         if case ClaudeClient.ClientError.missingAPIKey = error { throw error }
-                        q.status = .needsParentReview
+                        q.status = .needsCheck
                         q.reviewNote = "Couldn't solve automatically: \(error.localizedDescription)"
                         q.referenceAnswer = "?"
                     }

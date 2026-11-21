@@ -135,7 +135,7 @@ struct PracticeSessionView: View {
                         Text(gradingError).foregroundStyle(.red).multilineTextAlignment(.center)
                         HStack {
                             Button("Try again") { if let a = lastAttempt { grade(a) } }.buttonStyle(.borderedProminent)
-                            Button("Skip — a parent will check") { skipGrading() }.buttonStyle(.bordered)
+                            Button("Skip — I'll check it later") { skipGrading() }.buttonStyle(.bordered)
                         }
                     } else {
                         ProgressView()
@@ -224,7 +224,7 @@ struct PracticeSessionView: View {
                 attempt.transcribedAnswer = r.transcribedAnswer
                 attempt.errorStep = r.errorStep
                 attempt.feedback = r.verdict == .needsReview
-                    ? "I couldn't check this one for sure, so a parent will look at it. Let's keep going!"
+                    ? "I couldn't check this one for sure. It's saved under Questions & answers → Gradings to check so you can look at it later. Let's keep going!"
                     : r.feedback
                 attempt.graderConfidence = r.confidence
                 attempt.graderLog = r.graderLog
@@ -238,7 +238,7 @@ struct PracticeSessionView: View {
     private func skipGrading() {
         guard let a = lastAttempt else { return }
         a.verdict = .needsReview
-        a.feedback = "A parent will check this one."
+        a.feedback = "Saved under Questions & answers → Gradings to check."
         finish(a)
     }
 
@@ -278,7 +278,7 @@ struct FeedbackCard: View {
                     if let m = attempt.mistakeType { Text(m.displayName).font(.subheadline).padding(6).background(.red.opacity(0.12), in: Capsule()) }
                 case .needsReview:
                     Image(systemName: "questionmark.circle.fill").font(.largeTitle).foregroundStyle(.orange)
-                    Text("Saved for a parent").font(.title.bold())
+                    Text("Saved to check later").font(.title.bold())
                 }
                 Spacer()
                 if showTime {

@@ -140,7 +140,7 @@ struct ClaudeServices: Sendable {
                                  errorStep: result.errorStep, feedback: result.feedback, confidence: second.confidence)
         }
         result.graderLog = Self.log(["pass1 (effort medium)": first, "pass2 recheck (effort high)": second,
-                                     "outcome": stillUnsure ? "sent to parent review" : "pass2 verdict used"])
+                                     "outcome": stillUnsure ? "saved for review" : "pass2 verdict used"])
         return result
     }
 
