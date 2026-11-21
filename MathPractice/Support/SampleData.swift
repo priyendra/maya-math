@@ -12,7 +12,7 @@ enum SampleData {
 
         let chapter = Chapter(title: "Ch. 2 · Solving Linear Equations")
         chapter.status = .ready
-        chapter.formatVersion = 2
+        chapter.formatVersion = Chapter.currentFormat
         context.insert(chapter)
 
         let specs: [(String, String, [(String, Int, Bool, Bool)])] = [

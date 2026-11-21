@@ -49,3 +49,14 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+  MathPracticeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: MathPracticeUITests
+    dependencies:
+      - target: MathPractice
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: MathPractice

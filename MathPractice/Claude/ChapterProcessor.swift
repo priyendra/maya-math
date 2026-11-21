@@ -48,7 +48,7 @@ final class ChapterProcessor: ObservableObject {
         }
         // Chapters organized by an older version: re-organize from the stored transcriptions (quick, no re-reading).
         for chapter in chapters where chapter.status == .ready && chapter.formatVersion >= 2
-            && chapter.formatVersion < Chapter.currentFormat && !isRunning(chapter) {
+            && chapter.formatVersion < Chapter.currentFormat && !chapter.pages.isEmpty && !isRunning(chapter) {
             reorganize(chapter, context: context)
         }
     }
@@ -74,7 +74,7 @@ final class ChapterProcessor: ObservableObject {
 
     /// Rebuilds outline, questions and tags from the stored page transcriptions (no page reading).
     func reorganize(_ chapter: Chapter, context: ModelContext) {
-        guard !isRunning(chapter), chapter.pages.allSatisfy({ $0.readJSON != nil }) else { return }
+        guard !isRunning(chapter), !chapter.pages.isEmpty, chapter.pages.allSatisfy({ $0.readJSON != nil }) else { return }
         for s in chapter.skills { context.delete(s) }
         for e in chapter.exams { context.delete(e) }
         chapter.formatVersion = 2

@@ -1,0 +1,24 @@
+import XCTest
+
+final class CanvasUITests: XCTestCase {
+    /// Opens a practice session on the sample chapter and draws on the canvas; Next must become enabled.
+    func testDrawingOnCanvasRegisters() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-seedSample", "-openFirstChapter"]
+        app.launch()
+        let practice = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Practice'")).firstMatch
+        if !practice.waitForExistence(timeout: 15) { print(app.debugDescription); XCTFail("no Practice button"); return }
+        practice.tap()
+        let canvas = app.descendants(matching: .any)["writingCanvas"]
+        if !canvas.waitForExistence(timeout: 10) { print(app.debugDescription); XCTFail("canvas not found"); return }
+        let next = app.buttons["Next"]
+        XCTAssertFalse(next.isEnabled)
+        let start = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5))
+        let end = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.6))
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: 200, thenHoldForDuration: 0.2)
+        sleep(1)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.lifetime = .keepAlways; add(shot)
+        if !next.isEnabled { print(app.debugDescription) }
+        XCTAssertTrue(next.isEnabled, "stroke did not register")
+    }
+}

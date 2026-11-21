@@ -20,6 +20,10 @@ final class CanvasController: ObservableObject {
 
     func clear() { load(PKDrawing()) }
 
+    #if DEBUG
+    func markInk() { hasInk = true }
+    #endif
+
     fileprivate func changed() {
         let ink = !(canvas?.drawing.strokes.isEmpty ?? true)
         if ink != hasInk { hasInk = ink }
@@ -59,7 +63,9 @@ struct WritingCanvas: UIViewRepresentable {
 
         let picker = PKToolPicker()
         context.coordinator.toolPicker = picker
+        picker.selectedTool = PKInkingTool(.pen, color: .black, width: 3)
         picker.addObserver(canvas)
+        canvas.accessibilityIdentifier = "writingCanvas"
         picker.setVisible(true, forFirstResponder: canvas)
         DispatchQueue.main.async { canvas.becomeFirstResponder() }
         controller.canvas = canvas
@@ -68,7 +74,10 @@ struct WritingCanvas: UIViewRepresentable {
 
     func updateUIView(_ canvas: PKCanvasView, context: Context) {
         controller.canvas = canvas
-        let height = max(4000, canvas.drawing.bounds.maxY + 1200)
+        // An empty drawing's bounds are CGRect.null (maxY = +∞); an infinite content size silently stops PencilKit
+        // from drawing at all.
+        let inkBottom = canvas.drawing.strokes.isEmpty ? 0 : canvas.drawing.bounds.maxY
+        let height = max(4000, inkBottom + 1200)
         let size = CGSize(width: max(canvas.bounds.width, 800), height: height)
         if canvas.contentSize != size { canvas.contentSize = size }
         context.coordinator.grid?.isHidden = !graphPaper
