@@ -92,7 +92,12 @@ Running record of product decisions and open discussion topics. Newest decisions
 - **Pointer (proposed):** a mouse-style cursor that glides to what the voice is talking about, plus a soft
   highlight on the target, synced to the spoken words.
 - **Cost:** not a constraint for now; build the good experience first.
+- **The solution page is one canvas:** she can write anywhere (circle a step of her work, underline part of the
+  solution). Each voice turn sends her words + a snapshot of what she's looking at with her ink (strokes new since
+  her last turn tinted in the snapshot only) + the page's text/math. The page only grows downward (tutor content
+  appended at the bottom) so her ink stays anchored; the tutor's cursor points into the same page. She clears ink
+  herself. Conversations (words, ink snapshots, tutor replies) are saved with the answer.
 
 ## Open topics
 - Voice turn-taking: hands-free (listens automatically after the tutor speaks, tap to interrupt) vs. push-to-talk.
-- Save tutor conversations with the answer (for her to revisit and for evaluation)?
+
