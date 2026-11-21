@@ -62,5 +62,13 @@ Running record of product decisions and open discussion topics. Newest decisions
 - **Deferred:** two students practicing the same chapter on one iPad (histories would mix). Possible fix later:
   "Duplicate chapter" without reprocessing.
 
-## Open topics (discuss in order)
-1. Background grading details: check-in interval, what the check-in screen shows.
+- **Check-ins (background grading):** at the first question boundary after every 10 minutes of practice and at
+  session end; skipped if nothing new is graded; still-grading answers roll over. Shows a one-line summary
+  (done / right / faster than target), mistakes first and expanded (question, her work, where it went wrong,
+  tip; solution behind "Show solution"), correct ones as a compact row, "Disagree with the grade?" on each, and
+  "Keep going" (similar questions already queued for misses). Conceptual mistakes interrupt at the next
+  question boundary with the same expanded view. Check-in time counts toward the session but not toward any
+  question's time. Exam mode unchanged.
+
+## Open topics
+(none)
