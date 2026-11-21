@@ -1,4 +1,4 @@
-# Math Practice (iPad)
+# MayaMath (iPad)
 
 Scan textbook pages into a chapter; Claude extracts, solves and categorizes the questions; the student practices
 with Apple Pencil and Claude grades her handwritten work. An adaptive scheduler spends most time on weak skills,
