@@ -66,11 +66,13 @@ struct ExamView: View {
         .onChange(of: scenePhase) { _, p in
             if p == .active { clock.resume(); questionClock.resume() } else { clock.pause(); questionClock.pause() }
         }
-        .confirmationDialog("Hand in the exam?", isPresented: $confirmSubmit) {
+        .alert("Hand in your exam?", isPresented: $confirmSubmit) {
+            Button("Keep working", role: .cancel) {}
             Button("Hand in") { submitAll() }
         } message: {
             let blank = questions.filter { (drawings[$0.id]?.strokes.isEmpty ?? true) }.count
-            Text(blank > 0 ? "\(blank) question(s) are still blank." : "All questions have an answer.")
+            Text((blank > 0 ? "\(blank) question\(blank == 1 ? " is" : "s are") still blank. " : "All questions have an answer. ")
+                 + "You have \(formatClock(remaining)) left.")
         }
     }
 

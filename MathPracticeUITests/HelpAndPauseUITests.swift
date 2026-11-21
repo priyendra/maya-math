@@ -77,3 +77,30 @@ final class HelpAndPauseUITests: XCTestCase {
         shot(app, "long-solution-scrolled")
     }
 }
+
+final class EndSessionUITests: XCTestCase {
+    func testEndAsksWithCenteredAlertAndKeepPracticingIsSafe() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-seedSample", "-openFirstChapter"]
+        app.launch()
+        let practice = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Practice'")).firstMatch
+        XCTAssertTrue(practice.waitForExistence(timeout: 15))
+        practice.tap()
+        let canvas = app.descendants(matching: .any)["writingCanvas"]
+        XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+        canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5))
+            .press(forDuration: 0.1, thenDragTo: canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.6)),
+                   withVelocity: 200, thenHoldForDuration: 0.2)
+        app.buttons["Next"].tap()
+        app.buttons["End"].tap()
+        let alert = app.alerts["End this session?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 3))
+        let a = XCTAttachment(screenshot: app.screenshot()); a.name = "end-alert"; a.lifetime = .keepAlways; add(a)
+        alert.buttons["Keep practicing"].tap()
+        XCTAssertTrue(canvas.waitForExistence(timeout: 3), "Keep practicing should return to the question")
+        app.buttons["End"].tap()
+        app.alerts["End this session?"].buttons["End session"].tap()
+        XCTAssertTrue(app.staticTexts["Checking your last answers…"].waitForExistence(timeout: 5)
+                      || app.staticTexts["How you did"].waitForExistence(timeout: 5))
+    }
+}

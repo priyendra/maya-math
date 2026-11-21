@@ -146,8 +146,9 @@ struct ChapterHomeView: View {
         #if DEBUG
         .onAppear { if ProcessInfo.processInfo.arguments.contains("-openRead") { debugRead = true } }
         #endif
-        .confirmationDialog("Re-read this chapter?", isPresented: $confirmReread) {
-            Button("Re-read from my scanned pages") { processor.reread(chapter, context: context) }
+        .alert("Re-read this chapter?", isPresented: $confirmReread) {
+            Button("Cancel", role: .cancel) {}
+            Button("Re-read", role: .destructive) { processor.reread(chapter, context: context) }
         } message: {
             Text("Questions are rebuilt from your scanned pages, so any practice history in this chapter is cleared.")
         }
@@ -193,8 +194,11 @@ struct ChapterSettingsView: View {
             }
             .navigationTitle("Chapter settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { try? context.save(); dismiss() } } }
-            .confirmationDialog("Re-read this chapter?", isPresented: $confirmReread) {
+            .alert("Re-read this chapter?", isPresented: $confirmReread) {
+                Button("Cancel", role: .cancel) {}
                 Button("Re-read", role: .destructive) { processor.reread(chapter, context: context); dismiss() }
+            } message: {
+                Text("Questions are rebuilt from your scanned pages, so any practice history in this chapter is cleared.")
             }
         }
     }

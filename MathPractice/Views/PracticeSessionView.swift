@@ -73,7 +73,7 @@ struct PracticeSessionView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(phase == .summary ? "Close" : "End") {
-                        if phase == .summary || sessionAttempts.isEmpty { dismiss() } else { confirmQuit = true }
+                        if phase == .summary || (sessionAttempts.isEmpty && !canvas.hasInk) { dismiss() } else { confirmQuit = true }
                     }
                 }
                 ToolbarItem(placement: .principal) {
@@ -97,8 +97,15 @@ struct PracticeSessionView: View {
                     }
                 }
             }
-            .confirmationDialog("End this session?", isPresented: $confirmQuit) {
-                Button("End and see how I did") { finish() }
+            // A centered alert (not a popover): hard to miss, and "Keep practicing" is the safe default.
+            .alert("End this session?", isPresented: $confirmQuit) {
+                Button("Keep practicing", role: .cancel) {}
+                Button("End session") { sessionAttempts.isEmpty ? dismiss() : finish() }
+            } message: {
+                let n = sessionAttempts.count
+                let minutes = Int(sessionClock.elapsed() / 60)
+                Text(n == 0 ? "Your work on this question won't be saved."
+                     : "You've done \(n) question\(n == 1 ? "" : "s") in " + (minutes < 1 ? "under a minute" : "\(minutes) minute\(minutes == 1 ? "" : "s")") + ". Your answers will be checked and you'll see how you did.")
             }
         }
         .onAppear(perform: start)
