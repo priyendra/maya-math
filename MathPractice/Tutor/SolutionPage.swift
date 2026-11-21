@@ -35,7 +35,8 @@ struct SolutionPage: View {
             tutor.snapshot = { [weak ink] in ink?.snapshot() }
         }
         .onChange(of: tutor.pointer) { _, id in ink.reveal(id) }
-        .onChange(of: scenePhase) { _, p in if p != .active { tutor.end() } }
+        // Only a real trip to the background ends the talk (permission prompts make the app briefly inactive).
+        .onChange(of: scenePhase) { _, p in if p == .background { tutor.end() } }
         .onDisappear { tutor.end() }
     }
 
@@ -43,12 +44,13 @@ struct SolutionPage: View {
 
     private var bottomBar: some View {
         HStack(spacing: 14) {
-            Picker("Tool", selection: $ink.erasing) {
-                Image(systemName: "pencil.tip").tag(false)
-                Image(systemName: "eraser").tag(true)
+            Picker("Tool", selection: $ink.tool) {
+                Image(systemName: "pencil.tip").accessibilityLabel("Pencil").tag(PageInk.Tool.pen)
+                Image(systemName: "highlighter").accessibilityLabel("Highlighter").tag(PageInk.Tool.highlighter)
+                Image(systemName: "eraser").accessibilityLabel("Eraser").tag(PageInk.Tool.eraser)
             }
             .pickerStyle(.segmented)
-            .frame(width: 110)
+            .frame(width: 160)
             Button { ink.undo() } label: { Image(systemName: "arrow.uturn.backward") }
                 .accessibilityLabel("Undo")
             Button { ink.clear() } label: { Image(systemName: "trash") }
@@ -91,7 +93,10 @@ struct SolutionPage: View {
             switch tutor.state {
             case .off:
                 EmptyView()
-            case .starting, .thinking:
+            case .starting:
+                ProgressView()
+                Text("Getting ready…").foregroundStyle(.secondary)
+            case .thinking:
                 ProgressView()
                 Text("Thinking…").foregroundStyle(.secondary)
             case .speaking:
@@ -262,7 +267,8 @@ private struct InkPageView: UIViewRepresentable {
 /// A scrolling Pencil canvas with the page content hosted underneath the ink. Pencil writes, fingers scroll.
 @MainActor
 final class PageInk: NSObject, ObservableObject, PKCanvasViewDelegate {
-    @Published var erasing = false { didSet { applyTool() } }
+    enum Tool: Hashable { case pen, highlighter, eraser }
+    @Published var tool: Tool = .pen { didSet { applyTool() } }
     @Published private(set) var hasInk = false
 
     let canvas = LayoutCanvas()
@@ -305,7 +311,11 @@ final class PageInk: NSObject, ObservableObject, PKCanvasViewDelegate {
     }
 
     private func applyTool() {
-        canvas.tool = erasing ? PKEraserTool(.vector) : PKInkingTool(.pen, color: .systemBlue, width: 3)
+        switch tool {
+        case .pen: canvas.tool = PKInkingTool(.pen, color: .systemBlue, width: 3)
+        case .highlighter: canvas.tool = PKInkingTool(.marker, color: .systemYellow, width: 24)
+        case .eraser: canvas.tool = PKEraserTool(.vector)
+        }
     }
 
     func undo() { canvas.undoManager?.undo() }
@@ -388,7 +398,8 @@ final class PageInk: NSObject, ObservableObject, PKCanvasViewDelegate {
             if !fresh.isEmpty {
                 let pink = fresh.map { s -> PKStroke in
                     var s = s
-                    s.ink = PKInk(.pen, color: .systemPink)
+                    // Highlights stay highlights (translucent marker), just pink like her other new marks.
+                    s.ink = s.ink.inkType == .marker ? PKInk(.marker, color: .systemPink) : PKInk(.pen, color: .systemPink)
                     return s
                 }
                 PKDrawing(strokes: pink).image(from: b, scale: format.scale).draw(in: CGRect(origin: .zero, size: b.size))

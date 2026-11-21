@@ -44,6 +44,8 @@ final class TutorSession: ObservableObject {
     private let listener = Listener()
     private var history: [[String: Any]] = []
     private var run: Task<Void, Never>?
+    private var timedOut = false
+    private enum TutorError: Error { case tooSlow }
     private let fake: Bool
 
     var isOn: Bool { state != .off }
@@ -84,7 +86,10 @@ final class TutorSession: ObservableObject {
         state = .starting
         run = Task {
             if !fake {
-                guard await Listener.requestPermissions() else {
+                let ok = await Listener.requestPermissions()
+                // Ended while the permission prompts were up: don't come back to life.
+                guard !Task.isCancelled, state == .starting else { return }
+                guard ok else {
                     state = .waiting("To talk with the tutor, allow the microphone and speech recognition in Settings → Maya Math.")
                     return
                 }
@@ -114,7 +119,9 @@ final class TutorSession: ObservableObject {
 
     /// Start listening again after she stopped (or gave up waiting).
     func talk() {
-        if state == .speaking || state == .thinking { interrupt() } else { listen() }
+        if state == .speaking || state == .thinking { interrupt(); return }
+        let tutorSpoke = history.contains { $0["role"] as? String == "assistant" }
+        if tutorSpoke { listen() } else { state = .off; start() }   // the opening never arrived: try it again
     }
 
     func end() {
@@ -162,7 +169,11 @@ final class TutorSession: ObservableObject {
         run = Task { await reply() }
     }
 
+    /// No reply text in this long: give up on this turn rather than sit on "Thinking…".
+    static let replyTimeout: TimeInterval = 60
+
     private func reply() async {
+        guard !Task.isCancelled, state != .off else { return }
         state = .thinking
         caption = ""
         let (beats, feed) = AsyncStream.makeStream(of: TutorBeat.self)
@@ -192,13 +203,21 @@ final class TutorSession: ObservableObject {
                 return error
             }
         }
+        let watchdog = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.replyTimeout * 1_000_000_000))
+            guard !Task.isCancelled, box.text.isEmpty else { return }
+            self?.timedOut = true
+            network.cancel()
+        }
         for await beat in beats {
             if Task.isCancelled { break }
             await perform(beat)
         }
+        watchdog.cancel()
         let cancelled = Task.isCancelled
         if cancelled { network.cancel() }
-        let error = await network.value
+        var error = await network.value
+        if timedOut { timedOut = false; error = TutorError.tooSlow }
         let said = box.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !said.isEmpty {
             history.append(["role": "assistant", "content": [["type": "text", "text": said + (cancelled ? "\n[She interrupted you here.]" : "")]]])
@@ -212,8 +231,16 @@ final class TutorSession: ObservableObject {
         }
         guard !cancelled, state != .off else { return }
         if let error, said.isEmpty {
-            let msg = (error as? URLError) != nil ? "Couldn't reach the tutor. Check the internet connection, then tap Talk."
-                                                  : "Sorry, the tutor couldn't answer that one. Tap Talk to try again."
+            let msg: String
+            if case ClaudeClient.ClientError.missingAPIKey? = error as? ClaudeClient.ClientError {
+                msg = "The tutor needs a Claude API key. Add one in Settings."
+            } else if error is TutorError {
+                msg = "The tutor is taking too long to answer. Tap Talk to try again."
+            } else if error is URLError {
+                msg = "Couldn't reach the tutor. Check the internet connection, then tap Talk."
+            } else {
+                msg = "Sorry, the tutor couldn't answer that one. Tap Talk to try again."
+            }
             state = .waiting(msg)
             return
         }
