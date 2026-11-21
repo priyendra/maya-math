@@ -33,12 +33,16 @@ Running record of product decisions and open discussion topics. Newest decisions
   as beyond the standard material (heading, label, symbol — judged from the page, no fixed word list); no signal
   means no tag. Rules: in practice only as occasional stretch questions after the hard level of that concept is
   mastered, and a wrong answer doesn't lower mastery or score; never in exams.
+- **Pencil rule:** Claude asks "can a student answer this completely by writing with a pencil, using only what's
+  on the page?" Excluded: programming, measuring/constructions with physical tools, physical models, partner or
+  group activities, data collection, outside sources. Kept: graphs, sketches, tables, diagrams in the book,
+  written explanations, multiple choice, and questions referring to other exercises (the referenced material is
+  attached). **Calculator use never excludes a question**; the student decides whether to use one. Excluded
+  questions are shown greyed out in the Read view, with an Include anyway / Exclude toggle per question.
 
 ## Open topics (discuss in order)
-1. Ignoring anything needing more than an iPad + pencil, across books: confirm the "pencil-compatible" tag
-   (judged by Claude from content) is enough.
-2. Replace printed question labels with internal links into the digital chapter.
-3. Just-in-time solving: details (how far ahead, what happens offline / on failure).
-4. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
+1. Replace printed question labels with internal links into the digital chapter.
+2. Just-in-time solving: details (how far ahead, what happens offline / on failure).
+3. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
    scopes can span chapters (finals).
-5. Background grading details: check-in interval, what the check-in screen shows.
+4. Background grading details: check-in interval, what the check-in screen shows.
