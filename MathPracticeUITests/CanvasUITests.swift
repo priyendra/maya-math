@@ -20,5 +20,18 @@ final class CanvasUITests: XCTestCase {
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.lifetime = .keepAlways; add(shot)
         if !next.isEnabled { print(app.debugDescription) }
         XCTAssertTrue(next.isEnabled, "stroke did not register")
+
+        // Next question: a fresh, empty canvas that still takes ink.
+        next.tap()
+        sleep(2)
+        let fresh = XCTAttachment(screenshot: app.screenshot()); fresh.name = "after-next"; fresh.lifetime = .keepAlways; add(fresh)
+        let canvas2 = app.descendants(matching: .any)["writingCanvas"]
+        XCTAssertTrue(canvas2.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Next"].isEnabled, "new question should start with no ink")
+        canvas2.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.3))
+            .press(forDuration: 0.1, thenDragTo: canvas2.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)),
+                   withVelocity: 200, thenHoldForDuration: 0.2)
+        sleep(1)
+        XCTAssertTrue(app.buttons["Next"].isEnabled, "second canvas did not take ink")
     }
 }

@@ -6,16 +6,26 @@ import PencilKit
 @MainActor
 final class CanvasController: ObservableObject {
     @Published private(set) var hasInk = false
+    /// Bumped on every load/clear: each answer gets a brand-new PKCanvasView. Replacing the drawing of a live
+    /// canvas right after a stroke sometimes leaves the old ink on screen until the next stroke.
+    @Published private(set) var generation = 0
     fileprivate weak var canvas: PKCanvasView?
-    /// Drawing to load once the canvas exists (e.g. returning to an exam question).
-    fileprivate var pending: PKDrawing?
+    /// Drawing the next canvas starts with (e.g. returning to an exam question).
+    fileprivate var pending = PKDrawing()
+    /// One tool picker for the whole session, so her pen/color choice carries over between questions.
+    fileprivate lazy var toolPicker: PKToolPicker = {
+        let picker = PKToolPicker()
+        picker.selectedTool = PKInkingTool(.pen, color: .black, width: 3)
+        return picker
+    }()
 
-    var drawing: PKDrawing { canvas?.drawing ?? pending ?? PKDrawing() }
+    var drawing: PKDrawing { canvas?.drawing ?? pending }
 
     func load(_ drawing: PKDrawing) {
         pending = drawing
-        canvas?.drawing = drawing
+        canvas = nil
         hasInk = !drawing.strokes.isEmpty
+        generation += 1
     }
 
     func clear() { load(PKDrawing()) }
@@ -24,30 +34,51 @@ final class CanvasController: ObservableObject {
     func markInk() { hasInk = true }
     #endif
 
-    fileprivate func changed() {
-        let ink = !(canvas?.drawing.strokes.isEmpty ?? true)
+    /// Only the current generation's canvas may register or report; a replaced canvas can still get a late
+    /// SwiftUI update or delegate callback while it is being torn down.
+    fileprivate func attach(_ c: PKCanvasView, generation g: Int) {
+        if g == generation { canvas = c }
+    }
+
+    fileprivate func changed(_ c: PKCanvasView, generation g: Int) {
+        guard g == generation, canvas === c || canvas == nil else { return }
+        canvas = c
+        let ink = !c.drawing.strokes.isEmpty
         if ink != hasInk { hasInk = ink }
     }
 }
 
 /// Large, scrollable Apple Pencil canvas. Fingers scroll; the pencil writes.
-struct WritingCanvas: UIViewRepresentable {
+struct WritingCanvas: View {
     @ObservedObject var controller: CanvasController
     var graphPaper: Bool = false
 
-    func makeCoordinator() -> Coordinator { Coordinator(controller: controller) }
+    var body: some View {
+        CanvasRepresentable(controller: controller, generation: controller.generation, graphPaper: graphPaper)
+            .id(controller.generation)
+    }
+
+    static let gridTile = CanvasRepresentable.gridTile
+}
+
+struct CanvasRepresentable: UIViewRepresentable {
+    @ObservedObject var controller: CanvasController
+    let generation: Int
+    var graphPaper: Bool = false
+
+    func makeCoordinator() -> Coordinator { Coordinator(controller: controller, generation: generation) }
 
     func makeUIView(context: Context) -> PKCanvasView {
         let canvas = PKCanvasView()
         canvas.delegate = context.coordinator
-        canvas.drawing = controller.pending ?? PKDrawing()
+        canvas.drawing = controller.pending
         #if targetEnvironment(simulator)
         canvas.drawingPolicy = .anyInput
         #else
         canvas.drawingPolicy = .pencilOnly
         #endif
-        // PencilKit adapts black ink for dark mode itself.
-        canvas.tool = PKInkingTool(.pen, color: .black, width: 3)
+        let picker = controller.toolPicker
+        canvas.tool = picker.selectedTool
         canvas.backgroundColor = .clear
         canvas.isOpaque = false
         canvas.alwaysBounceVertical = true
@@ -61,19 +92,20 @@ struct WritingCanvas: UIViewRepresentable {
         canvas.insertSubview(grid, at: 0)
         context.coordinator.grid = grid
 
-        let picker = PKToolPicker()
-        context.coordinator.toolPicker = picker
-        picker.selectedTool = PKInkingTool(.pen, color: .black, width: 3)
         picker.addObserver(canvas)
         canvas.accessibilityIdentifier = "writingCanvas"
         picker.setVisible(true, forFirstResponder: canvas)
         DispatchQueue.main.async { canvas.becomeFirstResponder() }
-        controller.canvas = canvas
+        controller.attach(canvas, generation: generation)
         return canvas
     }
 
+    static func dismantleUIView(_ canvas: PKCanvasView, coordinator: Coordinator) {
+        coordinator.controller.toolPicker.removeObserver(canvas)
+    }
+
     func updateUIView(_ canvas: PKCanvasView, context: Context) {
-        controller.canvas = canvas
+        controller.attach(canvas, generation: generation)
         // An empty drawing's bounds are CGRect.null (maxY = +∞); an infinite content size silently stops PencilKit
         // from drawing at all.
         let inkBottom = canvas.drawing.strokes.isEmpty ? 0 : canvas.drawing.bounds.maxY
@@ -98,12 +130,12 @@ struct WritingCanvas: UIViewRepresentable {
 
     final class Coordinator: NSObject, PKCanvasViewDelegate {
         let controller: CanvasController
-        var toolPicker: PKToolPicker?
+        let generation: Int
         var grid: UIView?
-        init(controller: CanvasController) { self.controller = controller }
+        init(controller: CanvasController, generation: Int) { self.controller = controller; self.generation = generation }
 
         func canvasViewDrawingDidChange(_ canvas: PKCanvasView) {
-            MainActor.assumeIsolated { controller.changed() }
+            MainActor.assumeIsolated { controller.changed(canvas, generation: generation) }
         }
     }
 }
