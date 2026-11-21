@@ -79,7 +79,7 @@ struct ReadDTO: Codable {
 
 struct OutlineDTO: Decodable {
     struct Section: Decodable { let title: String; let level: Int }
-    struct PathMap: Decodable { let path_number: Int; let section_number: Int }
+    struct PathMap: Decodable { let run_number: Int; let section_number: Int }
     struct ConceptItem: Decodable { let name: String; let summary: String; let worked_example: String }
     let chapter_title: String
     let sections: [Section]
@@ -90,7 +90,7 @@ struct OutlineDTO: Decodable {
         Schema.object([
             "chapter_title": Schema.string,
             "sections": Schema.array(Schema.object(["title": Schema.string, "level": Schema.integer])),
-            "path_map": Schema.array(Schema.object(["path_number": Schema.integer, "section_number": Schema.integer])),
+            "path_map": Schema.array(Schema.object(["run_number": Schema.integer, "section_number": Schema.integer])),
             "concepts": Schema.array(Schema.object(["name": Schema.string, "summary": Schema.string, "worked_example": Schema.string])),
         ])
     }

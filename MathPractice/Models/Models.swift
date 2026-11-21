@@ -79,6 +79,8 @@ final class Chapter {
     /// Questions available for practice and exams (not removed, doable with a pencil or included by hand).
     var activeQuestions: [Question] { questions.filter(\.isAvailable) }
     var sortedBlocks: [ContentBlock] { blocks.sorted { $0.order < $1.order } }
+    /// 2 = digital chapter; 3 = outline mapped per run in reading order.
+    static let currentFormat = 3
     var needsRereading: Bool { formatVersion < 2 && !pages.isEmpty }
 
     var outline: [SectionNode] {

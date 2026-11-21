@@ -46,6 +46,11 @@ final class ChapterProcessor: ObservableObject {
         for chapter in chapters where chapter.status == .processing && !isRunning(chapter) {
             start(chapter, context: context)
         }
+        // Chapters organized by an older version: re-organize from the stored transcriptions (quick, no re-reading).
+        for chapter in chapters where chapter.status == .ready && chapter.formatVersion >= 2
+            && chapter.formatVersion < Chapter.currentFormat && !isRunning(chapter) {
+            reorganize(chapter, context: context)
+        }
     }
 
     /// Re-reads a chapter from its stored page images with the current pipeline (no rescanning).
@@ -67,6 +72,17 @@ final class ChapterProcessor: ObservableObject {
         start(chapter, context: context)
     }
 
+    /// Rebuilds outline, questions and tags from the stored page transcriptions (no page reading).
+    func reorganize(_ chapter: Chapter, context: ModelContext) {
+        guard !isRunning(chapter), chapter.pages.allSatisfy({ $0.readJSON != nil }) else { return }
+        for s in chapter.skills { context.delete(s) }
+        for e in chapter.exams { context.delete(e) }
+        chapter.formatVersion = 2
+        chapter.status = .processing
+        try? context.save()
+        start(chapter, context: context)
+    }
+
     private func report(_ chapter: Chapter, _ message: String, _ fraction: Double, _ context: ModelContext) {
         chapter.progressMessage = message
         chapter.progressFraction = fraction
@@ -78,11 +94,11 @@ final class ChapterProcessor: ObservableObject {
         chapter.errorMessage = nil
         try await readPages(chapter, context: context)
         chapter.pageWarning = Self.checkPageNumbers(chapter.sortedPages)
-        if chapter.formatVersion < 2 || chapter.questions.isEmpty {
+        if chapter.formatVersion < Chapter.currentFormat || chapter.questions.isEmpty {
             try await organize(chapter, context: context)
         }
         ensureSkills(chapter, context: context)
-        chapter.formatVersion = 2
+        chapter.formatVersion = Chapter.currentFormat
         chapter.status = .ready
         report(chapter, "Ready", 1, context)
     }
@@ -186,6 +202,12 @@ final class ChapterProcessor: ObservableObject {
 
     // MARK: 3–4. Organize
 
+    private struct Run {
+        let path: [String]
+        let pageLabel: String
+        var samples: [String]
+    }
+
     private struct RawBlock {
         let block: ReadDTO.Block
         let pageIndex: Int
@@ -199,18 +221,23 @@ final class ChapterProcessor: ObservableObject {
         for b in chapter.blocks { context.delete(b) }
 
         let pages = chapter.sortedPages
-        var paths: [[String]] = []
-        var pathIndex: [String: Int] = [:]
+        // Runs: consecutive blocks (in reading order) with the same section path. Mapping runs rather than distinct
+        // paths lets the outline place a continuation page's partial path (lesson heading printed on an earlier
+        // page) under the section actually in progress.
+        var runs: [Run] = []
         var raw: [RawBlock] = []
         for (pi, page) in pages.enumerated() {
             guard let dto = Self.decodePage(page) else { continue }
+            let pageLabel = page.printedPageNumber.map { "p\($0)" } ?? "scan \(pi + 1)"
             for b in dto.blocks {
-                let key = b.section_path.joined(separator: " › ")
-                let idx: Int
-                if let existing = pathIndex[key] { idx = existing } else {
-                    idx = paths.count; pathIndex[key] = idx; paths.append(b.section_path)
+                if runs.last?.path != b.section_path || runs.last?.pageLabel != pageLabel {
+                    runs.append(Run(path: b.section_path, pageLabel: pageLabel, samples: []))
                 }
-                raw.append(RawBlock(block: b, pageIndex: pi, pathIndex: idx))
+                if b.kind != "answer", runs[runs.count - 1].samples.count < 2 {
+                    let text = (b.printed_number.isEmpty ? "" : "#\(b.printed_number) ") + b.markdown
+                    runs[runs.count - 1].samples.append(b.kind + ": " + text)
+                }
+                raw.append(RawBlock(block: b, pageIndex: pi, pathIndex: runs.count - 1))
             }
         }
         guard raw.contains(where: { $0.block.kind == "exercise" }) else {
@@ -218,10 +245,7 @@ final class ChapterProcessor: ObservableObject {
         }
 
         report(chapter, "Building the chapter outline…", 0.75, context)
-        let samples = paths.indices.map { i in
-            raw.filter { $0.pathIndex == i && $0.block.kind == "exercise" }.prefix(3).map(\.block.markdown)
-        }
-        let outline = try await services.outline(paths: zip(paths, samples).map { ($0, Array($1)) })
+        let outline = try await services.outline(runs: runs.map { ($0.path, $0.pageLabel, $0.samples) })
 
         // Section tree.
         var nodes: [SectionNode] = []
@@ -234,7 +258,7 @@ final class ChapterProcessor: ObservableObject {
             stack.append(node)
         }
         chapter.outline = nodes
-        let sectionOfPath = Dictionary(outline.path_map.map { ($0.path_number - 1, $0.section_number - 1) }, uniquingKeysWith: { a, _ in a })
+        let sectionOfPath = Dictionary(outline.path_map.map { ($0.run_number - 1, $0.section_number - 1) }, uniquingKeysWith: { a, _ in a })
         func section(_ r: RawBlock) -> Int {
             let s = sectionOfPath[r.pathIndex] ?? -1
             return nodes.indices.contains(s) ? s : -1

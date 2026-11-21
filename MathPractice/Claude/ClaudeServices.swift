@@ -61,11 +61,11 @@ struct ClaudeServices: Sendable {
 
     // MARK: Organizing
 
-    func outline(paths: [(path: [String], samples: [String])]) async throws -> OutlineDTO {
-        var text = "Section paths found on the pages, in reading order:\n"
-        for (i, p) in paths.enumerated() {
-            text += "\(i + 1). " + p.path.joined(separator: " › ") + "\n"
-            for s in p.samples.prefix(3) { text += "     e.g. " + s.prefix(160).replacingOccurrences(of: "\n", with: " ") + "\n" }
+    func outline(runs: [(path: [String], page: String, samples: [String])]) async throws -> OutlineDTO {
+        var text = "Runs of content in reading order (page, section path as read on that page, first items):\n"
+        for (i, r) in runs.enumerated() {
+            text += "\(i + 1). [\(r.page)] " + r.path.joined(separator: " › ") + "\n"
+            for s in r.samples.prefix(2) { text += "     e.g. " + s.prefix(120).replacingOccurrences(of: "\n", with: " ") + "\n" }
         }
         return try await client.structured(OutlineDTO.self, system: Prompts.outline, content: [.text(text)],
                                            schema: OutlineDTO.schema, effort: .high, maxTokens: 32000, kind: "outline")

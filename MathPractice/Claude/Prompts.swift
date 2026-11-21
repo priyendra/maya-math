@@ -4,7 +4,7 @@ import Foundation
 /// Rules here must work for any math textbook: judge from content, never from one book's labels.
 enum Prompts {
     /// Bump when prompts change meaningfully (recorded in the call log).
-    static let version = "2"
+    static let version = "3"
 
     static let mathFormat = """
     Write all math using LaTeX inside $...$ (inline) or $$...$$ (display). Use Markdown for everything else. \
@@ -60,15 +60,19 @@ enum Prompts {
     static let outline = """
     You organize a textbook chapter that has been read into a digital version.
 
-    You get the list of distinct section paths that were found on the pages (numbered, in reading order, with a few \
-    sample exercises under each). Paths may be slightly inconsistent between pages (abbreviations, OCR differences, \
-    a missing level). Produce:
+    You get the chapter's content as numbered runs in reading order: each run is the page it is on, the section path \
+    that was read for it, and its first items. Paths were read one page at a time, so they can be inconsistent \
+    (abbreviations, OCR differences) and often incomplete: a page that continues a section whose heading was printed \
+    on an earlier page may give only part of the path (for example a sub-heading like an exercise set without the \
+    lesson it belongs to). Use reading order to resolve these: content belongs to the section in progress, unless its \
+    own heading starts a new section. The same sub-heading title under different parent sections is a different \
+    section each time. Produce:
     - chapter_title: a short title based on the book's own chapter name.
     - sections: the chapter's real section tree in book order, flattened depth-first, each with its title as printed \
     and level (1 = top level inside the chapter, 2 = subsection, ...). Include exercise sets and review/test sections \
     as their own sections where the book presents them that way.
-    - path_map: for every input path number, the 1-based section_number (in your sections list) it belongs to \
-    (the deepest matching section).
+    - path_map: for every input run number, the 1-based section_number (in your sections list) it belongs to \
+    (the deepest matching section). Every run must be mapped.
     - concepts: the distinct skills the chapter's exercises practice, in teaching order — usually about one per \
     lesson section; split a lesson that clearly mixes skills; skills reviewed from earlier chapters get their own \
     concept(s). Each with a one-sentence summary and a short worked_example (one representative problem solved step \
