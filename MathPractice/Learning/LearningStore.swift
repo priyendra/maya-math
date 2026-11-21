@@ -102,8 +102,11 @@ enum LearningStore {
 
     /// Applies a newly graded attempt to its skill cell. Challenge questions never affect mastery.
     static func apply(_ attempt: Attempt, context: ModelContext) {
+        // A hinted answer shows she can follow a hint, not that she has the skill: it doesn't move mastery
+        // (she gets a similar question later instead).
         guard let q = attempt.question, !q.isChallenge, let chapter = q.chapter,
               attempt.isGraded, attempt.effectiveVerdict != .needsReview,
+              attempt.hintText.isEmpty || attempt.wasStuck,
               let skill = skill(for: q, in: chapter, context: context) else { return }
         skill.progress = MasteryModel.apply(correct: attempt.effectiveVerdict == .correct, mistake: attempt.mistakeType,
                                             seconds: attempt.activeSeconds, to: skill.progress, now: attempt.startedAt)

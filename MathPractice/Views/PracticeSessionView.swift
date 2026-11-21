@@ -36,6 +36,17 @@ struct PracticeSessionView: View {
     @State private var checkInKind: CheckInView.Kind = .regular
     @State private var finishingSince: Date?
     @State private var confirmQuit = false
+    /// "I'm stuck" help for the current question: a hint first (she keeps going), then the full solution.
+    enum Help: Equatable { case none, loadingHint, hint, loadingSolution, solution }
+    @State private var help: Help = .none
+    @State private var hintText = ""
+    @State private var solutionText = ""
+    @State private var helpError: String?
+    /// Break: clocks stopped, question and canvas hidden.
+    @State private var paused = false
+    /// Looking back at earlier questions of this session: clocks stopped.
+    @State private var browsing = false
+    private var onHold: Bool { paused || browsing }
     private let ticker = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -54,7 +65,9 @@ struct PracticeSessionView: View {
                         Text("\(sessionAttempts.filter { !$0.isGraded }.count) still being checked").foregroundStyle(.secondary)
                     }
                 case .answering:
-                    if let q = current { questionScreen(q) } else { noQuestions }
+                    if paused { pausedScreen }
+                    else if browsing { PreviousQuestionsView(attempts: sessionAttempts) { resumeFromHold() } }
+                    else if let q = current { questionScreen(q) } else { noQuestions }
                 }
             }
             .toolbar {
@@ -66,7 +79,20 @@ struct PracticeSessionView: View {
                 ToolbarItem(placement: .principal) {
                     if phase != .summary {
                         TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                            Text("Session \(formatClock(sessionClock.elapsed(now: ctx.date))) / 30:00").monospacedDigit().font(.headline)
+                            Text("Session \(formatClock(sessionClock.elapsed(now: ctx.date))) / 30:00" + (onHold ? " · paused" : ""))
+                                .monospacedDigit().font(.headline)
+                        }
+                    }
+                }
+                ToolbarItemGroup(placement: .primaryAction) {
+                    if phase == .answering, current != nil {
+                        if onHold {
+                            Button { resumeFromHold() } label: { HStack(spacing: 6) { Image(systemName: "play.fill"); Text("Resume") } }
+                                .buttonStyle(.borderedProminent)
+                        } else {
+                            Button { hold(browse: true) } label: { HStack(spacing: 6) { Image(systemName: "clock.arrow.circlepath"); Text("Previous") } }
+                                .disabled(sessionAttempts.isEmpty)
+                            Button { hold(browse: false) } label: { HStack(spacing: 6) { Image(systemName: "pause.fill"); Text("Pause") } }
                         }
                     }
                 }
@@ -82,8 +108,10 @@ struct PracticeSessionView: View {
         .onChange(of: grading.version) { _, _ in absorbGrades() }
         .onChange(of: scenePhase) { _, p in
             if p == .active {
-                sessionClock.resume()
-                if phase == .answering { questionClock.resume() }
+                if !onHold {
+                    sessionClock.resume()
+                    if phase == .answering { questionClock.resume() }
+                }
                 GradingQueue.shared.resumePending(context: context)
             } else { questionClock.pause(); sessionClock.pause() }
         }
@@ -110,6 +138,7 @@ struct PracticeSessionView: View {
                     timerView(q)
                 }
                 QuestionPanel(question: q)
+                helpPanel
             }
             .padding()
             .background(.bar)
@@ -124,6 +153,64 @@ struct PracticeSessionView: View {
         }
     }
 
+    private var pausedScreen: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "pause.circle.fill").font(.system(size: 72)).foregroundStyle(.blue)
+            Text("Taking a break").font(.largeTitle.bold())
+            Text("The clock is stopped. Your work on this question is saved.").foregroundStyle(.secondary)
+            Button { resumeFromHold() } label: { Label("Resume", systemImage: "play.fill").font(.title2.bold()) }
+                .buttonStyle(.borderedProminent).controlSize(.large)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func hold(browse: Bool) {
+        // The canvas leaves the screen; keep her ink so the next canvas starts with it.
+        canvas.load(canvas.drawing)
+        questionClock.pause()
+        sessionClock.pause()
+        if browse { browsing = true } else { paused = true }
+    }
+
+    private func resumeFromHold() {
+        paused = false
+        browsing = false
+        sessionClock.resume()
+        if help != .loadingHint && help != .loadingSolution { questionClock.resume() }
+    }
+
+    @ViewBuilder
+    private var helpPanel: some View {
+        switch help {
+        case .none:
+            if let helpError { Text(helpError).font(.callout).foregroundStyle(.red) }
+        case .loadingHint, .loadingSolution:
+            HStack(spacing: 10) {
+                ProgressView()
+                Text(help == .loadingHint ? "Getting a hint…" : "Getting the solution…").foregroundStyle(.secondary)
+            }
+            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
+        case .hint:
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Hint", systemImage: "lightbulb.fill").font(.headline).foregroundStyle(.orange)
+                MathText(markdown: hintText, fontSize: 18)
+                if let helpError { Text(helpError).font(.callout).foregroundStyle(.red) }
+            }
+            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
+        case .solution:
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Solution", systemImage: "checkmark.seal.fill").font(.headline).foregroundStyle(.blue)
+                MathText(markdown: solutionText, fontSize: 18, maxHeight: 380)
+                Text("Read it through, try writing it out yourself below, then tap Next. You'll get another one like this soon.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
     private func timerView(_ q: Question) -> some View {
         ClockLabel(clock: questionClock, target: LearningStore.inSpeedStage(q) ? LearningStore.targetSeconds(for: q) : nil)
     }
@@ -131,14 +218,22 @@ struct PracticeSessionView: View {
     /// Sits at the top of the canvas so the PencilKit tool picker never covers it.
     private var actionBar: some View {
         HStack(spacing: 16) {
-            Button { submit(stuck: true) } label: { Label("I'm stuck", systemImage: "questionmark.bubble") }
-                .buttonStyle(.bordered)
+            switch help {
+            case .none, .loadingHint:
+                Button { getHint() } label: { Label("I'm stuck", systemImage: "questionmark.bubble") }
+                    .buttonStyle(.bordered).disabled(help == .loadingHint)
+            case .hint, .loadingSolution:
+                Button { getSolution() } label: { Label("Show solution", systemImage: "eye") }
+                    .buttonStyle(.bordered).disabled(help == .loadingSolution)
+            case .solution:
+                EmptyView()
+            }
             Button { canvas.clear() } label: { Label("Clear", systemImage: "trash") }
                 .buttonStyle(.bordered)
                 .disabled(!canvas.hasInk)
-            Button { submit(stuck: false) } label: { Label("Next", systemImage: "arrow.right").font(.title3.bold()) }
+            Button { next() } label: { Label("Next", systemImage: "arrow.right").font(.title3.bold()) }
                 .buttonStyle(.borderedProminent)
-                .disabled(!canvas.hasInk)
+                .disabled(help == .solution ? false : (!canvas.hasInk || help == .loadingHint || help == .loadingSolution))
         }
         .padding()
         .background(.regularMaterial, in: Capsule())
@@ -160,6 +255,10 @@ struct PracticeSessionView: View {
 
     private func show(_ q: Question, pick: Pick) {
         canvas.clear()
+        help = .none
+        hintText = ""
+        solutionText = ""
+        helpError = nil
         currentPick = pick
         current = q
         questionClock.reset()
@@ -179,21 +278,84 @@ struct PracticeSessionView: View {
         VariantGenerator.shared.refill(set, planner: planner, context: context)
     }
 
-    private func submit(stuck: Bool) {
-        guard let q = current, let pick = currentPick else { return }
+    private func context(for q: Question) -> QuestionContext {
+        QuestionContext(text: q.text, figureJPEG: q.figureData, conceptName: q.concept?.name ?? "", bookAnswer: q.answerKeyAnswer)
+    }
+
+    /// First "I'm stuck": wait for a hint, show it, and let her keep working on the same question.
+    private func getHint() {
+        guard let q = current else { return }
+        help = .loadingHint
+        helpError = nil
         questionClock.pause()
+        let ctx = context(for: q)
+        let work = canvas.hasInk ? ImageUtils.renderDrawing(canvas.drawing) : nil
+        Task {
+            do {
+                let h = try await HelpProvider.hint(ctx, work)
+                guard current?.id == q.id else { return }
+                hintText = h
+                help = .hint
+            } catch {
+                guard current?.id == q.id else { return }
+                help = .none
+                helpError = "Couldn't get a hint right now (\(error.localizedDescription)). Try again in a moment."
+            }
+            if !onHold { questionClock.resume() }
+        }
+    }
+
+    /// After a hint: the full solution. The question then counts as not solved, and a similar one comes back later.
+    private func getSolution() {
+        guard let q = current, let pick = currentPick else { return }
+        help = .loadingSolution
+        helpError = nil
+        questionClock.pause()
+        let ctx = context(for: q)
+        Task {
+            do {
+                let r = try await HelpProvider.solution(ctx)
+                guard current?.id == q.id else { return }
+                let attempt = makeAttempt(q, pick: pick)
+                attempt.wasStuck = true
+                attempt.revealed = true
+                GradingQueue.shared.record(attempt, r, context: context)
+                solutionText = r.workedSolution
+                help = .solution
+            } catch {
+                guard current?.id == q.id else { return }
+                help = .hint
+                helpError = "Couldn't get the solution right now (\(error.localizedDescription)). Try again in a moment."
+            }
+            if !onHold { questionClock.resume() }
+        }
+    }
+
+    private func next() {
+        if help == .solution { advance() } else { submit() }
+    }
+
+    /// Creates and saves an attempt for the current question with her ink so far.
+    private func makeAttempt(_ q: Question, pick: Pick) -> Attempt {
         let attempt = Attempt(mode: .practice, startedAt: Date().addingTimeInterval(-questionClock.elapsed()))
         attempt.activeSeconds = questionClock.elapsed()
         let drawing = canvas.drawing
         attempt.inkData = drawing.dataRepresentation()
         attempt.renderedImage = ImageUtils.renderDrawing(drawing)
-        attempt.wasStuck = stuck
+        attempt.hintText = hintText
         attempt.question = q
         context.insert(attempt)
         try? context.save()
         sessionAttempts.append(attempt)
         cellOfAttempt[attempt.id] = pick.cell
         Planner.asked(q.id, in: &session)
+        return attempt
+    }
+
+    private func submit() {
+        guard let q = current, let pick = currentPick else { return }
+        questionClock.pause()
+        let attempt = makeAttempt(q, pick: pick)
         GradingQueue.shared.enqueue(attempt, context: context)
         advance()
     }
@@ -249,7 +411,8 @@ struct PracticeSessionView: View {
         for a in sessionAttempts where a.isGraded && !processed.contains(a.id) {
             processed.insert(a.id)
             if let cell = cellOfAttempt[a.id], a.question?.isChallenge == false {
-                Planner.graded(cell: cell, correct: a.effectiveVerdict != .incorrect, in: &session)
+                // A hinted answer still gets a similar question later.
+                Planner.graded(cell: cell, correct: a.effectiveVerdict != .incorrect && a.hintText.isEmpty, in: &session)
             }
         }
         if phase == .finishing, sessionAttempts.allSatisfy(\.isGraded) { showFinal() }
@@ -279,7 +442,13 @@ struct FeedbackCard: View {
                 Spacer()
                 Text(formatClock(attempt.activeSeconds)).monospacedDigit().foregroundStyle(.secondary)
             }
-            QuestionPanel(question: question)
+            QuestionPanel(question: question, label: "Question")
+            if !attempt.hintText.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Hint you used", systemImage: "lightbulb.fill").font(.subheadline.bold()).foregroundStyle(.orange)
+                    MathText(markdown: attempt.hintText, fontSize: 16)
+                }
+            }
             if showWork, !attempt.wasStuck, let data = attempt.renderedImage, let img = UIImage(data: data) {
                 Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 260)
                     .background(Color.white).clipShape(RoundedRectangle(cornerRadius: 8))
@@ -292,9 +461,7 @@ struct FeedbackCard: View {
                 if attempt.wasStuck {
                     MathText(markdown: attempt.workedSolution, fontSize: 17)
                 } else {
-                    DisclosureGroup("Show solution", isExpanded: $showSolution) {
-                        MathText(markdown: attempt.workedSolution, fontSize: 17)
-                    }
+                    Button { showSolution = true } label: { Label("Show solution", systemImage: "doc.text.magnifyingglass") }
                 }
                 Label("You'll get another one like this soon.", systemImage: "arrow.triangle.2.circlepath")
                     .font(.subheadline).foregroundStyle(.secondary)
@@ -306,6 +473,30 @@ struct FeedbackCard: View {
         .padding(20)
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
         .sheet(isPresented: $disagree) { NavigationStack { AttemptReviewView(attempt: attempt) } }
+        .fullScreenCover(isPresented: $showSolution) { SolutionSheet(question: question, solution: attempt.workedSolution) }
+    }
+}
+
+/// The full worked solution, with the question it answers, scrolling on its own (never clipped).
+struct SolutionSheet: View {
+    let question: Question
+    let solution: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                QuestionPanel(question: question, label: "Question")
+                    .padding(16)
+                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                Text("Solution").font(.headline).foregroundStyle(.blue)
+                MathText(markdown: solution, fontSize: 18, fill: true)
+            }
+            .padding(20)
+            .navigationTitle("Solution")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
     }
 }
 
@@ -349,6 +540,53 @@ struct SessionSummaryView: View {
         case .careless: return "check each line once before moving on."
         case .misread: return "underline what the question asks before starting."
         case .incomplete: return "make sure you answer every part."
+        }
+    }
+}
+
+/// Earlier questions from this session (newest first): the full question, her work, and the result once it has
+/// been shown at a check-in. Read-only; the clock is stopped while she looks.
+struct PreviousQuestionsView: View {
+    let attempts: [Attempt]
+    let onResume: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Earlier questions").font(.largeTitle.bold())
+                Text("The clock is stopped while you look back.").foregroundStyle(.secondary)
+                ForEach(Array(attempts.enumerated().reversed()), id: \.element.id) { i, a in
+                    if let q = a.question {
+                        if a.isGraded && a.revealed {
+                            FeedbackCard(attempt: a, question: q)
+                        } else {
+                            VStack(alignment: .leading, spacing: 12) {
+                                QuestionPanel(question: q, label: "Question \(i + 1)")
+                                if let data = a.renderedImage, let img = UIImage(data: data) {
+                                    Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 260)
+                                        .background(Color.white).clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                                if !a.hintText.isEmpty {
+                                    Label("You used a hint", systemImage: "lightbulb.fill").font(.subheadline).foregroundStyle(.orange)
+                                }
+                                Label(a.isGraded ? "Checked. You'll see how you did at the next check-in."
+                                                 : "Being checked. You'll see how you did at the next check-in.",
+                                      systemImage: "hourglass").font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            .padding(20)
+                            .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
+                        }
+                    }
+                }
+                HStack {
+                    Spacer()
+                    Button(action: onResume) { Label("Resume", systemImage: "play.fill").font(.title3.bold()) }
+                        .buttonStyle(.borderedProminent).controlSize(.large)
+                }
+            }
+            .padding(28)
+            .frame(maxWidth: 900)
+            .frame(maxWidth: .infinity)
         }
     }
 }

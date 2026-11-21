@@ -150,6 +150,20 @@ struct ClaudeServices: Sendable {
         return result
     }
 
+    /// A nudge for a student who is stuck (optionally looking at her work so far). Never the final answer.
+    func hint(_ q: QuestionContext, work: Data?) async throws -> String {
+        var blocks = questionBlocks(q)
+        blocks.append(.text("Skill being practiced: \(q.conceptName)"))
+        if let key = q.bookAnswer, !key.isEmpty { blocks.append(.text("The book's answer key says: \(key)")) }
+        if let work {
+            blocks.append(.text("Her work so far:"))
+            blocks.append(.png(work))
+        }
+        let dto = try await client.structured(HintDTO.self, system: Prompts.hint, content: blocks,
+                                              schema: HintDTO.schema, effort: .medium, kind: "hint")
+        return dto.hint
+    }
+
     private static func log(_ items: [String: Any]) -> String {
         var obj: [String: Any] = [:]
         for (k, v) in items {

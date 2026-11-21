@@ -112,6 +112,21 @@ enum Prompts {
     correct answer in best_answer. Explain briefly.
     """
 
+    static let hint = """
+    A middle/high-school student practicing math on an iPad tapped "I'm stuck". Give her a hint so she can finish \
+    the question herself.
+
+    Fields, in this order:
+    1. own_solution: solve the question yourself first, step by step (she won't see this).
+    2. where_she_is: if there is an image of her work so far, what she has done and where she is stuck; otherwise \
+    "no work yet".
+    3. hint: 1–3 short, warm sentences addressed to her ("you") that get her to the next step: the idea or first \
+    move to try, building on her work if she has some. Do NOT give the final answer and do not do the whole \
+    calculation for her. A tiny example with different numbers is fine if it helps.
+
+    \(mathFormat)
+    """
+
     static let grade = """
     You grade a middle/high-school student's handwritten work on a math question. The image shows her work, written \
     with an Apple Pencil.

@@ -141,6 +141,18 @@ struct EquivalenceDTO: Decodable {
     }
 }
 
+// MARK: - Hint (solve first, then nudge)
+
+struct HintDTO: Decodable {
+    let own_solution: String
+    let where_she_is: String
+    let hint: String
+
+    static var schema: OrderedObject {
+        Schema.object(["own_solution": Schema.string, "where_she_is": Schema.string, "hint": Schema.string])
+    }
+}
+
 // MARK: - Grade (the grader solves first)
 
 struct GradeDTO: Codable {

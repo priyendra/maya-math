@@ -6,6 +6,7 @@ struct AttemptReviewView: View {
     @Bindable var attempt: Attempt
     @Environment(\.modelContext) private var context
     @State private var mistake: MistakeType = .procedural
+    @State private var showSolution = false
 
     var body: some View {
         Form {
@@ -35,7 +36,7 @@ struct AttemptReviewView: View {
                 if !attempt.feedback.isEmpty { MathText(markdown: attempt.feedback, fontSize: 16) }
                 LabeledContent("Confidence", value: String(format: "%.0f%%", attempt.graderConfidence * 100))
                 if !attempt.workedSolution.isEmpty {
-                    DisclosureGroup("Solution") { MathText(markdown: attempt.workedSolution, fontSize: 16) }
+                    Button { showSolution = true } label: { Label("Show solution", systemImage: "doc.text.magnifyingglass") }
                 }
             }
             Section {
@@ -56,6 +57,9 @@ struct AttemptReviewView: View {
             Section { ReportProblemButton(subject: .attempt(attempt)) }
         }
         .navigationTitle("Answer")
+        .fullScreenCover(isPresented: $showSolution) {
+            if let q = attempt.question { SolutionSheet(question: q, solution: attempt.workedSolution) }
+        }
         .onAppear { if let m = attempt.mistakeType { mistake = m } }
     }
 

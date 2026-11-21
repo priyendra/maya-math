@@ -67,6 +67,12 @@ final class GradingQueue: ObservableObject {
         }
     }
 
+    /// Records a result obtained in the foreground (e.g. the solution she asked for) and notifies views.
+    func record(_ attempt: Attempt, _ r: GradeResult, context: ModelContext) {
+        finish(attempt, r, context: context)
+        version += 1
+    }
+
     private func finish(_ attempt: Attempt, _ r: GradeResult, context: ModelContext) {
         attempt.verdict = r.verdict
         attempt.mistakeType = r.mistake

@@ -227,6 +227,8 @@ final class Attempt {
     /// Shown to her at a check-in (or an interruption).
     var revealed: Bool = false
     var wasStuck: Bool = false
+    /// The hint she asked for before answering ("" if none). Hinted answers don't move mastery.
+    var hintText: String = ""
     var question: Question?
 
     init(mode: AttemptMode, startedAt: Date = Date()) {
