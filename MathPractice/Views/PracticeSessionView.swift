@@ -175,6 +175,8 @@ struct PracticeSessionView: View {
             return
         }
         show(q, pick: pick)
+        // Top up generated questions between questions (never while she is writing), reusing this planner.
+        VariantGenerator.shared.refill(set, planner: planner, context: context)
     }
 
     private func submit(stuck: Bool) {
@@ -251,7 +253,6 @@ struct PracticeSessionView: View {
             }
         }
         if phase == .finishing, sessionAttempts.allSatisfy(\.isGraded) { showFinal() }
-        VariantGenerator.shared.refill(set, context: context)
     }
 }
 

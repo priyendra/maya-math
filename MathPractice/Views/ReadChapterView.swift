@@ -142,13 +142,13 @@ struct ChapterWebView: UIViewRepresentable {
         <script>
           function render(src) {
             const math = [];
-            let s = (src || '').replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, (_, m) => { math.push([m, true]); return '@@M' + (math.length - 1) + '@@'; })
+            let s = (src || '').replace(/\\\\\\$/g, '@@D@@').replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, (_, m) => { math.push([m, true]); return '@@M' + (math.length - 1) + '@@'; })
                        .replace(/\\$([^$\\n]+?)\\$/g, (_, m) => { math.push([m, false]); return '@@M' + (math.length - 1) + '@@'; });
             let html = marked.parse(s, { breaks: true });
             return html.replace(/@@M(\\d+)@@/g, (_, i) => {
               const [m, d] = math[+i];
               try { return katex.renderToString(m, { displayMode: d, throwOnError: false }); } catch (e) { return m; }
-            });
+            }).replace(/@@D@@/g, '$');
           }
           function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
           document.getElementById('t').textContent = \(titleJSON)[0];

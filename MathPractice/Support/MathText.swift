@@ -37,6 +37,9 @@ private struct MathWebView: UIViewRepresentable {
         view.backgroundColor = .clear
         view.scrollView.isScrollEnabled = false
         view.scrollView.bounces = false
+        // Display-only: let every touch (finger or Pencil) fall through to the scrolling page around it, so
+        // WebKit's text-selection gestures can never swallow a scroll.
+        view.isUserInteractionEnabled = false
         return view
     }
 
@@ -75,14 +78,14 @@ private struct MathWebView: UIViewRepresentable {
           const src = \(json)[0];
           const math = [];
           // Pull math out first so Markdown doesn't mangle underscores/asterisks inside LaTeX.
-          let s = src.replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, (_, m) => { math.push([m, true]); return '@@M' + (math.length - 1) + '@@'; })
+          let s = src.replace(/\\\\\\$/g, '@@D@@').replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, (_, m) => { math.push([m, true]); return '@@M' + (math.length - 1) + '@@'; })
                      .replace(/\\$([^$\\n]+?)\\$/g, (_, m) => { math.push([m, false]); return '@@M' + (math.length - 1) + '@@'; });
           let html = marked.parse(s, { breaks: true });
           html = html.replace(/@@M(\\d+)@@/g, (_, i) => {
             const [m, display] = math[+i];
             try { return katex.renderToString(m, { displayMode: display, throwOnError: false }); }
             catch (e) { return m; }
-          });
+          }).replace(/@@D@@/g, '$');
           document.getElementById('c').innerHTML = html;
           function report() { window.webkit.messageHandlers.height.postMessage(document.getElementById('c').scrollHeight + 4); }
           report(); new ResizeObserver(report).observe(document.getElementById('c'));

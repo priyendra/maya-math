@@ -67,6 +67,20 @@ enum SampleData {
             }
         }
         chapter.outline = nodes
+        if ProcessInfo.processInfo.arguments.contains("-seedGraded"), let q = chapter.questions.first(where: { $0.difficulty == 3 }) {
+            let a = Attempt(mode: .practice)
+            a.question = q
+            a.isGraded = true
+            a.verdict = .incorrect
+            a.mistakeType = .conceptual
+            a.activeSeconds = 140
+            a.errorStep = "In the second line, $0.10t$ was added to both sides instead of subtracted."
+            a.feedback = "Good setup! Watch the step where you move the texts term — undo addition with subtraction."
+            a.workedSolution = (1...14).map { i in
+                "**Step \(i).** Rewrite the equation: $20 + 0.10t = 27.50$, so $0.10t = 27.50 - 20 = 7.50$ and $t = \\frac{7.50}{0.10} = 75$."
+            }.joined(separator: "\n\n") + "\n\n**Answer:** $t = 75$ texts."
+            context.insert(a)
+        }
         try? context.save()
         ChapterProcessor.shared.ensureSkills(chapter, context: context)
     }

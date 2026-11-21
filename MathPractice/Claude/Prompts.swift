@@ -4,11 +4,11 @@ import Foundation
 /// Rules here must work for any math textbook: judge from content, never from one book's labels.
 enum Prompts {
     /// Bump when prompts change meaningfully (recorded in the call log).
-    static let version = "3"
+    static let version = "4"
 
     static let mathFormat = """
     Write all math using LaTeX inside $...$ (inline) or $$...$$ (display). Use Markdown for everything else. \
-    Never use other math delimiters.
+    Never use other math delimiters. Write a literal dollar sign (money) as \\$.
     """
 
     static let read = """
@@ -132,7 +132,8 @@ enum Prompts {
     approach, a rule applied wrongly), careless (arithmetic slip or copying error in sound work), misread (answered a \
     different question than asked), incomplete (stopped early or left out part). Otherwise "none". If she was stuck: \
     conceptual.
-    6. error_step: quote or describe the first line where it went wrong (empty if correct).
+    6. error_step: the first line where it went wrong, addressed to her as "you" (e.g. "In your second line, you…"); \
+    empty if correct.
     7. feedback: 1–3 short, warm, specific sentences addressed to her ("you"). If correct, say briefly what was good. \
     If incorrect, point to where it went wrong and the idea to fix it, without giving away the final answer.
     8. worked_solution: if incorrect or stuck, a clear step-by-step solution she can learn from; otherwise "".

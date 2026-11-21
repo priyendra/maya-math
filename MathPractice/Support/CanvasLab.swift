@@ -1,6 +1,7 @@
 #if DEBUG
 import SwiftUI
 import PencilKit
+import SwiftData
 
 /// Debug-only: `-canvasLab 0|1|2` shows a stock PKCanvasView (0) or our WritingCanvas (1, 2 = inside a
 /// NavigationStack) full screen, so UI tests can check that drawing registers.
@@ -46,3 +47,25 @@ struct BareCanvas: UIViewRepresentable {
 }
 #endif
 
+
+#if DEBUG
+/// Debug-only: `-checkInLab` shows a check-in with the seeded graded attempts (use with -seedSample -seedGraded).
+struct CheckInLab: View {
+    @Query private var attempts: [Attempt]
+    var body: some View {
+        CheckInView(items: attempts.filter { $0.isGraded && $0.effectiveVerdict == .incorrect }, pending: 0,
+                    kind: .regular, onContinue: {})
+    }
+}
+#endif
+
+#if DEBUG
+struct SeededCheckInLab: View {
+    @Environment(\.modelContext) private var context
+    @State private var ready = false
+    var body: some View {
+        Group { if ready { CheckInLab() } else { ProgressView() } }
+            .onAppear { SampleData.seedIfRequested(context: context); ready = true }
+    }
+}
+#endif

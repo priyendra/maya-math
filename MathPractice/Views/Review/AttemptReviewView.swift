@@ -31,7 +31,7 @@ struct AttemptReviewView: View {
                 if !attempt.transcribedAnswer.isEmpty { LabeledContent("Claude read your answer as", value: attempt.transcribedAnswer) }
                 if !attempt.ownAnswer.isEmpty { LabeledContent("Claude's own answer", value: attempt.ownAnswer) }
                 if let m = attempt.mistakeType { LabeledContent("Mistake type", value: m.displayName) }
-                if !attempt.errorStep.isEmpty { Text("Where: \(attempt.errorStep)") }
+                if !attempt.errorStep.isEmpty { MathText(markdown: "**Where it went wrong:** \(attempt.errorStep)", fontSize: 16) }
                 if !attempt.feedback.isEmpty { MathText(markdown: attempt.feedback, fontSize: 16) }
                 LabeledContent("Confidence", value: String(format: "%.0f%%", attempt.graderConfidence * 100))
                 if !attempt.workedSolution.isEmpty {

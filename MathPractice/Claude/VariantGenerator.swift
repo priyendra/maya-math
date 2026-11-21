@@ -15,11 +15,11 @@ final class VariantGenerator {
     func refill(_ chapter: Chapter, context: ModelContext) { refill(.chapter(chapter), context: context) }
 
     /// Generates questions for in-scope skills that have run out of unseen questions.
-    func refill(_ set: StudySet, context: ModelContext) {
-        // Not while the chapter's own book questions are still being solved.
-        guard KeychainStore.apiKey != nil else { return }
-        let planner = LearningStore.planner(set)
+    func refill(_ set: StudySet, planner existing: Planner? = nil, context: ModelContext) {
+        guard KeychainStore.apiKey != nil, inFlight.count < Self.maxConcurrentCells else { return }
+        let planner = existing ?? LearningStore.planner(set)
         let cells = planner.cellsNeedingVariants().filter { !inFlight.contains($0) }
+        guard !cells.isEmpty else { return }
         for cell in cells.prefix(max(0, Self.maxConcurrentCells - inFlight.count)) {
             let inCell = set.questions.filter { LearningStore.cellKey($0) == cell }
             guard inCell.filter({ $0.source == .generated }).count < Self.maxGeneratedPerCell else { continue }

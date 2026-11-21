@@ -6,7 +6,9 @@ struct MathPracticeApp: App {
     var body: some Scene {
         WindowGroup {
             #if DEBUG
-            if let v = CanvasLab.requested { CanvasLab(variant: v) } else { LibraryView() }
+            if let v = CanvasLab.requested { CanvasLab(variant: v) }
+            else if ProcessInfo.processInfo.arguments.contains("-checkInLab") { SeededCheckInLab() }
+            else { LibraryView() }
             #else
             LibraryView()
             #endif
