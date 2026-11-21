@@ -82,10 +82,28 @@ enum ProblemReport {
         return try zip(dir, name: name)
     }
 
+    /// Everything the app has stored (database, page images, Claude call log) as one .zip, for evaluation.
+    static func exportAllData() throws -> URL {
+        let fm = FileManager.default
+        let stamp = Self.stamp.string(from: Date())
+        let name = "MayaMath-data-\(stamp)"
+        let dir = fm.temporaryDirectory.appendingPathComponent(name, isDirectory: true)
+        try? fm.removeItem(at: dir)
+        let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        try fm.copyItem(at: support, to: dir)
+        return try zip(dir, name: name)
+    }
+
     private static func questionInfo(_ q: Question) -> [String: Any] {
         [
             "id": q.id.uuidString,
-            "book_ref": q.bookRef,
+            "printed_number": q.printedNumber,
+            "printed_page": (q.printedPage) as Any,
+            "section": q.chapter.map { ChapterProcessor.sectionTitle(q.sectionID, $0.outline) } ?? "",
+            "pencil_ok": q.pencilOK,
+            "pencil_reason": q.pencilReason,
+            "is_challenge": q.isChallenge,
+            "include_override": (q.includeOverride) as Any,
             "source": q.sourceRaw,
             "status": q.statusRaw,
             "review_note": q.reviewNote ?? "",
@@ -95,8 +113,6 @@ enum ProblemReport {
             "text": q.text,
             "has_figure": q.figureData != nil,
             "page": (q.pageIndex.map { $0 + 1 }) as Any,
-            "reference_answer": q.referenceAnswer,
-            "reference_solution": q.referenceSolution,
             "answer_key_answer": q.answerKeyAnswer ?? "",
             "parent_edited": q.parentEdited,
             "generated_from": q.parentQuestionID?.uuidString ?? "",
@@ -116,6 +132,9 @@ enum ProblemReport {
             "error_step": a.errorStep,
             "feedback": a.feedback,
             "confidence": a.graderConfidence,
+            "own_answer": a.ownAnswer,
+            "worked_solution": a.workedSolution,
+            "was_stuck": a.wasStuck,
             "grader_log": a.graderLog,
         ]
     }

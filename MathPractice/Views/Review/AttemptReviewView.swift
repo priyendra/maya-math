@@ -15,7 +15,6 @@ struct AttemptReviewView: View {
                     if let fig = q.figureData, let img = UIImage(data: fig) {
                         Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 220)
                     }
-                    LabeledContent("Reference answer") { MathText(markdown: q.referenceAnswer, fontSize: 16).frame(width: 300) }
                 }
             }
             Section("Your work") {
@@ -30,10 +29,14 @@ struct AttemptReviewView: View {
             Section("Claude's grading") {
                 HStack { VerdictBadge(verdict: attempt.verdict); Text(attempt.verdict.rawValue.capitalized) }
                 if !attempt.transcribedAnswer.isEmpty { LabeledContent("Claude read your answer as", value: attempt.transcribedAnswer) }
+                if !attempt.ownAnswer.isEmpty { LabeledContent("Claude's own answer", value: attempt.ownAnswer) }
                 if let m = attempt.mistakeType { LabeledContent("Mistake type", value: m.displayName) }
                 if !attempt.errorStep.isEmpty { Text("Where: \(attempt.errorStep)") }
                 if !attempt.feedback.isEmpty { MathText(markdown: attempt.feedback, fontSize: 16) }
                 LabeledContent("Confidence", value: String(format: "%.0f%%", attempt.graderConfidence * 100))
+                if !attempt.workedSolution.isEmpty {
+                    DisclosureGroup("Solution") { MathText(markdown: attempt.workedSolution, fontSize: 16) }
+                }
             }
             Section {
                 if let override = attempt.correction {

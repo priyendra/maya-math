@@ -57,6 +57,22 @@ final class PlannerTests: XCTestCase {
                      timesSeen: seen, lastSeen: lastSeen, lastWasCorrect: lastCorrect)
     }
 
+    func testChallengeOnlyAfterHardestLevelMasteredAndNeverInExams() {
+        let a1 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 1)
+        var challenge = q(a1); challenge.isChallenge = true
+        let regular = q(a1)
+        let fresh = Planner(questions: [regular, challenge], skills: [:], now: now)
+        XCTAssertEqual(fresh.allCells, [a1])
+        XCTAssertNil(fresh.pickChallenge(session: SessionState()))
+        XCTAssertNotEqual(fresh.next(session: SessionState(), random: { 0.99 })?.questionID, challenge.id)
+
+        var mastered = SkillProgress()
+        for _ in 0..<5 { mastered = MasteryModel.apply(correct: true, mistake: nil, seconds: 60, to: mastered, now: now) }
+        let ready = Planner(questions: [regular, challenge], skills: [a1: mastered], now: now)
+        XCTAssertEqual(ready.next(session: SessionState(), random: { 0.99 })?.category, .challenge)
+        XCTAssertFalse(ExamBuilder.build(questions: [regular, challenge], minutes: 30).contains(challenge.id))
+    }
+
     func testHigherDifficultyLockedUntilLowerProgresses() {
         let a1 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 1)
         let a2 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 2)

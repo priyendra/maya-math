@@ -74,11 +74,12 @@ struct ClaudeClient: Sendable {
         _ type: T.Type,
         system: String,
         content: [Block],
-        schema: [String: Any],
+        schema: OrderedObject,
         effort: Effort,
-        maxTokens: Int = 32000
+        maxTokens: Int = 32000,
+        kind: String = "other"
     ) async throws -> T {
-        let text = try await send(system: system, content: content, schema: schema, effort: effort, maxTokens: maxTokens)
+        let text = try await send(system: system, content: content, schema: schema, effort: effort, maxTokens: maxTokens, kind: kind)
         guard let data = text.data(using: .utf8) else { throw ClientError.decoding("non-UTF8 text") }
         do {
             return try JSONDecoder().decode(T.self, from: data)
@@ -88,28 +89,36 @@ struct ClaudeClient: Sendable {
     }
 
     /// Sends one user turn and returns the concatenated text of the reply.
-    func send(system: String, content: [Block], schema: [String: Any]?, effort: Effort, maxTokens: Int) async throws -> String {
+    func send(system: String, content: [Block], schema: OrderedObject?, effort: Effort, maxTokens: Int, kind: String = "other") async throws -> String {
         guard let key = apiKey(), !key.isEmpty else { throw ClientError.missingAPIKey }
         let body = Self.requestBody(model: model, system: system, content: content, schema: schema, effort: effort, maxTokens: maxTokens)
         let request = try Self.urlRequest(apiKey: key, body: body)
 
         var attempt = 0
+        let started = Date()
         while true {
             do {
-                return try await performStreaming(request)
+                let (text, usage) = try await performStreaming(request)
+                CallLog.record(kind: kind, model: model, effort: effort.rawValue, started: started, retries: attempt,
+                               usage: usage, error: nil, response: text)
+                return text
             } catch let error as ClientError where error.isRetryable && attempt < maxRetries {
                 attempt += 1
                 try await Task.sleep(nanoseconds: UInt64(min(pow(2.0, Double(attempt)), 30) * 1_000_000_000))
             } catch let error as URLError where attempt < maxRetries && error.code != .cancelled {
                 attempt += 1
                 try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))
+            } catch {
+                CallLog.record(kind: kind, model: model, effort: effort.rawValue, started: started, retries: attempt,
+                               usage: [:], error: error.localizedDescription, response: nil)
+                throw error
             }
         }
     }
 
     // MARK: - Request building (internal for tests)
 
-    static func requestBody(model: String, system: String, content: [Block], schema: [String: Any]?, effort: Effort, maxTokens: Int) -> [String: Any] {
+    static func requestBody(model: String, system: String, content: [Block], schema: OrderedObject?, effort: Effort, maxTokens: Int) -> [String: Any] {
         var outputConfig: [String: Any] = ["effort": effort.rawValue]
         if let schema {
             outputConfig["format"] = ["type": "json_schema", "schema": schema]
@@ -134,13 +143,13 @@ struct ClaudeClient: Sendable {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue(apiVersion, forHTTPHeaderField: "anthropic-version")
         request.setValue("server-side-fallback-2026-07-01", forHTTPHeaderField: "anthropic-beta")
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = JSONWriter.data(body)
         return request
     }
 
     // MARK: - Streaming
 
-    private func performStreaming(_ request: URLRequest) async throws -> String {
+    private func performStreaming(_ request: URLRequest) async throws -> (String, [String: Int]) {
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse else { throw ClientError.stream("no HTTP response") }
         if http.statusCode != 200 {
@@ -152,7 +161,7 @@ struct ClaudeClient: Sendable {
         for try await line in bytes.lines {
             try parser.consume(line: line)
         }
-        return try parser.finish()
+        return (try parser.finish(), parser.usage)
     }
 
     static func errorMessage(from data: Data) -> String {
@@ -172,6 +181,13 @@ struct SSEAccumulator {
     private(set) var stopReason: String?
     private(set) var refusalCategory: String?
     private var sawMessageStop = false
+    /// Token usage from message_start / message_delta.
+    private(set) var usage: [String: Int] = [:]
+
+    private mutating func mergeUsage(_ u: Any?) {
+        guard let u = u as? [String: Any] else { return }
+        for (k, v) in u { if let n = v as? Int { usage[k] = n } }
+    }
 
     mutating func consume(line: String) throws {
         guard line.hasPrefix("data:") else { return }
@@ -181,6 +197,8 @@ struct SSEAccumulator {
               let type = event["type"] as? String else { return }
 
         switch type {
+        case "message_start":
+            mergeUsage((event["message"] as? [String: Any])?["usage"])
         case "content_block_start":
             if let index = event["index"] as? Int,
                let block = event["content_block"] as? [String: Any],
@@ -196,6 +214,7 @@ struct SSEAccumulator {
                 textByIndex[index, default: ""] += text
             }
         case "message_delta":
+            mergeUsage(event["usage"])
             if let delta = event["delta"] as? [String: Any] {
                 if let reason = delta["stop_reason"] as? String { stopReason = reason }
                 if let details = delta["stop_details"] as? [String: Any] {

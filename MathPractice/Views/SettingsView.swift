@@ -6,6 +6,9 @@ struct SettingsView: View {
     @State private var savedKey = KeychainStore.apiKey
     @State private var newKey = ""
     @State private var testState: TestState = .idle
+    @State private var exportURL: URL?
+    @State private var exporting = false
+    @State private var exportError: String?
 
     enum TestState: Equatable { case idle, testing, ok, failed(String) }
 
@@ -69,9 +72,30 @@ struct SettingsView: View {
                 } footer: {
                     Text("Stored in this iPad's Keychain. Create a key at console.anthropic.com and set a monthly spend limit on it.")
                 }
+                Section {
+                    if let exportURL {
+                        ShareLink(item: exportURL) { Label("Share data file", systemImage: "square.and.arrow.up") }
+                    } else {
+                        Button(exporting ? "Preparing…" : "Export app data") { export() }.disabled(exporting)
+                    }
+                    if let exportError { Text(exportError).foregroundStyle(.red) }
+                } header: {
+                    Text("Your data")
+                } footer: {
+                    Text("Bundles your chapters, answers and the app's Claude activity log into one file (e.g. to AirDrop to a Mac for review). It can be large.")
+                }
             }
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+
+    private func export() {
+        exporting = true
+        exportError = nil
+        Task { @MainActor in
+            do { exportURL = try ProblemReport.exportAllData() } catch { exportError = error.localizedDescription }
+            exporting = false
         }
     }
 
@@ -82,7 +106,7 @@ struct SettingsView: View {
             let client = ClaudeClient(apiKey: { key })
             do {
                 _ = try await client.send(system: "Reply with the single word OK.", content: [.text("Test")],
-                                          schema: nil, effort: .low, maxTokens: 200)
+                                          schema: nil, effort: .low, maxTokens: 200, kind: "key_test")
                 testState = .ok
             } catch let ClaudeClient.ClientError.http(status, message) where status == 401 {
                 testState = .failed("Key rejected (401): \(message)")

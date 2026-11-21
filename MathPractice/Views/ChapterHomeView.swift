@@ -1,56 +1,31 @@
 import SwiftUI
 import SwiftData
 
-struct ChapterHomeView: View {
-    let chapter: Chapter
+/// Big Practice / Exam buttons plus links, for a chapter or a scope.
+struct StudyActions: View {
+    let set: StudySet
     @State private var practicing = false
     @State private var examining = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                HStack(spacing: 16) {
-                    bigButton("Practice", subtitle: "30-minute session", icon: "pencil.and.scribble", color: .blue) { practicing = true }
-                    bigButton("Exam mode", subtitle: "\(chapter.examMinutes)-minute timed test", icon: "timer", color: .purple) { examining = true }
-                }
-                .disabled(chapter.activeQuestions.isEmpty)
-
-                if chapter.activeQuestions.isEmpty {
-                    Text("No questions are ready yet. Open \"Questions & answers\" below and check the ones Claude wasn't sure about.")
-                        .foregroundStyle(.secondary)
-                }
-
-                if chapter.status == .processing {
-                    ProgressView(value: chapter.progressFraction) {
-                        Text("\(chapter.progressMessage). New questions join your practice as they're ready.").font(.caption)
-                    }
-                }
-
-                reviewLinks
-
-                Text("Your skills").font(.title2.bold())
-                MasteryGrid(chapter: chapter)
-
-                let stats = SessionStats(attempts: chapter.allAttempts.filter(\.isGraded))
-                if stats.total > 0 {
-                    HStack(spacing: 24) {
-                        stat("\(stats.total)", "answered")
-                        stat("\(Int(stats.accuracy * 100))%", "correct")
-                        stat("\(stats.minutes)", "minutes practiced")
-                    }
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 16) {
+                bigButton("Practice", subtitle: "30-minute session", icon: "pencil.and.scribble", color: .blue) { practicing = true }
+                bigButton("Exam mode", subtitle: "\(set.examMinutes)-minute timed test", icon: "timer", color: .purple) { examining = true }
             }
-            .padding(24)
+            .disabled(set.questions.isEmpty)
+            if set.questions.isEmpty {
+                Text("There are no questions here yet.").foregroundStyle(.secondary)
+            }
         }
-        .navigationTitle(chapter.title)
-        .fullScreenCover(isPresented: $practicing) { PracticeSessionView(chapter: chapter) }
+        .fullScreenCover(isPresented: $practicing) { PracticeSessionView(set: set) }
+        .fullScreenCover(isPresented: $examining) { ExamView(set: set) }
         #if DEBUG
         .onAppear {
             if ProcessInfo.processInfo.arguments.contains("-autoPractice") { practicing = true }
             if ProcessInfo.processInfo.arguments.contains("-autoExam") { examining = true }
         }
         #endif
-        .fullScreenCover(isPresented: $examining) { ExamView(chapter: chapter) }
     }
 
     private func bigButton(_ title: String, subtitle: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
@@ -70,25 +45,15 @@ struct ChapterHomeView: View {
         }
         .buttonStyle(.plain)
     }
+}
 
-    private var reviewLinks: some View {
-        let questionsToCheck = chapter.questions.filter { $0.status == .needsCheck }.count
-        let gradingsToCheck = chapter.allAttempts.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.count
-        let toCheck = questionsToCheck + gradingsToCheck
-        return HStack(spacing: 12) {
-            NavigationLink { ChapterReviewView(chapter: chapter) } label: {
-                linkTile("Questions & answers",
-                         subtitle: toCheck > 0 ? "\(toCheck) to check" : "Review your answers and the questions",
-                         icon: "list.bullet.rectangle", highlight: toCheck > 0)
-            }
-            NavigationLink { ProgressReportView(chapter: chapter) } label: {
-                linkTile("My progress", subtitle: "Mistake patterns, speed, practice days", icon: "chart.bar.xaxis", highlight: false)
-            }
-        }
-        .buttonStyle(.plain)
-    }
+struct LinkTile: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    var highlight = false
 
-    private func linkTile(_ title: String, subtitle: String, icon: String, highlight: Bool) -> some View {
+    var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.title2).foregroundStyle(highlight ? .orange : .accentColor)
             VStack(alignment: .leading, spacing: 2) {
@@ -102,11 +67,135 @@ struct ChapterHomeView: View {
         .frame(maxWidth: .infinity)
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
     }
+}
+
+struct ChapterHomeView: View {
+    @Bindable var chapter: Chapter
+    @Environment(\.modelContext) private var context
+    @ObservedObject private var processor = ChapterProcessor.shared
+    @State private var showSettings = false
+    @State private var confirmReread = false
+    @State private var debugRead = false
+
+    var body: some View {
+        let set = StudySet.chapter(chapter)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                if chapter.needsRereading && chapter.status != .processing {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("New: a clean digital version of this chapter", systemImage: "sparkles").font(.headline)
+                        Text("Re-read this chapter from the pages you already scanned (no rescanning) to get the browsable chapter, sections and page numbers for study plans, and smarter question tags. It takes about 10–15 minutes; keep the app open.")
+                            .font(.subheadline)
+                        Button("Re-read chapter") { confirmReread = true }.buttonStyle(.borderedProminent)
+                    }
+                    .padding()
+                    .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+                }
+                if chapter.status == .processing {
+                    ProgressView(value: chapter.progressFraction) { Text(chapter.progressMessage).font(.caption) }
+                }
+                if let warning = chapter.pageWarning {
+                    Label("Check your scans: \(warning)", systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline).foregroundStyle(.orange)
+                }
+
+                if chapter.status == .ready && !chapter.needsRereading {
+                    StudyActions(set: set)
+                }
+
+                HStack(spacing: 12) {
+                    if !chapter.needsRereading && !chapter.blocks.isEmpty {
+                        NavigationLink { ReadChapterView(chapter: chapter) } label: {
+                            LinkTile(title: "Read chapter", subtitle: "Lessons, examples and exercises", icon: "book")
+                        }
+                    }
+                    NavigationLink { MyAnswersView(set: set) } label: {
+                        let toCheck = set.allAttempts.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.count
+                        LinkTile(title: "My answers", subtitle: toCheck > 0 ? "\(toCheck) to check" : "Your work and how it was graded",
+                                 icon: "list.bullet.rectangle", highlight: toCheck > 0)
+                    }
+                    NavigationLink { ProgressReportView(chapter: chapter) } label: {
+                        LinkTile(title: "My progress", subtitle: "Mistake patterns, speed, practice days", icon: "chart.bar.xaxis")
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if !chapter.needsRereading {
+                    Text("Your skills").font(.title2.bold())
+                    MasteryGrid(set: set)
+                    let stats = SessionStats(attempts: set.allAttempts.filter(\.isGraded))
+                    if stats.total > 0 {
+                        HStack(spacing: 24) {
+                            stat("\(stats.total)", "answered")
+                            stat("\(Int(stats.accuracy * 100))%", "correct")
+                            stat("\(stats.minutes)", "minutes practiced")
+                        }
+                    }
+                }
+            }
+            .padding(24)
+        }
+        .navigationTitle(chapter.title)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showSettings = true } label: { Label("Chapter settings", systemImage: "slider.horizontal.3") }
+            }
+        }
+        .sheet(isPresented: $showSettings) { ChapterSettingsView(chapter: chapter) }
+        .navigationDestination(isPresented: $debugRead) { ReadChapterView(chapter: chapter) }
+        #if DEBUG
+        .onAppear { if ProcessInfo.processInfo.arguments.contains("-openRead") { debugRead = true } }
+        #endif
+        .confirmationDialog("Re-read this chapter?", isPresented: $confirmReread) {
+            Button("Re-read from my scanned pages") { processor.reread(chapter, context: context) }
+        } message: {
+            Text("Questions are rebuilt from your scanned pages, so any practice history in this chapter is cleared.")
+        }
+    }
 
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading) {
             Text(value).font(.title.bold().monospacedDigit())
             Text(label).font(.caption).foregroundStyle(.secondary)
+        }
+    }
+}
+
+struct ChapterSettingsView: View {
+    @Bindable var chapter: Chapter
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var processor = ChapterProcessor.shared
+    @State private var confirmReread = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Title", text: $chapter.title)
+                    Stepper("Exam length: \(chapter.examMinutes) min", value: $chapter.examMinutes, in: 5...120, step: 5)
+                }
+                Section {
+                    LabeledContent("Pages", value: "\(chapter.pages.count)")
+                    let printed = chapter.sortedPages.compactMap(\.printedPageNumber)
+                    if let first = printed.min(), let last = printed.max() {
+                        LabeledContent("Book pages", value: "\(first)–\(last)")
+                    }
+                    if let warning = chapter.pageWarning { Text(warning).foregroundStyle(.orange) }
+                }
+                Section {
+                    Button("Re-read chapter from scanned pages", role: .destructive) { confirmReread = true }
+                        .disabled(processor.isRunning(chapter))
+                } footer: {
+                    Text("Rebuilds the digital chapter and its questions from the pages you scanned. Practice history for this chapter is cleared.")
+                }
+                Section { ReportProblemButton(subject: .chapter(chapter)) }
+            }
+            .navigationTitle("Chapter settings")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { try? context.save(); dismiss() } } }
+            .confirmationDialog("Re-read this chapter?", isPresented: $confirmReread) {
+                Button("Re-read", role: .destructive) { processor.reread(chapter, context: context); dismiss() }
+            }
         }
     }
 }
@@ -117,20 +206,36 @@ struct SessionStats {
     let minutes: Int
     var accuracy: Double { total == 0 ? 0 : Double(correct) / Double(total) }
 
+    /// Wrong answers on challenge questions don't count against her.
     init(attempts: [Attempt]) {
-        let counted = attempts.filter { $0.effectiveVerdict != .needsReview }
+        let counted = attempts.filter {
+            $0.effectiveVerdict != .needsReview && !($0.question?.isChallenge == true && $0.effectiveVerdict == .incorrect)
+        }
         total = counted.count
         correct = counted.filter { $0.effectiveVerdict == .correct }.count
         minutes = Int(attempts.map(\.activeSeconds).reduce(0, +) / 60)
     }
 }
 
-/// Concept × difficulty grid colored by mastery.
+/// Concept × difficulty grid colored by mastery, for a chapter or scope.
 struct MasteryGrid: View {
-    let chapter: Chapter
+    let set: StudySet
+
+    init(set: StudySet) { self.set = set }
+    init(chapter: Chapter) { self.set = .chapter(chapter) }
+
+    private var concepts: [Concept] {
+        var seen = Set<UUID>(); var out: [Concept] = []
+        let chapterOrder = Dictionary(uniqueKeysWithValues: set.chapters.enumerated().map { ($1.id, $0) })
+        for q in set.questions where !q.isChallenge {
+            if let c = q.concept, seen.insert(c.id).inserted { out.append(c) }
+        }
+        return out.sorted { (chapterOrder[$0.chapter?.id ?? UUID()] ?? 0, $0.bookOrder) < (chapterOrder[$1.chapter?.id ?? UUID()] ?? 0, $1.bookOrder) }
+    }
 
     var body: some View {
-        let planner = LearningStore.planner(chapter)
+        let planner = LearningStore.planner(set)
+        let present = Set(set.questions.filter { !$0.isChallenge }.compactMap { q in q.concept.map { "\($0.id)|\(q.difficulty)" } })
         Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 10) {
             GridRow {
                 Text("")
@@ -139,11 +244,11 @@ struct MasteryGrid: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            ForEach(chapter.sortedConcepts) { concept in
+            ForEach(concepts) { concept in
                 GridRow {
                     Text(concept.name).font(.subheadline).lineLimit(2).frame(maxWidth: 260, alignment: .leading)
                     ForEach(1...3, id: \.self) { d in
-                        cell(concept: concept, difficulty: d, planner: planner)
+                        cell(concept: concept, difficulty: d, planner: planner, has: present.contains("\(concept.id)|\(d)"))
                     }
                 }
             }
@@ -151,10 +256,9 @@ struct MasteryGrid: View {
     }
 
     @ViewBuilder
-    private func cell(concept: Concept, difficulty: Int, planner: Planner) -> some View {
+    private func cell(concept: Concept, difficulty: Int, planner: Planner, has: Bool) -> some View {
         let key = CellKey(conceptID: concept.id, conceptOrder: concept.bookOrder, difficulty: difficulty)
-        let hasQuestions = concept.questions.contains { $0.difficulty == difficulty && $0.status == .ok }
-        if !hasQuestions {
+        if !has {
             RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.08)).frame(height: 44)
         } else {
             let p = planner.progress(key)

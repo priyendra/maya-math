@@ -2,40 +2,20 @@ import Foundation
 import SwiftData
 import UIKit
 
-/// Runs concurrent async work with a concurrency limit, preserving input order in results.
-func concurrentMap<T: Sendable, R: Sendable>(_ items: [T], limit: Int, _ body: @escaping @Sendable (T) async throws -> R) async rethrows -> [R] {
-    try await withThrowingTaskGroup(of: (Int, R).self) { group in
-        var results = [R?](repeating: nil, count: items.count)
-        var next = 0
-        func launch() {
-            guard next < items.count else { return }
-            let i = next, item = items[i]
-            next += 1
-            group.addTask { (i, try await body(item)) }
-        }
-        for _ in 0..<min(limit, items.count) { launch() }
-        while let (i, r) = try await group.next() {
-            results[i] = r
-            launch()
-        }
-        return results.map { $0! }
-    }
-}
-
-/// Turns a chapter's scanned pages into concepts + verified questions.
+/// Turns a chapter's scanned pages into a digital chapter: section tree, content blocks, and tagged questions.
 ///
-/// Built for large chapters (60–100+ pages, hundreds of questions):
-/// - pages are read in small batches, and each page's result is saved immediately, so an interruption
-///   resumes from the next unread page instead of starting over;
-/// - once questions are organized, the chapter can be practiced while the rest are still being solved
-///   (solved in book order, so the first concepts are ready first);
-/// - the screen is kept awake while work is running, since iOS pauses apps when the iPad sleeps.
+/// 1. Read pages in small batches (each page's result saved immediately, so an interruption resumes).
+/// 2. Check printed page numbers for gaps/repeats.
+/// 3. Outline: canonical section tree + concepts (one call over the whole chapter).
+/// 4. Assign: concept, difficulty, time, answer-key link (batched by section, in parallel).
+/// No solving — the grader solves each question when grading.
 @MainActor
 final class ChapterProcessor: ObservableObject {
     static let shared = ChapterProcessor()
     static let pagesPerBatch = 3
-    static let extractConcurrency = 3
-    static let solveConcurrency = 6
+    static let readConcurrency = 4
+    static let assignBatchSize = 40
+    static let assignConcurrency = 4
 
     @Published private(set) var running: Set<UUID> = []
     var services: ClaudeServices = .live
@@ -68,6 +48,25 @@ final class ChapterProcessor: ObservableObject {
         }
     }
 
+    /// Re-reads a chapter from its stored page images with the current pipeline (no rescanning).
+    /// Practice history for the chapter is discarded, since its questions are rebuilt.
+    func reread(_ chapter: Chapter, context: ModelContext) {
+        guard !isRunning(chapter) else { return }
+        for q in chapter.questions { context.delete(q) }
+        for c in chapter.concepts { context.delete(c) }
+        for s in chapter.skills { context.delete(s) }
+        for e in chapter.exams { context.delete(e) }
+        for b in chapter.blocks { context.delete(b) }
+        for p in chapter.pages { p.readJSON = nil; p.printedPageNumber = nil }
+        chapter.outlineJSON = ""
+        chapter.pageWarning = nil
+        chapter.formatVersion = 1
+        chapter.status = .processing
+        chapter.progressFraction = 0
+        try? context.save()
+        start(chapter, context: context)
+    }
+
     private func report(_ chapter: Chapter, _ message: String, _ fraction: Double, _ context: ModelContext) {
         chapter.progressMessage = message
         chapter.progressFraction = fraction
@@ -77,29 +76,25 @@ final class ChapterProcessor: ObservableObject {
     func process(_ chapter: Chapter, context: ModelContext) async throws {
         chapter.status = .processing
         chapter.errorMessage = nil
-
-        if chapter.questions.isEmpty {
-            try await extractPages(chapter, context: context)
+        try await readPages(chapter, context: context)
+        chapter.pageWarning = Self.checkPageNumbers(chapter.sortedPages)
+        if chapter.formatVersion < 2 || chapter.questions.isEmpty {
             try await organize(chapter, context: context)
         }
         ensureSkills(chapter, context: context)
-        try await solveAll(chapter, context: context)
-        ensureSkills(chapter, context: context)
-
+        chapter.formatVersion = 2
         chapter.status = .ready
         report(chapter, "Ready", 1, context)
     }
 
-    // MARK: Step 1 — read pages (resumable)
+    // MARK: 1. Read pages (resumable)
 
-    private func extractPages(_ chapter: Chapter, context: ModelContext) async throws {
+    private func readPages(_ chapter: Chapter, context: ModelContext) async throws {
         let pages = chapter.sortedPages
         guard !pages.isEmpty else { throw ClaudeClient.ClientError.decoding("This chapter has no pages.") }
-
-        let pending = pages.indices.filter { pages[$0].extractionJSON == nil }
+        let pending = pages.indices.filter { pages[$0].readJSON == nil }
         guard !pending.isEmpty else { return }
 
-        // Batches of consecutive unread pages; each also gets the page before it as section context.
         var batches: [[Int]] = []
         for i in pending {
             if let last = batches.last?.last, last == i - 1, batches[batches.count - 1].count < Self.pagesPerBatch {
@@ -108,93 +103,146 @@ final class ChapterProcessor: ObservableObject {
                 batches.append([i])
             }
         }
-        struct Job: Sendable { let indices: [Int]; let images: [Data]; let flags: [Bool]; let context: Data? }
+        struct Job: Sendable { let indices: [Int]; let images: [Data]; let hints: [Bool]; let context: Data? }
         let jobs = batches.map { idx in
             Job(indices: idx,
                 images: idx.map { ImageUtils.jpegForAPI(pages[$0].imageData) ?? pages[$0].imageData },
-                flags: idx.map { pages[$0].isAnswerKey },
+                hints: idx.map { pages[$0].isAnswerKey },
                 context: idx.first.flatMap { $0 > 0 ? ImageUtils.jpegForAPI(pages[$0 - 1].imageData, maxEdge: 1000) : nil })
         }
 
-        let done = pages.count - pending.count
-        var finished = done
+        var finished = pages.count - pending.count
         report(chapter, "Reading pages (\(finished)/\(pages.count))…", 0.02, context)
         let services = self.services
+        let encoder = JSONEncoder()
 
-        try await withThrowingTaskGroup(of: (Job, ExtractionDTO).self) { group in
+        try await withThrowingTaskGroup(of: (Job, ReadDTO).self) { group in
             var iterator = jobs.makeIterator()
             func launch() {
                 guard let job = iterator.next() else { return }
-                group.addTask { (job, try await services.extract(pages: job.images, answerKeyFlags: job.flags, contextPage: job.context)) }
+                group.addTask { (job, try await services.read(pages: job.images, answerKeyHints: job.hints, contextPage: job.context)) }
             }
-            for _ in 0..<Self.extractConcurrency { launch() }
+            for _ in 0..<Self.readConcurrency { launch() }
             while let (job, dto) = try await group.next() {
-                save(dto, to: job.indices.map { pages[$0] })
+                for (i, pageIndex) in job.indices.enumerated() {
+                    let page = dto.pages.first { $0.image_number == i + 1 }
+                        ?? ReadDTO.Page(image_number: i + 1, printed_page_number: 0, is_answer_key: job.hints[i], blocks: [])
+                    pages[pageIndex].readJSON = (try? encoder.encode(page)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+                    if page.is_answer_key { pages[pageIndex].isAnswerKey = true }
+                }
                 finished += job.indices.count
-                report(chapter, "Reading pages (\(finished)/\(pages.count))…", 0.25 * Double(finished) / Double(pages.count), context)
+                report(chapter, "Reading pages (\(finished)/\(pages.count))…", 0.7 * Double(finished) / Double(pages.count), context)
                 launch()
             }
         }
     }
 
-    /// Splits one batch's result across its pages and saves it right away.
-    private func save(_ dto: ExtractionDTO, to batchPages: [PageImage]) {
-        let encoder = JSONEncoder()
-        for (i, page) in batchPages.enumerated() {
-            let pageDTO = ExtractionDTO(
-                sections: i == 0 ? dto.sections : [],
-                worked_examples: i == 0 ? dto.worked_examples : [],
-                questions: dto.questions.filter { min(max($0.page_number, 1), batchPages.count) == i + 1 },
-                answer_key: i == 0 ? dto.answer_key : [])
-            page.extractionJSON = (try? encoder.encode(pageDTO)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        }
+    static func decodePage(_ page: PageImage) -> ReadDTO.Page? {
+        guard let json = page.readJSON else { return nil }
+        return try? JSONDecoder().decode(ReadDTO.Page.self, from: Data(json.utf8))
     }
 
-    // MARK: Step 2 — organize into concepts
+    // MARK: 2. Page numbers
 
-    private struct RawQuestion {
-        let ref: String
-        let section: String
-        let text: String
-        let figure: Data?
+    /// Fills in missing printed page numbers from neighbours and describes gaps/repeats (nil if none).
+    static func checkPageNumbers(_ pages: [PageImage]) -> String? {
+        let content = pages.filter { !$0.isAnswerKey }
+        let read: [Int?] = content.map { p in decodePage(p).map(\.printed_page_number).flatMap { $0 > 0 ? $0 : nil } }
+        let filled = inferPageNumbers(read)
+        for (p, n) in zip(content, filled) { p.printedPageNumber = n }
+        return pageProblems(filled)
+    }
+
+    static func inferPageNumbers(_ read: [Int?]) -> [Int?] {
+        var out = read
+        let known = read.indices.filter { read[$0] != nil }
+        guard !known.isEmpty else { return out }
+        for i in read.indices where read[i] == nil {
+            let prev = known.last { $0 < i }, next = known.first { $0 > i }
+            if let p = prev, let n = next, read[n]! - read[p]! == n - p { out[i] = read[p]! + (i - p) }
+            else if let p = prev, next == nil { out[i] = read[p]! + (i - p) }
+            else if let n = next, prev == nil { out[i] = read[n]! - (n - i) }
+        }
+        return out
+    }
+
+    static func pageProblems(_ numbers: [Int?]) -> String? {
+        var problems: [String] = []
+        var prev: Int?
+        for n in numbers {
+            guard let n else { continue }
+            if let p = prev {
+                if n == p { problems.append("page \(n) was scanned twice") }
+                else if n == p + 2 { problems.append("page \(p + 1) seems to be missing") }
+                else if n > p + 2 { problems.append("pages \(p + 1)–\(n - 1) seem to be missing") }
+                else if n < p { problems.append("page \(n) comes after page \(p)") }
+            }
+            prev = n
+        }
+        guard !problems.isEmpty else { return nil }
+        let s = problems.joined(separator: "; ")
+        return s.prefix(1).uppercased() + s.dropFirst() + "."
+    }
+
+    // MARK: 3–4. Organize
+
+    private struct RawBlock {
+        let block: ReadDTO.Block
         let pageIndex: Int
+        let pathIndex: Int
     }
 
     private func organize(_ chapter: Chapter, context: ModelContext) async throws {
-        let pages = chapter.sortedPages
-        let decoder = JSONDecoder()
-        var raw: [RawQuestion] = []
-        var sections: [ExtractionDTO.Section] = []
-        var examples: [ExtractionDTO.Example] = []
-        var keys: [ExtractionDTO.Key] = []
+        // Clear anything from a previous partial organize.
+        for q in chapter.questions { context.delete(q) }
+        for c in chapter.concepts { context.delete(c) }
+        for b in chapter.blocks { context.delete(b) }
 
-        for (index, page) in pages.enumerated() {
-            guard let json = page.extractionJSON?.data(using: .utf8),
-                  let dto = try? decoder.decode(ExtractionDTO.self, from: json) else { continue }
-            for s in dto.sections where !sections.contains(where: { $0.heading == s.heading }) { sections.append(s) }
-            examples += dto.worked_examples
-            keys += dto.answer_key
-            guard !page.isAnswerKey else { continue }
-            for q in dto.questions {
-                var figure: Data?
-                if q.has_figure, q.figure_box.width > 0, q.figure_box.height > 0 {
-                    figure = ImageUtils.crop(page.imageData, x: q.figure_box.x, y: q.figure_box.y,
-                                             width: q.figure_box.width, height: q.figure_box.height)
+        let pages = chapter.sortedPages
+        var paths: [[String]] = []
+        var pathIndex: [String: Int] = [:]
+        var raw: [RawBlock] = []
+        for (pi, page) in pages.enumerated() {
+            guard let dto = Self.decodePage(page) else { continue }
+            for b in dto.blocks {
+                let key = b.section_path.joined(separator: " › ")
+                let idx: Int
+                if let existing = pathIndex[key] { idx = existing } else {
+                    idx = paths.count; pathIndex[key] = idx; paths.append(b.section_path)
                 }
-                raw.append(RawQuestion(ref: q.book_ref, section: q.section_heading, text: q.text, figure: figure, pageIndex: index))
+                raw.append(RawBlock(block: b, pageIndex: pi, pathIndex: idx))
             }
         }
-        guard !raw.isEmpty else {
+        guard raw.contains(where: { $0.block.kind == "exercise" }) else {
             throw ClaudeClient.ClientError.decoding("No exercises were found on these pages. Check that the scans are clear.")
         }
 
-        report(chapter, "Organizing \(raw.count) questions into concepts…", 0.27, context)
-        let plan = try await services.organize(questions: raw.map { ($0.ref, $0.section, $0.text) },
-                                               sections: sections, examples: examples)
+        report(chapter, "Building the chapter outline…", 0.75, context)
+        let samples = paths.indices.map { i in
+            raw.filter { $0.pathIndex == i && $0.block.kind == "exercise" }.prefix(3).map(\.block.markdown)
+        }
+        let outline = try await services.outline(paths: zip(paths, samples).map { ($0, Array($1)) })
 
-        chapter.title = plan.chapter_title.isEmpty || chapter.title != "New chapter" ? chapter.title : plan.chapter_title
+        // Section tree.
+        var nodes: [SectionNode] = []
+        var stack: [SectionNode] = []
+        for (i, s) in outline.sections.enumerated() {
+            let level = max(1, s.level)
+            while let top = stack.last, top.level >= level { stack.removeLast() }
+            let node = SectionNode(id: i, title: s.title, level: level, parent: stack.last?.id ?? -1)
+            nodes.append(node)
+            stack.append(node)
+        }
+        chapter.outline = nodes
+        let sectionOfPath = Dictionary(outline.path_map.map { ($0.path_number - 1, $0.section_number - 1) }, uniquingKeysWith: { a, _ in a })
+        func section(_ r: RawBlock) -> Int {
+            let s = sectionOfPath[r.pathIndex] ?? -1
+            return nodes.indices.contains(s) ? s : -1
+        }
+        if chapter.title == "New chapter", !outline.chapter_title.isEmpty { chapter.title = outline.chapter_title }
+
         var concepts: [Concept] = []
-        for (i, c) in plan.concepts.enumerated() {
+        for (i, c) in outline.concepts.enumerated() {
             let concept = Concept(name: c.name, summary: c.summary, bookOrder: i, workedExample: c.worked_example)
             concept.chapter = chapter
             context.insert(concept)
@@ -207,81 +255,109 @@ final class ChapterProcessor: ObservableObject {
             concepts.append(concept)
         }
 
-        let answers = AnswerKeyMatcher(keys: keys, questionRefs: raw.map(\.ref))
-        let assignments = Dictionary(plan.assignments.map { ($0.question_number, $0) }, uniquingKeysWith: { a, _ in a })
-        for (i, r) in raw.enumerated() {
-            let a = assignments[i + 1]
-            let question = Question(text: r.text, difficulty: min(max(a?.difficulty ?? 1, 1), 3), source: .book, bookRef: r.ref)
-            question.figureData = r.figure
-            question.pageIndex = r.pageIndex
-            question.estimatedSeconds = min(max(a?.estimated_seconds ?? 120, 20), 1200)
-            question.answerKeyAnswer = answers.answer(for: r.ref)
-            question.concept = concepts[min(max((a?.concept_number ?? 1) - 1, 0), concepts.count - 1)]
-            question.chapter = chapter
-            context.insert(question)
+        // Content blocks + questions.
+        var questions: [(Question, RawBlock)] = []
+        var answers: [(text: String, section: Int)] = []
+        for (order, r) in raw.enumerated() {
+            let b = r.block, page = pages[r.pageIndex], sec = section(r)
+            if b.kind == "answer" {
+                let label = b.printed_number.isEmpty ? "" : "#\(b.printed_number): "
+                answers.append(("[\(b.section_path.joined(separator: " › "))] \(label)\(b.markdown)", sec))
+                continue
+            }
+            if page.isAnswerKey { continue }
+            let block = ContentBlock(order: order, kind: b.kind, markdown: b.markdown, pageIndex: r.pageIndex, sectionID: sec)
+            block.printedNumber = b.printed_number
+            if b.has_figure, !b.figure_box.isEmpty {
+                block.imageData = ImageUtils.crop(page.imageData, x: b.figure_box.x, y: b.figure_box.y,
+                                                  width: b.figure_box.width, height: b.figure_box.height)
+            }
+            block.chapter = chapter
+            context.insert(block)
+            guard b.kind == "exercise" else { continue }
+            let text = b.question_markdown.isEmpty ? b.markdown : b.question_markdown
+            let q = Question(text: text, difficulty: 1, source: .book)
+            q.printedNumber = b.printed_number
+            q.printedPage = page.printedPageNumber
+            q.pageIndex = page.order
+            q.sectionID = sec
+            q.pencilOK = b.pencil_ok
+            q.pencilReason = b.pencil_reason
+            q.isChallenge = b.is_challenge
+            q.figureData = block.imageData
+            q.concept = concepts[0]
+            q.chapter = chapter
+            context.insert(q)
+            block.questionID = q.id
+            questions.append((q, r))
+        }
+
+        // Assign concept / difficulty / time / answer key, batched by section.
+        let conceptNames = concepts.map { "\($0.name) — \($0.summary)" }
+        func related(_ a: Int, _ b: Int) -> Bool {
+            guard a >= 0, b >= 0 else { return false }
+            func ancestors(_ x: Int) -> Set<Int> {
+                var out: Set<Int> = [x]; var cur = x
+                while nodes.indices.contains(cur), nodes[cur].parent >= 0 { cur = nodes[cur].parent; out.insert(cur) }
+                return out
+            }
+            return ancestors(a).contains(b) || ancestors(b).contains(a)
+        }
+        var batches: [[Int]] = []
+        let bySection = Dictionary(grouping: questions.indices, by: { questions[$0].0.sectionID })
+        for key in bySection.keys.sorted() {
+            let idx = bySection[key]!
+            stride(from: 0, to: idx.count, by: Self.assignBatchSize).forEach { batches.append(Array(idx[$0..<min($0 + Self.assignBatchSize, idx.count)])) }
+        }
+        struct AssignJob: Sendable { let indices: [Int]; let inputs: [AssignInput]; let answers: [String] }
+        let jobs: [AssignJob] = batches.map { idx in
+            let sec = questions[idx[0]].0.sectionID
+            let title = nodes.indices.contains(sec) ? Self.sectionTitle(sec, nodes) : "Unknown section"
+            let ans = answers.filter { related($0.section, sec) }.map(\.text)
+            return AssignJob(indices: idx,
+                             inputs: idx.map { AssignInput(text: questions[$0].0.text, printedNumber: questions[$0].0.printedNumber, section: title) },
+                             answers: Array(ans.prefix(150)))
+        }
+        var done = 0
+        report(chapter, "Organizing \(questions.count) questions…", 0.8, context)
+        let services = self.services
+        try await withThrowingTaskGroup(of: (AssignJob, AssignDTO).self) { group in
+            var iterator = jobs.makeIterator()
+            func launch() {
+                guard let job = iterator.next() else { return }
+                group.addTask { (job, try await services.assign(questions: job.inputs, concepts: conceptNames, answers: job.answers)) }
+            }
+            for _ in 0..<Self.assignConcurrency { launch() }
+            while let (job, dto) = try await group.next() {
+                for item in dto.items {
+                    guard job.indices.indices.contains(item.question_number - 1) else { continue }
+                    let q = questions[job.indices[item.question_number - 1]].0
+                    q.concept = concepts[min(max(item.concept_number - 1, 0), concepts.count - 1)]
+                    q.difficulty = min(max(item.difficulty, 1), 3)
+                    q.estimatedSeconds = min(max(item.estimated_seconds, 15), 1200)
+                    if job.answers.indices.contains(item.answer_number - 1) {
+                        let entry = job.answers[item.answer_number - 1]
+                        q.answerKeyAnswer = entry.components(separatedBy: "] ").dropFirst().joined(separator: "] ")
+                    }
+                }
+                done += job.indices.count
+                report(chapter, "Organizing questions (\(done)/\(questions.count))…", 0.8 + 0.2 * Double(done) / Double(max(questions.count, 1)), context)
+                launch()
+            }
         }
         try context.save()
     }
 
-    // MARK: Step 3 — solve (chapter is practicable while this runs)
-
-    private func solveAll(_ chapter: Chapter, context: ModelContext) async throws {
-        // Book order: earliest concepts and easiest questions first, so practice can start right away.
-        let pending = chapter.questions
-            .filter { $0.referenceAnswer.isEmpty && $0.status != .retired }
-            .sorted { a, b in
-                let ca = a.concept?.bookOrder ?? 0, cb = b.concept?.bookOrder ?? 0
-                if ca != cb { return ca < cb }
-                if a.difficulty != b.difficulty { return a.difficulty < b.difficulty }
-                return (a.pageIndex ?? 0) < (b.pageIndex ?? 0)
-            }
-        guard !pending.isEmpty else { return }
-        let total = chapter.questions.count
-        var done = total - pending.count
-        let solvingMessage = { "Solving questions (\(done)/\(total)) — you can start practicing" }
-        report(chapter, solvingMessage(), 0.3, context)
-
-        let inputs = pending.map { q in
-            (q.id, QuestionContext(text: q.text, figureJPEG: q.figureData, conceptName: q.concept?.name ?? ""), q.answerKeyAnswer)
-        }
-        let services = self.services
-        let byID = Dictionary(uniqueKeysWithValues: pending.map { ($0.id, $0) })
-
-        try await withThrowingTaskGroup(of: (UUID, Result<VerifiedSolution, Error>).self) { group in
-            var iterator = inputs.makeIterator()
-            func launch() {
-                guard let (id, ctx, key) = iterator.next() else { return }
-                group.addTask {
-                    do { return (id, .success(try await services.solveVerified(ctx, answerKey: key))) }
-                    catch { return (id, .failure(error)) }
-                }
-            }
-            for _ in 0..<Self.solveConcurrency { launch() }
-            while let (id, result) = try await group.next() {
-                if let q = byID[id] {
-                    switch result {
-                    case let .success(s):
-                        q.referenceSolution = s.solution
-                        q.referenceAnswer = s.finalAnswer
-                        q.status = s.trusted ? .ok : .needsCheck
-                        q.reviewNote = s.note
-                    case let .failure(error):
-                        if case ClaudeClient.ClientError.missingAPIKey = error { throw error }
-                        q.status = .needsCheck
-                        q.reviewNote = "Couldn't solve automatically: \(error.localizedDescription)"
-                        q.referenceAnswer = "?"
-                    }
-                }
-                done += 1
-                report(chapter, solvingMessage(), 0.3 + 0.7 * Double(done) / Double(total), context)
-                launch()
-            }
-        }
+    static func sectionTitle(_ id: Int, _ nodes: [SectionNode]) -> String {
+        var parts: [String] = []
+        var cur = id
+        while nodes.indices.contains(cur) { parts.insert(nodes[cur].title, at: 0); cur = nodes[cur].parent }
+        return parts.joined(separator: " › ")
     }
 
     func ensureSkills(_ chapter: Chapter, context: ModelContext) {
         for concept in chapter.concepts {
-            let levels = Set(concept.questions.map(\.difficulty))
+            let levels = Set(concept.questions.filter { !$0.isChallenge }.map(\.difficulty))
             for d in levels where chapter.skill(concept: concept, difficulty: d) == nil {
                 let skill = SkillState(concept: concept, difficulty: d)
                 skill.chapter = chapter
@@ -289,44 +365,5 @@ final class ChapterProcessor: ObservableObject {
             }
         }
         try? context.save()
-    }
-}
-
-/// Matches answer-key entries to questions. Refs look like "3.2 #14b"; exercise numbers repeat across
-/// sections, so match on section + label, and fall back to the label alone only when it's unambiguous.
-struct AnswerKeyMatcher {
-    private var byFull: [String: String] = [:]
-    private var byLabel: [String: [String]] = [:]
-    private var questionLabelCounts: [String: Int] = [:]
-
-    init(keys: [ExtractionDTO.Key], questionRefs: [String]) {
-        for k in keys {
-            byFull[Self.full(k.book_ref)] = k.answer
-            byLabel[Self.label(k.book_ref), default: []].append(k.answer)
-        }
-        for ref in questionRefs { questionLabelCounts[Self.label(ref), default: 0] += 1 }
-    }
-
-    func answer(for ref: String) -> String? {
-        if let a = byFull[Self.full(ref)] { return a }
-        let label = Self.label(ref)
-        if questionLabelCounts[label] == 1, let answers = byLabel[label], answers.count == 1 { return answers[0] }
-        return nil
-    }
-
-    /// "3.2 #14b" → "3.2|14b"; "Section 3.2, #14(b)" → "3.2|14b".
-    static func full(_ ref: String) -> String {
-        let parts = ref.lowercased().split(separator: "#", maxSplits: 1)
-        let section = parts.count > 1 ? String(parts[0]) : ""
-        let sectionKey = section.filter { $0.isNumber || $0 == "." || $0.isLetter }
-            .replacingOccurrences(of: "section", with: "").trimmingCharacters(in: CharacterSet(charactersIn: "."))
-        return sectionKey + "|" + label(ref)
-    }
-
-    static func label(_ ref: String) -> String {
-        let lowered = ref.lowercased()
-        let tail = lowered.split(separator: "#").last.map(String.init) ?? lowered
-        let lastToken = tail.split(whereSeparator: { $0 == " " }).last.map(String.init) ?? tail
-        return lastToken.filter { $0.isLetter || $0.isNumber }
     }
 }

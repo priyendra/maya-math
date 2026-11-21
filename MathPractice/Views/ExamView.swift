@@ -2,9 +2,10 @@ import SwiftUI
 import SwiftData
 import PencilKit
 
-/// Timed mixed test across the whole chapter. No feedback until the end.
+/// Timed mixed test across a study set. No feedback until the end.
 struct ExamView: View {
-    let chapter: Chapter
+    let set: StudySet
+    @ObservedObject private var grading = GradingQueue.shared
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
@@ -26,7 +27,7 @@ struct ExamView: View {
     @State private var graphPaper = false
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    private var timeLimit: TimeInterval { TimeInterval(chapter.examMinutes * 60) }
+    private var timeLimit: TimeInterval { TimeInterval(set.examMinutes * 60) }
     private var remaining: TimeInterval { timeLimit - clock.elapsed(now: now) }
 
     var body: some View {
@@ -56,6 +57,11 @@ struct ExamView: View {
             now = t
             if phase == .running && remaining <= 0 { submitAll() }
         }
+        .onChange(of: grading.version) { _, _ in
+            guard phase == .grading else { return }
+            gradedCount = attempts.filter(\.isGraded).count
+            if gradedCount == attempts.count { phase = .results }
+        }
         .onChange(of: scenePhase) { _, p in
             if p == .active { clock.resume(); questionClock.resume() } else { clock.pause(); questionClock.pause() }
         }
@@ -71,7 +77,7 @@ struct ExamView: View {
         VStack(spacing: 20) {
             Image(systemName: "timer").font(.system(size: 64)).foregroundStyle(.purple)
             Text("Exam mode").font(.largeTitle.bold())
-            Text("A mix of questions from the whole chapter, like the real test.\nYou have \(chapter.examMinutes) minutes. You'll see your results at the end.")
+            Text("A mix of questions from \(set.title), like the real test.\nYou have \(set.examMinutes) minutes. You'll see your results at the end.")
                 .multilineTextAlignment(.center)
             Button("Start exam") { begin() }.buttonStyle(.borderedProminent).controlSize(.large)
         }
@@ -124,16 +130,16 @@ struct ExamView: View {
     }
 
     private var targets: [UUID: Double] {
-        Dictionary(uniqueKeysWithValues: questions.map { ($0.id, LearningStore.targetSeconds(for: $0, in: chapter)) })
+        Dictionary(uniqueKeysWithValues: questions.map { ($0.id, LearningStore.targetSeconds(for: $0)) })
     }
 
     private func begin() {
-        let infos = chapter.activeQuestions.compactMap(LearningStore.questionInfo)
-        let ids = ExamBuilder.build(questions: infos, minutes: chapter.examMinutes)
-        questions = ids.compactMap { id in chapter.questions.first { $0.id == id } }
+        let infos = set.questions.compactMap(LearningStore.questionInfo)
+        let ids = ExamBuilder.build(questions: infos, minutes: set.examMinutes)
+        questions = ids.compactMap { id in set.questions.first { $0.id == id } }
         guard !questions.isEmpty else { dismiss(); return }
-        let session = ExamSession(questionIDs: ids, timeLimitSeconds: chapter.examMinutes * 60)
-        session.chapter = chapter
+        let session = ExamSession(questionIDs: ids, timeLimitSeconds: set.examMinutes * 60)
+        session.chapter = set.chapters.first
         context.insert(session)
         exam = session
         clock.reset()
@@ -171,51 +177,8 @@ struct ExamView: View {
         phase = .grading
         gradedCount = 0
 
-        let jobs: [(UUID, QuestionContext, String, String, Data?)] = attempts.compactMap { a in
-            guard let q = a.question else { return nil }
-            return (a.id, QuestionContext(text: q.text, figureJPEG: q.figureData, conceptName: q.concept?.name ?? ""),
-                    q.referenceAnswer, q.referenceSolution, a.renderedImage)
-        }
-        let byID = Dictionary(uniqueKeysWithValues: attempts.map { ($0.id, $0) })
-        Task {
-            await withTaskGroup(of: (UUID, GradeResult?).self) { group in
-                var iterator = jobs.makeIterator()
-                func launch() {
-                    guard let (id, ctx, answer, solution, work) = iterator.next() else { return }
-                    group.addTask {
-                        guard let work else {
-                            return (id, GradeResult(verdict: .incorrect, mistake: .incomplete, transcribedAnswer: "",
-                                                    errorStep: "", feedback: "This one was left blank.", confidence: 1))
-                        }
-                        return (id, try? await ClaudeServices.live.grade(ctx, referenceAnswer: answer, referenceSolution: solution, work: work))
-                    }
-                }
-                for _ in 0..<3 { launch() }
-                while let (id, result) = await group.next() {
-                    if let a = byID[id] {
-                        if let r = result {
-                            a.verdict = r.verdict
-                            a.mistakeType = r.mistake
-                            a.transcribedAnswer = r.transcribedAnswer
-                            a.errorStep = r.errorStep
-                            a.feedback = r.feedback
-                            a.graderConfidence = r.confidence
-                            a.graderLog = r.graderLog
-                        } else {
-                            a.verdict = .needsReview
-                            a.feedback = "Couldn't be graded automatically. Check it under Questions & answers → Gradings to check."
-                        }
-                        a.isGraded = true
-                        LearningStore.apply(a, context: context)
-                    }
-                    gradedCount += 1
-                    launch()
-                }
-            }
-            try? context.save()
-            phase = .results
-            VariantGenerator.shared.refill(chapter, context: context)
-        }
+        for a in attempts { GradingQueue.shared.enqueue(a, context: context) }
+        if attempts.allSatisfy(\.isGraded) { phase = .results }
     }
 }
 
@@ -270,8 +233,7 @@ struct ExamResultsView: View {
                         if let data = a.renderedImage, let img = UIImage(data: data) {
                             Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 360)
                         }
-                        FeedbackCard(attempt: a, question: q, target: targets[q.id] ?? 0, showTime: true,
-                                     willRepeat: a.effectiveVerdict == .incorrect) { selected = nil }
+                        FeedbackCard(attempt: a, question: q, showWork: false)
                     }
                     .padding()
                 }

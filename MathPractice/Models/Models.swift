@@ -50,12 +50,20 @@ final class Chapter {
     var errorMessage: String?
     /// Exam length in minutes (configurable per chapter).
     var examMinutes: Int = 30
+    /// 2 = digital-chapter pipeline. Chapters below this were processed by the old pipeline and need re-reading.
+    var formatVersion: Int = 1
+    /// Section tree as JSON: [SectionNode] in book order.
+    var outlineJSON: String = ""
+    /// Problems found with the scanned pages (missing / repeated page numbers), shown after processing.
+    var pageWarning: String?
+    var folder: Folder?
 
     @Relationship(deleteRule: .cascade, inverse: \PageImage.chapter) var pages: [PageImage] = []
     @Relationship(deleteRule: .cascade, inverse: \Concept.chapter) var concepts: [Concept] = []
     @Relationship(deleteRule: .cascade, inverse: \Question.chapter) var questions: [Question] = []
     @Relationship(deleteRule: .cascade, inverse: \SkillState.chapter) var skills: [SkillState] = []
     @Relationship(deleteRule: .cascade, inverse: \ExamSession.chapter) var exams: [ExamSession] = []
+    @Relationship(deleteRule: .cascade, inverse: \ContentBlock.chapter) var blocks: [ContentBlock] = []
 
     init(title: String = "New chapter") {
         self.title = title
@@ -68,9 +76,15 @@ final class Chapter {
 
     var sortedPages: [PageImage] { pages.sorted { $0.order < $1.order } }
     var sortedConcepts: [Concept] { concepts.sorted { $0.bookOrder < $1.bookOrder } }
-    /// Questions ready for practice: trusted and already solved (large chapters solve progressively).
-    var activeQuestions: [Question] { questions.filter { $0.status == .ok && !$0.referenceAnswer.isEmpty } }
-    var unsolvedCount: Int { questions.filter { $0.referenceAnswer.isEmpty && $0.status != .retired }.count }
+    /// Questions available for practice and exams (not removed, doable with a pencil or included by hand).
+    var activeQuestions: [Question] { questions.filter(\.isAvailable) }
+    var sortedBlocks: [ContentBlock] { blocks.sorted { $0.order < $1.order } }
+    var needsRereading: Bool { formatVersion < 2 && !pages.isEmpty }
+
+    var outline: [SectionNode] {
+        get { (try? JSONDecoder().decode([SectionNode].self, from: Data(outlineJSON.utf8))) ?? [] }
+        set { outlineJSON = (try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)) ?? "" }
+    }
     var allAttempts: [Attempt] { questions.flatMap { $0.attempts } }
 
     func skill(concept: Concept, difficulty: Int) -> SkillState? {
@@ -87,6 +101,10 @@ final class PageImage {
     /// Claude's extraction for this page (JSON), saved as soon as it arrives so an interrupted
     /// large chapter resumes without re-reading pages already done.
     var extractionJSON: String?
+    /// New pipeline: Claude's reading of this page (JSON of ReadDTO.Page), saved as it arrives.
+    var readJSON: String?
+    /// The page number printed in the book (read or inferred from neighbours).
+    var printedPageNumber: Int?
     var chapter: Chapter?
 
     init(order: Int, imageData: Data, isAnswerKey: Bool = false) {
@@ -135,6 +153,19 @@ final class Question {
     /// For generated variants: the question it was derived from.
     var parentQuestionID: UUID?
     var createdAt: Date = Date()
+    /// Position in the digital chapter (section tree node id; -1 = unknown).
+    var sectionID: Int = -1
+    /// Exercise number as printed in the book — display only.
+    var printedNumber: String = ""
+    /// Page number printed in the book.
+    var printedPage: Int?
+    /// Claude's judgment: answerable completely with a pencil using only what's on the page.
+    var pencilOK: Bool = true
+    var pencilReason: String = ""
+    /// The book marks this as beyond the standard material.
+    var isChallenge: Bool = false
+    /// Manual include (true) / exclude (false); nil = follow pencilOK.
+    var includeOverride: Bool?
 
     var chapter: Chapter?
     var concept: Concept?
@@ -156,6 +187,9 @@ final class Question {
         get { QuestionStatus(rawValue: statusRaw) ?? .ok }
         set { statusRaw = newValue.rawValue }
     }
+
+    var isIncluded: Bool { includeOverride ?? pencilOK }
+    var isAvailable: Bool { status != .retired && isIncluded }
 
     var gradedAttempts: [Attempt] {
         attempts.filter { $0.effectiveVerdict != .needsReview }.sorted { $0.startedAt < $1.startedAt }
@@ -182,6 +216,15 @@ final class Attempt {
     var correctionRaw: String?
     var isGraded: Bool = false
     var examSessionID: UUID?
+    /// The grader's own answer (it solves the question before judging hers).
+    var ownAnswer: String = ""
+    /// Full worked solution, written by the grader when she got it wrong or was stuck.
+    var workedSolution: String = ""
+    /// Last grading error (network etc.); grading is retried.
+    var gradingError: String?
+    /// Shown to her at a check-in (or an interruption).
+    var revealed: Bool = false
+    var wasStuck: Bool = false
     var question: Question?
 
     init(mode: AttemptMode, startedAt: Date = Date()) {
@@ -246,4 +289,70 @@ final class ExamSession {
         self.questionIDs = questionIDs
         self.timeLimitSeconds = timeLimitSeconds
     }
+}
+
+/// One node of a chapter's section tree.
+struct SectionNode: Codable, Hashable, Identifiable {
+    let id: Int
+    let title: String
+    let level: Int
+    let parent: Int
+}
+
+/// A piece of the digital chapter, in reading order.
+@Model
+final class ContentBlock {
+    var id: UUID = UUID()
+    var order: Int = 0
+    /// heading | text | example | figure | exercise
+    var kind: String = "text"
+    /// Markdown + LaTeX as it should be displayed in the chapter.
+    var markdown: String = ""
+    @Attribute(.externalStorage) var imageData: Data?
+    var pageIndex: Int = 0
+    var sectionID: Int = -1
+    /// For exercise blocks: the practice question.
+    var questionID: UUID?
+    var printedNumber: String = ""
+    var chapter: Chapter?
+
+    init(order: Int, kind: String, markdown: String, pageIndex: Int, sectionID: Int) {
+        self.order = order
+        self.kind = kind
+        self.markdown = markdown
+        self.pageIndex = pageIndex
+        self.sectionID = sectionID
+    }
+}
+
+/// Free-form folder; contains chapters, scopes, and other folders.
+@Model
+final class Folder {
+    var id: UUID = UUID()
+    var name: String = "New folder"
+    var createdAt: Date = Date()
+    var parent: Folder?
+    @Relationship(deleteRule: .nullify, inverse: \Folder.parent) var children: [Folder] = []
+    @Relationship(deleteRule: .nullify, inverse: \Chapter.folder) var chapters: [Chapter] = []
+    @Relationship(deleteRule: .nullify, inverse: \StudyScope.folder) var scopes: [StudyScope] = []
+
+    init(name: String, parent: Folder? = nil) {
+        self.name = name
+        self.parent = parent
+    }
+}
+
+/// A saved selection of material to practice for (a test, a final…). History stays on the chapters.
+@Model
+final class StudyScope {
+    var id: UUID = UUID()
+    var name: String = "New scope"
+    var createdAt: Date = Date()
+    var testDate: Date?
+    var examMinutes: Int = 30
+    /// Selections: "c|<chapterID>", "s|<chapterID>|<sectionID>", "p|<chapterID>|<from>|<to>".
+    var items: [String] = []
+    var folder: Folder?
+
+    init(name: String) { self.name = name }
 }

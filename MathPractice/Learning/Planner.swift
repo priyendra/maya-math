@@ -16,6 +16,8 @@ struct QuestionInfo: Equatable {
     let timesSeen: Int
     let lastSeen: Date?
     let lastWasCorrect: Bool?
+    /// Book-marked challenge questions: never in normal pools; offered as stretch once the concept's hardest level is mastered.
+    var isChallenge: Bool = false
 }
 
 /// State of the current 30-minute session.
@@ -27,7 +29,7 @@ struct SessionState {
 }
 
 enum PickCategory: String, Equatable {
-    case reinforcement, weak, review, stretch
+    case reinforcement, weak, review, stretch, challenge
 }
 
 struct Pick: Equatable {
@@ -46,8 +48,10 @@ struct Planner {
     let skills: [CellKey: SkillProgress]
     let now: Date
 
+    var regular: [QuestionInfo] { questions.filter { !$0.isChallenge } }
+
     var allCells: [CellKey] {
-        Array(Set(questions.map(\.cell))).sorted {
+        Array(Set(regular.map(\.cell))).sorted {
             ($0.conceptOrder, $0.difficulty) < ($1.conceptOrder, $1.difficulty)
         }
     }
@@ -55,7 +59,7 @@ struct Planner {
     func progress(_ cell: CellKey) -> SkillProgress { skills[cell] ?? SkillProgress() }
 
     func estimate(_ cell: CellKey) -> Double {
-        let qs = questions.filter { $0.cell == cell }
+        let qs = regular.filter { $0.cell == cell }
         guard !qs.isEmpty else { return 120 }
         return qs.map(\.estimatedSeconds).reduce(0, +) / Double(qs.count)
     }
@@ -101,7 +105,7 @@ struct Planner {
     func cellsNeedingVariants(minUnseen: Int = 1) -> [CellKey] {
         let targets = Set(weakCells + reviewCells + stretchCells)
         return allCells.filter { cell in
-            targets.contains(cell) && questions.filter { $0.cell == cell && $0.timesSeen == 0 }.count < minUnseen
+            targets.contains(cell) && regular.filter { $0.cell == cell && $0.timesSeen == 0 }.count < minUnseen
         }
     }
 
@@ -123,7 +127,7 @@ struct Planner {
         var order: [PickCategory]
         if r < Self.weakShare { order = [.weak, .review, .stretch] }
         else if r < Self.weakShare + Self.reviewShare { order = [.review, .weak, .stretch] }
-        else { order = [.stretch, .weak, .review] }
+        else { order = [.challenge, .stretch, .weak, .review] }
 
         for category in order {
             let pool: [CellKey]
@@ -132,6 +136,11 @@ struct Planner {
             case .review: pool = reviewCells
             case .stretch: pool = stretchCells
             case .reinforcement: pool = []
+            case .challenge:
+                if let q = pickChallenge(session: session) {
+                    return Pick(questionID: q.id, cell: q.cell, category: .challenge)
+                }
+                continue
             }
             // Take from the top few, varying the cell so she doesn't get the same type back-to-back.
             let lastCell = session.askedQuestionIDs.last.flatMap { id in questions.first { $0.id == id }?.cell }
@@ -156,11 +165,22 @@ struct Planner {
         return nil
     }
 
+    /// An unseen challenge question from a concept whose hardest regular level is mastered.
+    func pickChallenge(session: SessionState) -> QuestionInfo? {
+        let asked = Set(session.askedQuestionIDs)
+        return questions.first { q in
+            guard q.isChallenge, q.timesSeen == 0, !asked.contains(q.id) else { return false }
+            let levels = allCells.filter { $0.conceptID == q.cell.conceptID }
+            guard let top = levels.max(by: { $0.difficulty < $1.difficulty }) else { return false }
+            return isMastered(top)
+        }
+    }
+
     /// Within a cell: unseen book → unseen generated → previously wrong (≥1 day ago) → least recently seen.
     /// Never repeats a question already asked this session.
     func pickQuestion(in cell: CellKey, session: SessionState) -> QuestionInfo? {
         let asked = Set(session.askedQuestionIDs)
-        let qs = questions.filter { $0.cell == cell && !asked.contains($0.id) }
+        let qs = regular.filter { $0.cell == cell && !asked.contains($0.id) }
         if let q = qs.first(where: { $0.timesSeen == 0 && !$0.isGenerated }) { return q }
         if let q = qs.first(where: { $0.timesSeen == 0 && $0.isGenerated }) { return q }
         let dayAgo = now.addingTimeInterval(-86_400)
@@ -169,20 +189,31 @@ struct Planner {
         return qs.min { ($0.lastSeen ?? .distantPast) < ($1.lastSeen ?? .distantPast) }
     }
 
-    /// Records an answer in the session (schedules in-session re-practice after a miss).
-    static func record(questionID: UUID, cell: CellKey, correct: Bool, in session: inout SessionState) {
+    /// Records that a question was asked (grading happens in the background).
+    static func asked(_ questionID: UUID, in session: inout SessionState) {
         session.askedQuestionIDs.append(questionID)
+    }
+
+    /// Applies a grade that arrived for a question asked earlier this session.
+    static func graded(cell: CellKey, correct: Bool, in session: inout SessionState) {
         if correct {
             session.pendingReinforcement[cell] = nil
         } else {
             session.pendingReinforcement[cell] = session.askedQuestionIDs.count + reinforcementGap
         }
     }
+
+    /// Records an answer graded immediately (asked + graded).
+    static func record(questionID: UUID, cell: CellKey, correct: Bool, in session: inout SessionState) {
+        asked(questionID, in: &session)
+        graded(cell: cell, correct: correct, in: &session)
+    }
 }
 
 /// Builds a timed mixed exam across all concepts.
 enum ExamBuilder {
-    static func build(questions: [QuestionInfo], minutes: Int, random: () -> Double = { Double.random(in: 0..<1) }) -> [UUID] {
+    static func build(questions all: [QuestionInfo], minutes: Int, random: () -> Double = { Double.random(in: 0..<1) }) -> [UUID] {
+        let questions = all.filter { !$0.isChallenge }
         guard !questions.isEmpty else { return [] }
         let budget = Double(minutes * 60)
         let avg = questions.map(\.estimatedSeconds).reduce(0, +) / Double(questions.count)

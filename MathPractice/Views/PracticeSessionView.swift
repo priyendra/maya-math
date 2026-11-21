@@ -2,16 +2,23 @@ import SwiftUI
 import SwiftData
 import PencilKit
 
-/// A 30-minute adaptive practice session.
+/// A 30-minute adaptive practice session. Answers are graded in the background; results are shown at
+/// check-ins (~every 10 minutes and at the end), except conceptual mistakes, which are shown at the next
+/// question boundary.
 struct PracticeSessionView: View {
-    let chapter: Chapter
+    let set: StudySet
+    /// Start with this question (e.g. "Practice this question" from the chapter).
+    var startQuestionID: UUID?
     static let sessionSeconds: TimeInterval = 30 * 60
+    static let checkInSeconds: TimeInterval = 10 * 60
+    static let finalWaitSeconds: TimeInterval = 90
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @ObservedObject private var grading = GradingQueue.shared
 
-    enum Phase { case answering, grading, feedback, summary }
+    enum Phase: Equatable { case answering, checkIn, finishing, summary }
 
     @State private var phase: Phase = .answering
     @State private var session = SessionState()
@@ -21,9 +28,13 @@ struct PracticeSessionView: View {
     @State private var graphPaper = false
     @State private var questionClock = ActiveClock()
     @State private var sessionClock = ActiveClock()
-    @State private var lastAttempt: Attempt?
-    @State private var gradingError: String?
     @State private var sessionAttempts: [Attempt] = []
+    @State private var cellOfAttempt: [UUID: CellKey] = [:]
+    @State private var processed: Set<UUID> = []
+    @State private var lastCheckInAt: TimeInterval = 0
+    @State private var checkInItems: [Attempt] = []
+    @State private var checkInKind: CheckInView.Kind = .regular
+    @State private var finishingSince: Date?
     @State private var now = Date()
     @State private var confirmQuit = false
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -33,8 +44,17 @@ struct PracticeSessionView: View {
             Group {
                 switch phase {
                 case .summary:
-                    SessionSummaryView(attempts: sessionAttempts, chapter: chapter) { dismiss() }
-                default:
+                    SessionSummaryView(attempts: sessionAttempts, set: set) { dismiss() }
+                case .checkIn:
+                    CheckInView(items: checkInItems, pending: sessionAttempts.filter { !$0.isGraded }.count,
+                                kind: checkInKind, onContinue: continueAfterCheckIn)
+                case .finishing:
+                    VStack(spacing: 16) {
+                        ProgressView()
+                        Text("Checking your last answers…").font(.title3)
+                        Text("\(sessionAttempts.filter { !$0.isGraded }.count) still being checked").foregroundStyle(.secondary)
+                    }
+                case .answering:
                     if let q = current { questionScreen(q) } else { noQuestions }
                 }
             }
@@ -51,14 +71,21 @@ struct PracticeSessionView: View {
                 }
             }
             .confirmationDialog("End this session?", isPresented: $confirmQuit) {
-                Button("End and see summary") { phase = .summary }
+                Button("End and see how I did") { finish() }
             }
         }
         .onAppear(perform: start)
-        .onReceive(ticker) { now = $0 }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { questionClock.resume(); sessionClock.resume() }
-            else { questionClock.pause(); sessionClock.pause() }
+        .onReceive(ticker) { t in
+            now = t
+            if phase == .finishing, let since = finishingSince, t.timeIntervalSince(since) > Self.finalWaitSeconds { showFinal() }
+        }
+        .onChange(of: grading.version) { _, _ in absorbGrades() }
+        .onChange(of: scenePhase) { _, p in
+            if p == .active {
+                sessionClock.resume()
+                if phase == .answering { questionClock.resume() }
+                GradingQueue.shared.resumePending(context: context)
+            } else { questionClock.pause(); sessionClock.pause() }
         }
     }
 
@@ -66,7 +93,7 @@ struct PracticeSessionView: View {
 
     private var noQuestions: some View {
         ContentUnavailableView("Nothing to practice", systemImage: "checkmark.seal",
-                               description: Text("There are no questions ready in this chapter yet."))
+                               description: Text("There are no questions in this scope yet."))
     }
 
     private func questionScreen(_ q: Question) -> some View {
@@ -75,8 +102,9 @@ struct PracticeSessionView: View {
                 HStack {
                     Text(q.concept?.name ?? "").font(.caption.bold()).foregroundStyle(.secondary)
                     Text(String(repeating: "●", count: q.difficulty)).font(.caption2).foregroundStyle(.orange)
+                    if q.isChallenge { Label("Challenge", systemImage: "flame.fill").font(.caption.bold()).foregroundStyle(.red) }
                     if currentPick?.category == .reinforcement {
-                        Label("Another one like the last", systemImage: "arrow.triangle.2.circlepath").font(.caption).foregroundStyle(.blue)
+                        Label("Another one like an earlier one", systemImage: "arrow.triangle.2.circlepath").font(.caption).foregroundStyle(.blue)
                     }
                     Spacer()
                     timerView(q)
@@ -88,248 +116,214 @@ struct PracticeSessionView: View {
 
             ZStack(alignment: .topTrailing) {
                 WritingCanvas(drawing: $drawing, graphPaper: graphPaper)
-                    .disabled(phase != .answering)
                 Toggle(isOn: $graphPaper) { Image(systemName: "squareshape.split.3x3") }
                     .toggleStyle(.button)
                     .padding(8)
             }
-            .overlay(alignment: .top) { bottomBar(q).padding(.top, 8) }
+            .overlay(alignment: .top) { actionBar.padding(.top, 8) }
         }
     }
 
     @ViewBuilder
     private func timerView(_ q: Question) -> some View {
         let elapsed = questionClock.elapsed(now: now)
-        if phase == .answering && LearningStore.inSpeedStage(q, in: chapter) {
-            let target = LearningStore.targetSeconds(for: q, in: chapter)
+        if LearningStore.inSpeedStage(q) {
+            let target = LearningStore.targetSeconds(for: q)
             Label("\(formatClock(elapsed)) · goal \(formatClock(target))", systemImage: "stopwatch")
                 .monospacedDigit()
                 .foregroundStyle(elapsed > target ? .orange : .green)
         } else {
-            Label(formatClock(phase == .answering ? elapsed : (lastAttempt?.activeSeconds ?? elapsed)), systemImage: "stopwatch")
-                .monospacedDigit().foregroundStyle(.secondary)
+            Label(formatClock(elapsed), systemImage: "stopwatch").monospacedDigit().foregroundStyle(.secondary)
         }
     }
 
-    @ViewBuilder
-    private func bottomBar(_ q: Question) -> some View {
-        Group {
-            switch phase {
-            case .answering:
-                HStack(spacing: 16) {
-                    Button { submit(stuck: true) } label: { Label("I'm stuck", systemImage: "questionmark.bubble") }
-                        .buttonStyle(.bordered)
-                    Button { drawing = PKDrawing() } label: { Label("Clear", systemImage: "trash") }
-                        .buttonStyle(.bordered)
-                        .disabled(drawing.strokes.isEmpty)
-                    Button { submit(stuck: false) } label: { Label("Check my answer", systemImage: "checkmark") .font(.title3.bold()) }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(drawing.strokes.isEmpty)
-                }
-                .padding()
-                .background(.regularMaterial, in: Capsule())
-                // Sits at the top of the canvas so the PencilKit tool picker never covers it.
-            case .grading:
-                VStack(spacing: 10) {
-                    if let gradingError {
-                        Text(gradingError).foregroundStyle(.red).multilineTextAlignment(.center)
-                        HStack {
-                            Button("Try again") { if let a = lastAttempt { grade(a) } }.buttonStyle(.borderedProminent)
-                            Button("Skip — I'll check it later") { skipGrading() }.buttonStyle(.bordered)
-                        }
-                    } else {
-                        ProgressView()
-                        Text("Checking your work…")
-                    }
-                }
-                .padding(24)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-
-            case .feedback:
-                if let a = lastAttempt {
-                    FeedbackCard(attempt: a, question: q, target: LearningStore.targetSeconds(for: q, in: chapter),
-                                 showTime: LearningStore.inSpeedStage(q, in: chapter),
-                                 willRepeat: a.effectiveVerdict == .incorrect) { next() }
-                        .padding()
-                }
-            case .summary:
-                EmptyView()
-            }
+    /// Sits at the top of the canvas so the PencilKit tool picker never covers it.
+    private var actionBar: some View {
+        HStack(spacing: 16) {
+            Button { submit(stuck: true) } label: { Label("I'm stuck", systemImage: "questionmark.bubble") }
+                .buttonStyle(.bordered)
+            Button { drawing = PKDrawing() } label: { Label("Clear", systemImage: "trash") }
+                .buttonStyle(.bordered)
+                .disabled(drawing.strokes.isEmpty)
+            Button { submit(stuck: false) } label: { Label("Next", systemImage: "arrow.right").font(.title3.bold()) }
+                .buttonStyle(.borderedProminent)
+                .disabled(drawing.strokes.isEmpty)
         }
+        .padding()
+        .background(.regularMaterial, in: Capsule())
     }
 
     // MARK: Flow
 
     private func start() {
         sessionClock.reset()
-        VariantGenerator.shared.refill(chapter, context: context)
-        next()
+        GradingQueue.shared.resumePending(context: context)
+        VariantGenerator.shared.refill(set, context: context)
+        if let id = startQuestionID, let q = set.questions.first(where: { $0.id == id }) ?? set.chapters.lazy.flatMap(\.questions).first(where: { $0.id == id }),
+           let cell = LearningStore.cellKey(q) {
+            show(q, pick: Pick(questionID: q.id, cell: cell, category: .weak))
+        } else {
+            nextQuestion()
+        }
     }
 
-    private func next() {
+    private func show(_ q: Question, pick: Pick) {
         drawing = PKDrawing()
-        lastAttempt = nil
-        gradingError = nil
-        if sessionClock.elapsed() >= Self.sessionSeconds, !sessionAttempts.isEmpty {
-            phase = .summary
-            return
-        }
-        let planner = LearningStore.planner(chapter)
-        guard let pick = planner.next(session: session),
-              let q = chapter.questions.first(where: { $0.id == pick.questionID }) else {
-            current = nil
-            if !sessionAttempts.isEmpty { phase = .summary }
-            return
-        }
         currentPick = pick
         current = q
         questionClock.reset()
         phase = .answering
     }
 
+    private func nextQuestion() {
+        let planner = LearningStore.planner(set)
+        guard let pick = planner.next(session: session),
+              let q = set.questions.first(where: { $0.id == pick.questionID }) else {
+            current = nil
+            if !sessionAttempts.isEmpty { finish() }
+            return
+        }
+        show(q, pick: pick)
+    }
+
     private func submit(stuck: Bool) {
-        guard let q = current else { return }
+        guard let q = current, let pick = currentPick else { return }
         questionClock.pause()
         let attempt = Attempt(mode: .practice, startedAt: Date().addingTimeInterval(-questionClock.elapsed()))
         attempt.activeSeconds = questionClock.elapsed()
         attempt.inkData = drawing.dataRepresentation()
         attempt.renderedImage = ImageUtils.renderDrawing(drawing)
+        attempt.wasStuck = stuck
         attempt.question = q
         context.insert(attempt)
-        lastAttempt = attempt
+        try? context.save()
         sessionAttempts.append(attempt)
+        cellOfAttempt[attempt.id] = pick.cell
+        Planner.asked(q.id, in: &session)
+        GradingQueue.shared.enqueue(attempt, context: context)
+        advance()
+    }
 
-        if stuck {
-            attempt.verdict = .incorrect
-            attempt.mistakeType = .conceptual
-            attempt.feedback = "That's okay — let's look at how this one works. You'll get another one like it soon."
-            attempt.graderConfidence = 1
-            finish(attempt)
+    /// Decides what comes after a question: an interruption, a check-in, the end, or the next question.
+    private func advance() {
+        let unrevealed = sessionAttempts.filter { $0.isGraded && !$0.revealed }
+        if let c = unrevealed.first(where: { $0.effectiveVerdict == .incorrect && $0.mistakeType == .conceptual }) {
+            present([c], kind: .interruption)
+        } else if sessionClock.elapsed() - lastCheckInAt >= Self.checkInSeconds, !unrevealed.isEmpty {
+            lastCheckInAt = sessionClock.elapsed()
+            present(unrevealed, kind: .regular)
+        } else if sessionClock.elapsed() >= Self.sessionSeconds {
+            finish()
         } else {
-            grade(attempt)
+            nextQuestion()
         }
     }
 
-    private func grade(_ attempt: Attempt) {
-        guard let q = attempt.question, let work = attempt.renderedImage else { skipGrading(); return }
-        phase = .grading
-        gradingError = nil
-        let ctx = QuestionContext(text: q.text, figureJPEG: q.figureData, conceptName: q.concept?.name ?? "")
-        let answer = q.referenceAnswer, solution = q.referenceSolution
-        Task {
-            do {
-                let r = try await ClaudeServices.live.grade(ctx, referenceAnswer: answer, referenceSolution: solution, work: work)
-                attempt.verdict = r.verdict
-                attempt.mistakeType = r.mistake
-                attempt.transcribedAnswer = r.transcribedAnswer
-                attempt.errorStep = r.errorStep
-                attempt.feedback = r.verdict == .needsReview
-                    ? "I couldn't check this one for sure. It's saved under Questions & answers → Gradings to check so you can look at it later. Let's keep going!"
-                    : r.feedback
-                attempt.graderConfidence = r.confidence
-                attempt.graderLog = r.graderLog
-                finish(attempt)
-            } catch {
-                gradingError = error.localizedDescription
+    private func present(_ items: [Attempt], kind: CheckInView.Kind) {
+        checkInItems = items
+        checkInKind = kind
+        phase = .checkIn
+    }
+
+    private func continueAfterCheckIn() {
+        for a in checkInItems { a.revealed = true }
+        try? context.save()
+        if checkInKind == .final { phase = .summary; return }
+        if sessionClock.elapsed() >= Self.sessionSeconds { finish(); return }
+        nextQuestion()
+    }
+
+    private func finish() {
+        questionClock.pause()
+        current = nil
+        if sessionAttempts.allSatisfy(\.isGraded) { showFinal() }
+        else {
+            finishingSince = Date()
+            phase = .finishing
+            GradingQueue.shared.resumePending(context: context)
+        }
+    }
+
+    private func showFinal() {
+        finishingSince = nil
+        let unrevealed = sessionAttempts.filter { $0.isGraded && !$0.revealed }
+        if unrevealed.isEmpty { phase = .summary } else { present(unrevealed, kind: .final) }
+    }
+
+    /// Feeds newly arrived grades into the session (re-practice after a miss).
+    private func absorbGrades() {
+        for a in sessionAttempts where a.isGraded && !processed.contains(a.id) {
+            processed.insert(a.id)
+            if let cell = cellOfAttempt[a.id], a.question?.isChallenge == false {
+                Planner.graded(cell: cell, correct: a.effectiveVerdict != .incorrect, in: &session)
             }
         }
-    }
-
-    private func skipGrading() {
-        guard let a = lastAttempt else { return }
-        a.verdict = .needsReview
-        a.feedback = "Saved under Questions & answers → Gradings to check."
-        finish(a)
-    }
-
-    private func finish(_ attempt: Attempt) {
-        attempt.isGraded = true
-        LearningStore.apply(attempt, context: context)
-        if let pick = currentPick {
-            Planner.record(questionID: pick.questionID, cell: pick.cell,
-                           correct: attempt.effectiveVerdict != .incorrect, in: &session)
-        }
-        try? context.save()
-        phase = .feedback
-        VariantGenerator.shared.refill(chapter, context: context)
+        if phase == .finishing, sessionAttempts.allSatisfy(\.isGraded) { showFinal() }
+        VariantGenerator.shared.refill(set, context: context)
     }
 }
 
-/// Result of one answer: verdict, where it went wrong, and help.
+/// One graded answer in detail: verdict, where it went wrong, tip, and the solution on request.
 struct FeedbackCard: View {
     let attempt: Attempt
     let question: Question
-    let target: Double
-    let showTime: Bool
-    let willRepeat: Bool
-    let onNext: () -> Void
+    var showWork = true
     @State private var showSolution = false
+    @State private var disagree = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
+                VerdictBadge(verdict: attempt.effectiveVerdict).font(.title)
                 switch attempt.effectiveVerdict {
-                case .correct:
-                    Image(systemName: "checkmark.circle.fill").font(.largeTitle).foregroundStyle(.green)
-                    Text("Correct!").font(.title.bold())
-                case .incorrect:
-                    Image(systemName: "xmark.circle.fill").font(.largeTitle).foregroundStyle(.red)
-                    Text("Not quite").font(.title.bold())
-                    if let m = attempt.mistakeType { Text(m.displayName).font(.subheadline).padding(6).background(.red.opacity(0.12), in: Capsule()) }
-                case .needsReview:
-                    Image(systemName: "questionmark.circle.fill").font(.largeTitle).foregroundStyle(.orange)
-                    Text("Saved to check later").font(.title.bold())
+                case .correct: Text("Correct").font(.title2.bold())
+                case .incorrect: Text(attempt.wasStuck ? "Let's see how this one works" : "Not quite").font(.title2.bold())
+                case .needsReview: Text("Couldn't check this one for sure").font(.title2.bold())
+                }
+                if attempt.effectiveVerdict == .incorrect, !attempt.wasStuck, let m = attempt.mistakeType {
+                    Text(m.displayName).font(.subheadline).padding(6).background(.red.opacity(0.12), in: Capsule())
                 }
                 Spacer()
-                if showTime {
-                    let fast = attempt.activeSeconds <= target
-                    Label("\(formatClock(attempt.activeSeconds)) (goal \(formatClock(target)))", systemImage: fast ? "bolt.fill" : "tortoise.fill")
-                        .foregroundStyle(fast ? .green : .orange).monospacedDigit()
-                }
+                Text(formatClock(attempt.activeSeconds)).monospacedDigit().foregroundStyle(.secondary)
             }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    if !attempt.feedback.isEmpty { MathText(markdown: attempt.feedback, fontSize: 19) }
-                    if attempt.effectiveVerdict == .incorrect, !attempt.errorStep.isEmpty {
-                        MathText(markdown: "**Where it went wrong:** \(attempt.errorStep)", fontSize: 17)
-                    }
-                    if attempt.effectiveVerdict == .incorrect, attempt.mistakeType == .conceptual,
-                       let example = question.concept?.workedExample, !example.isEmpty {
-                        Text("Worked example").font(.headline)
-                        MathText(markdown: example, fontSize: 17)
-                    }
-                    if attempt.effectiveVerdict == .incorrect {
-                        DisclosureGroup("See a full solution", isExpanded: $showSolution) {
-                            MathText(markdown: question.referenceSolution, fontSize: 17)
-                        }
-                    }
-                }
+            QuestionPanel(question: question)
+            if showWork, !attempt.wasStuck, let data = attempt.renderedImage, let img = UIImage(data: data) {
+                Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 260)
+                    .background(Color.white).clipShape(RoundedRectangle(cornerRadius: 8))
             }
-            .frame(maxHeight: 340)
-            HStack {
-                if willRepeat {
-                    Label("You'll get another one like this soon.", systemImage: "arrow.triangle.2.circlepath")
-                        .font(.subheadline).foregroundStyle(.secondary)
+            if attempt.effectiveVerdict == .incorrect, !attempt.errorStep.isEmpty, !attempt.wasStuck {
+                MathText(markdown: "**Where it went wrong:** \(attempt.errorStep)", fontSize: 17)
+            }
+            if !attempt.feedback.isEmpty, !attempt.wasStuck { MathText(markdown: attempt.feedback, fontSize: 17) }
+            if attempt.effectiveVerdict == .incorrect, !attempt.workedSolution.isEmpty {
+                if attempt.wasStuck {
+                    MathText(markdown: attempt.workedSolution, fontSize: 17)
+                } else {
+                    DisclosureGroup("Show solution", isExpanded: $showSolution) {
+                        MathText(markdown: attempt.workedSolution, fontSize: 17)
+                    }
                 }
-                Spacer()
-                Button(action: onNext) { Label("Next question", systemImage: "arrow.right").font(.title3.bold()) }
-                    .buttonStyle(.borderedProminent)
+                Label("You'll get another one like this soon.", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            if !attempt.wasStuck {
+                Button("Disagree with the grade?") { disagree = true }.font(.subheadline)
             }
         }
         .padding(20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
-        .shadow(radius: 12)
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
+        .sheet(isPresented: $disagree) { NavigationStack { AttemptReviewView(attempt: attempt) } }
     }
 }
 
 struct SessionSummaryView: View {
     let attempts: [Attempt]
-    let chapter: Chapter
+    let set: StudySet
     let onDone: () -> Void
 
     var body: some View {
         let stats = SessionStats(attempts: attempts)
-        let mistakes = Dictionary(grouping: attempts.compactMap { $0.effectiveVerdict == .incorrect ? $0.mistakeType : nil }, by: { $0 })
+        let mistakes = Dictionary(grouping: attempts.compactMap { $0.effectiveVerdict == .incorrect && !$0.wasStuck ? $0.mistakeType : nil }, by: { $0 })
         ScrollView {
             VStack(spacing: 24) {
                 Image(systemName: "star.circle.fill").font(.system(size: 64)).foregroundStyle(.yellow)
@@ -348,7 +342,7 @@ struct SessionSummaryView: View {
                     }
                     .frame(maxWidth: 600, alignment: .leading)
                 }
-                MasteryGrid(chapter: chapter).frame(maxWidth: 700)
+                MasteryGrid(set: set).frame(maxWidth: 700)
                 Button("Done", action: onDone).buttonStyle(.borderedProminent).controlSize(.large)
             }
             .padding(32)
