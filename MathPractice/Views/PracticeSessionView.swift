@@ -193,9 +193,11 @@ struct PracticeSessionView: View {
             .background(Color.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
         case .hint:
             VStack(alignment: .leading, spacing: 6) {
-                Label("Hint", systemImage: "lightbulb.fill").font(.headline).foregroundStyle(.orange)
-                MathText(markdown: hintText, fontSize: 18)
-                if let helpError { Text(helpError).font(.callout).foregroundStyle(.red) }
+                if !hintText.isEmpty {
+                    Label("Hint", systemImage: "lightbulb.fill").font(.headline).foregroundStyle(.orange)
+                    MathText(markdown: hintText, fontSize: 18)
+                }
+                if let helpError { Text(helpError).font(.callout).foregroundStyle(.secondary) }
             }
             .padding(12).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
@@ -298,8 +300,10 @@ struct PracticeSessionView: View {
                 help = .hint
             } catch {
                 guard current?.id == q.id else { return }
-                help = .none
-                helpError = "Couldn't get a hint right now (\(error.localizedDescription)). Try again in a moment."
+                // Never a dead end: without a hint she can still ask for the solution.
+                hintText = ""
+                help = .hint
+                helpError = "Sorry, a hint isn't available for this one right now. Keep trying, or tap Show solution."
             }
             if !onHold { questionClock.resume() }
         }
@@ -325,7 +329,7 @@ struct PracticeSessionView: View {
             } catch {
                 guard current?.id == q.id else { return }
                 help = .hint
-                helpError = "Couldn't get the solution right now (\(error.localizedDescription)). Try again in a moment."
+                helpError = "Sorry, the solution isn't available right now. Check the internet connection and try again."
             }
             if !onHold { questionClock.resume() }
         }

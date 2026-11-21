@@ -141,15 +141,15 @@ struct EquivalenceDTO: Decodable {
     }
 }
 
-// MARK: - Hint (solve first, then nudge)
+// MARK: - Hint
 
+/// Only the hint itself: asking for the model's working in a hidden field gets declined as reasoning extraction
+/// (it works the problem out in its own thinking anyway).
 struct HintDTO: Decodable {
-    let own_solution: String
-    let where_she_is: String
     let hint: String
 
     static var schema: OrderedObject {
-        Schema.object(["own_solution": Schema.string, "where_she_is": Schema.string, "hint": Schema.string])
+        Schema.object(["hint": Schema.string])
     }
 }
 
