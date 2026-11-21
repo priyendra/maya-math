@@ -21,6 +21,8 @@ struct GradeResult: Sendable {
     let errorStep: String
     let feedback: String
     let confidence: Double
+    /// Claude's full grading reply(s) as JSON, kept for problem reports.
+    var graderLog: String = ""
 }
 
 struct GeneratedQuestion: Sendable {
@@ -121,7 +123,11 @@ struct ClaudeServices: Sendable {
         let first = try await gradeOnce(q, referenceAnswer: referenceAnswer, referenceSolution: referenceSolution, work: work, effort: .medium)
         let suspicious = first.verdict == "unreadable" || first.confidence < 0.7
             || (first.verdict == "correct") != first.agrees_with_reference
-        guard suspicious else { return Self.result(from: first) }
+        guard suspicious else {
+            var result = Self.result(from: first)
+            result.graderLog = Self.log(["pass1 (effort medium)": first])
+            return result
+        }
 
         // Re-check carefully; if still unsure, leave it for the parent.
         let second = try await gradeOnce(q, referenceAnswer: referenceAnswer, referenceSolution: referenceSolution, work: work, effort: .high)
@@ -133,7 +139,19 @@ struct ClaudeServices: Sendable {
             result = GradeResult(verdict: .needsReview, mistake: result.mistake, transcribedAnswer: result.transcribedAnswer,
                                  errorStep: result.errorStep, feedback: result.feedback, confidence: second.confidence)
         }
+        result.graderLog = Self.log(["pass1 (effort medium)": first, "pass2 recheck (effort high)": second,
+                                     "outcome": stillUnsure ? "sent to parent review" : "pass2 verdict used"])
         return result
+    }
+
+    private static func log(_ items: [String: Any]) -> String {
+        var obj: [String: Any] = [:]
+        for (k, v) in items {
+            if let g = v as? GradeDTO, let data = try? JSONEncoder().encode(g),
+               let json = try? JSONSerialization.jsonObject(with: data) { obj[k] = json } else { obj[k] = v }
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys]) else { return "" }
+        return String(data: data, encoding: .utf8) ?? ""
     }
 
     private func gradeOnce(_ q: QuestionContext, referenceAnswer: String, referenceSolution: String, work: Data, effort: ClaudeClient.Effort) async throws -> GradeDTO {

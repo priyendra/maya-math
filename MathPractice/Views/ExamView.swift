@@ -200,6 +200,7 @@ struct ExamView: View {
                             a.errorStep = r.errorStep
                             a.feedback = r.feedback
                             a.graderConfidence = r.confidence
+                            a.graderLog = r.graderLog
                         } else {
                             a.verdict = .needsReview
                             a.feedback = "Couldn't be graded automatically; a parent will check it."

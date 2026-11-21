@@ -107,7 +107,7 @@ struct EquivalenceDTO: Decodable {
 
 // MARK: - Grade
 
-struct GradeDTO: Decodable {
+struct GradeDTO: Codable {
     let transcribed_work: String
     let transcribed_final_answer: String
     let verdict: String          // correct | incorrect | unreadable

@@ -15,6 +15,7 @@ re-practices mistakes, and pushes on speed once accuracy is solid. Exam mode giv
 ## Using it
 - **New chapter (+)**: scan pages (or import photos / a PDF). Toggle "Answer key" on any answer pages.
   Processing takes a few minutes; it resumes if the app is closed.
+- **Report a problem** (Parent → chapter, any question, or any answer): describe the issue, then AirDrop the .zip to your Mac and give its path to Claude Code.
 - **Parent → chapter**: check the questions Claude wasn't sure about (they're held back until approved),
   fix any text/answer, review gradings, override a grade, and see the progress report.
 - **Practice**: 30-minute adaptive session. **Exam mode**: timed mixed test; length set in Parent → chapter.

@@ -21,6 +21,7 @@ struct ParentChapterView: View {
                 TextField("Title", text: $chapter.title)
                 Stepper("Exam length: \(chapter.examMinutes) min", value: $chapter.examMinutes, in: 5...120, step: 5)
                 NavigationLink("Progress report") { ProgressReportView(chapter: chapter) }
+                ReportProblemButton(subject: .chapter(chapter))
             }
 
             if !questionsToCheck.isEmpty {
@@ -157,6 +158,7 @@ struct QuestionEditView: View {
                     Button("Remove from practice", role: .destructive) { setStatus(.retired) }
                 }
             }
+            Section { ReportProblemButton(subject: .question(question)) }
         }
         .navigationTitle(question.bookRef.isEmpty ? "Question" : question.bookRef)
         .onChange(of: question.text) { _, _ in question.parentEdited = true }

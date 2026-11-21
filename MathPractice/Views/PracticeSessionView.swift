@@ -227,6 +227,7 @@ struct PracticeSessionView: View {
                     ? "I couldn't check this one for sure, so a parent will look at it. Let's keep going!"
                     : r.feedback
                 attempt.graderConfidence = r.confidence
+                attempt.graderLog = r.graderLog
                 finish(attempt)
             } catch {
                 gradingError = error.localizedDescription

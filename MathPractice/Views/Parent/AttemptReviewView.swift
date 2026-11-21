@@ -50,6 +50,7 @@ struct AttemptReviewView: View {
             } footer: {
                 Text("Overrides update her progress for this chapter.")
             }
+            Section { ReportProblemButton(subject: .attempt(attempt)) }
         }
         .navigationTitle("Answer")
         .onAppear { if let m = attempt.mistakeType { mistake = m } }

@@ -171,6 +171,8 @@ final class Attempt {
     var errorStep: String = ""
     var feedback: String = ""
     var graderConfidence: Double = 0
+    /// Claude's full grading reply (JSON), for problem reports.
+    var graderLog: String = ""
     /// Parent's override of the verdict, if any.
     var parentOverrideRaw: String?
     var isGraded: Bool = false
