@@ -53,8 +53,14 @@ Running record of product decisions and open discussion topics. Newest decisions
   missing ones are inferred from neighbours (falls back to scan order if the book has none). After processing,
   the app reports gaps or repeats in the sequence so missing pages can be rescanned. Scopes can be set by page
   range. (First chapter: pages 185–245, complete; ~9 footers clipped by the scanner but inferable.)
+- **Organization:** free-form folders (contain chapters, scopes, other folders; rename/rearrange anytime; nothing
+  required). Chapters own pages, the digital version, questions and all history (attempts, mastery, mistakes).
+  Scopes are saved selections of chapters/sections/subsections/page ranges, possibly across chapters, with a name
+  and optional test date ("12 days to go"). Practice/exam always run inside a scope; each chapter has a built-in
+  whole-chapter scope. Overlapping scopes share the chapters' mastery. Same topic in two chapters = two skills
+  for now.
+- **Deferred:** two students practicing the same chapter on one iPad (histories would mix). Possible fix later:
+  "Duplicate chapter" without reprocessing.
 
 ## Open topics (discuss in order)
-1. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
-   scopes can span chapters (finals).
-2. Background grading details: check-in interval, what the check-in screen shows.
+1. Background grading details: check-in interval, what the check-in screen shows.
