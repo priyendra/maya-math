@@ -14,17 +14,30 @@ struct SettingsView: View {
             Form {
                 Section {
                     if let savedKey, !savedKey.isEmpty {
-                        Label("Key saved: \(Self.masked(savedKey))", systemImage: "checkmark.seal.fill")
-                            .foregroundStyle(.green)
-                        HStack {
-                            Button(testState == .testing ? "Testing…" : "Test key") { test(savedKey) }
-                                .disabled(testState == .testing)
+                        HStack(spacing: 12) {
+                            Label("API key saved", systemImage: "key.fill")
                             Spacer()
                             switch testState {
-                            case .ok: Label("Working", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
-                            case let .failed(message): Text(message).font(.caption).foregroundStyle(.red).multilineTextAlignment(.trailing)
-                            default: EmptyView()
+                            case .testing:
+                                ProgressView()
+                            case .ok:
+                                Image(systemName: "checkmark.circle.fill").font(.title2).foregroundStyle(.green)
+                                    .accessibilityLabel("Key works")
+                            case .failed:
+                                Image(systemName: "xmark.octagon.fill").font(.title2).foregroundStyle(.red)
+                                    .accessibilityLabel("Key failed")
+                            case .idle:
+                                EmptyView()
                             }
+                            Button { test(savedKey) } label: {
+                                Image(systemName: "checkmark.shield").font(.title2)
+                            }
+                            .buttonStyle(.borderless)
+                            .disabled(testState == .testing)
+                            .accessibilityLabel("Check that the key works")
+                        }
+                        if case let .failed(message) = testState {
+                            Text(message).font(.caption).foregroundStyle(.red)
                         }
                         Button("Remove key", role: .destructive) {
                             KeychainStore.set(nil, for: KeychainStore.apiKeyAccount)
@@ -60,12 +73,6 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
-    }
-
-    /// "sk-ant-api03-…AbCd": enough to recognize which key it is without showing it.
-    static func masked(_ key: String) -> String {
-        guard key.count > 12 else { return "••••" }
-        return "\(key.prefix(10))…\(key.suffix(4))"
     }
 
     /// One tiny request to confirm the key works (costs a fraction of a cent).

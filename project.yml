@@ -24,7 +24,7 @@ targets:
     info:
       path: MathPractice/Info.plist
       properties:
-        CFBundleDisplayName: MayaMath
+        CFBundleDisplayName: Maya Math
         UILaunchScreen: {}
         UIRequiresFullScreen: false
         UISupportedInterfaceOrientations~ipad:
