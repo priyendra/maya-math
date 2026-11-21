@@ -73,5 +73,26 @@ Running record of product decisions and open discussion topics. Newest decisions
   taking √(9a²) as 9a twice, graded "procedural" both times), since mistake categories are a judgment call.
   Revisit if real sessions show repeated mistakes slipping through to check-ins.
 
+- **Tutor: one grounded capability, two uses.** A tutor that talks about something specific on screen: a
+  solution (first) and, later, a lesson section. Built once (conversation, voice, narrated "board"), used by both.
+- **Tutor input: voice or Pencil only, no typing.** Math is written with the Pencil (sent as an image) so speech
+  recognition never has to parse math; speech is for everything else.
+- **Solution page is composite:** the question, her work, why it was wrong (if it was), the correct solution, and
+  "Talk to the tutor". Used everywhere a solution is shown (check-ins, answer details, "I'm stuck").
+- **Tutor scope:** confined to the question, but broad within it: explain the underlying concept, pull relevant
+  worked examples from the book, or work through a different example. Off-topic requests are steered back.
+- **Voice mode is all voice:** once she enters it, the tutor speaks and listens (on-device iPad speech, a
+  high-quality built-in female voice). Anything mathematical the tutor says is also written on the board.
+- **Teaching mode is opt-in** ("Learn this section"); never required before practice or exams (she may have
+  learned it in class).
+- **Lesson shape (proposed):** per concept: the idea → one or two of the book's worked examples, narrated →
+  "your turn" problem graded like practice → if wrong, re-explain using her mistake + another example, one more
+  try (max two loops, then move on and let practice focus on that concept) → next concept. Resumable.
+- **Lessons are generated only when she asks** (then saved).
+- **Pointer (proposed):** a mouse-style cursor that glides to what the voice is talking about, plus a soft
+  highlight on the target, synced to the spoken words.
+- **Cost:** not a constraint for now; build the good experience first.
+
 ## Open topics
-(none)
+- Voice turn-taking: hands-free (listens automatically after the tutor speaks, tap to interrupt) vs. push-to-talk.
+- Save tutor conversations with the answer (for her to revisit and for evaluation)?
