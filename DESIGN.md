@@ -29,13 +29,16 @@ Running record of product decisions and open discussion topics. Newest decisions
 - **Improvement data:** keep ink, rendered work, verdicts, grader logs, her corrections; add per-Claude-call
   records (kind, prompt version, model, latency, tokens/cost), raw page-reading output, app version.
   Readable over the cable; add "Export data" for other iPads.
+- **Challenge questions get their own tag.** Claude tags a question as challenge when the book itself marks it
+  as beyond the standard material (heading, label, symbol — judged from the page, no fixed word list); no signal
+  means no tag. Rules: in practice only as occasional stretch questions after the hard level of that concept is
+  mastered, and a wrong answer doesn't lower mastery or score; never in exams.
 
 ## Open topics (discuss in order)
-1. Challenge questions: separate tag (included in practice, left out of exams) vs. just difficulty 3.
-2. Ignoring anything needing more than an iPad + pencil, across books: confirm the "pencil-compatible" tag
+1. Ignoring anything needing more than an iPad + pencil, across books: confirm the "pencil-compatible" tag
    (judged by Claude from content) is enough.
-3. Replace printed question labels with internal links into the digital chapter.
-4. Just-in-time solving: details (how far ahead, what happens offline / on failure).
-5. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
+2. Replace printed question labels with internal links into the digital chapter.
+3. Just-in-time solving: details (how far ahead, what happens offline / on failure).
+4. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
    scopes can span chapters (finals).
-6. Background grading details: check-in interval, what the check-in screen shows.
+5. Background grading details: check-in interval, what the check-in screen shows.
