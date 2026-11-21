@@ -67,6 +67,13 @@ enum SampleData {
             }
         }
         chapter.outline = nodes
+        if ProcessInfo.processInfo.arguments.contains("-seedInFolder") {
+            let parent = Folder(name: "Student")
+            let child = Folder(name: "School algebra")
+            context.insert(parent); context.insert(child)
+            child.parent = parent
+            chapter.folder = child
+        }
         if ProcessInfo.processInfo.arguments.contains("-seedGraded"), let q = chapter.questions.first(where: { $0.difficulty == 3 }) {
             let a = Attempt(mode: .practice)
             a.question = q

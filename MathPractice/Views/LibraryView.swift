@@ -17,7 +17,11 @@ struct LibraryView: View {
                         Button { showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
                     }
                 }
+                // Everything in the library navigates by value. Mixing closure-pushed folders with value links
+                // made a chapter inside a folder pop back to the folder instead of opening.
                 .navigationDestination(for: Chapter.self) { ChapterHomeView(chapter: $0) }
+                .navigationDestination(for: Folder.self) { FolderView(folder: $0) }
+                .navigationDestination(for: StudyScope.self) { ScopeHomeView(scope: $0) }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
         .onAppear(perform: resume)
@@ -94,7 +98,7 @@ struct FolderView: View {
                     if !folders.isEmpty {
                         Section("Folders") {
                             ForEach(folders) { f in
-                                NavigationLink { FolderView(folder: f) } label: {
+                                NavigationLink(value: f) {
                                     Label(f.name, systemImage: "folder")
                                 }
                                 .contextMenu { menu(.folder(f), rename: .folder(f), name: f.name) { delete(folder: f) } }
@@ -104,7 +108,7 @@ struct FolderView: View {
                     if !scopes.isEmpty {
                         Section("Study plans") {
                             ForEach(scopes) { s in
-                                NavigationLink { ScopeHomeView(scope: s) } label: { scopeRow(s) }
+                                NavigationLink(value: s) { scopeRow(s) }
                                     .contextMenu { menu(.scope(s), rename: .scope(s), name: s.name) { context.delete(s); try? context.save() } }
                             }
                         }

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		060A7651148F1BFA44DA308F /* ChapterHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47532A0C491289D637FD2620 /* ChapterHomeView.swift */; };
 		068BA2E7A0C06960003E79E8 /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC840C4F982E6476B362357 /* Prompts.swift */; };
+		0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44CD57438440D0BE6E0745E /* LibraryUITests.swift */; };
 		13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F231E9BAE8BE9B8CC0ED4760 /* PracticeSessionView.swift */; };
 		16D59697D7A3D274E1515F07 /* AttemptReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */; };
 		1F28EF65C31C87942E6A464E /* ExamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4AB5FDE2DD41A5217B1614 /* ExamView.swift */; };
@@ -102,6 +103,7 @@
 		9A1CDC9394B9629E2AEAF5FB /* MathText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathText.swift; sourceTree = "<group>"; };
 		9ABDC763B9CB199D4590C26B /* MathPractice.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MathPractice.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A290B7BCA132EBA8AB7FD2AF /* NewChapterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChapterView.swift; sourceTree = "<group>"; };
+		A44CD57438440D0BE6E0745E /* LibraryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryUITests.swift; sourceTree = "<group>"; };
 		AC7907F8F17ECCF8B44BA369 /* MathPracticeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathPracticeApp.swift; sourceTree = "<group>"; };
 		B55804A2BBA01524A634BFB1 /* ProblemReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProblemReport.swift; sourceTree = "<group>"; };
 		B886E03B5A5F3BE3219DFF3F /* Planner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planner.swift; sourceTree = "<group>"; };
@@ -192,6 +194,7 @@
 				B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */,
 				C3352EA421577C75BDC7F236 /* CheckInUITests.swift */,
 				2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */,
+				A44CD57438440D0BE6E0745E /* LibraryUITests.swift */,
 			);
 			path = MathPracticeUITests;
 			sourceTree = "<group>";
@@ -440,6 +443,7 @@
 				743305947D8715F10D8149F4 /* CanvasUITests.swift in Sources */,
 				BAACC91351094CDC58E318C0 /* CheckInUITests.swift in Sources */,
 				9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */,
+				0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
