@@ -25,6 +25,7 @@ struct ExamView: View {
     @State private var now = Date()
     @State private var confirmSubmit = false
     @State private var graphPaper = false
+    @StateObject private var canvas = CanvasController()
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var timeLimit: TimeInterval { TimeInterval(set.examMinutes * 60) }
@@ -103,7 +104,7 @@ struct ExamView: View {
                 Label(formatClock(remaining), systemImage: "timer")
                     .font(.title3.bold().monospacedDigit())
                     .foregroundStyle(remaining < 120 ? .red : .primary)
-                Button("Hand in") { confirmSubmit = true }.buttonStyle(.borderedProminent).tint(.purple)
+                Button("Hand in") { if questions.indices.contains(index) { drawings[questions[index].id] = canvas.drawing }; confirmSubmit = true }.buttonStyle(.borderedProminent).tint(.purple)
             }
             .padding()
             if questions.indices.contains(index) {
@@ -111,9 +112,7 @@ struct ExamView: View {
                 QuestionPanel(question: q, label: "Question \(index + 1) of \(questions.count)")
                     .padding(.horizontal).padding(.bottom)
                 ZStack(alignment: .topTrailing) {
-                    WritingCanvas(drawing: Binding(get: { drawings[q.id] ?? PKDrawing() }, set: { drawings[q.id] = $0 }),
-                                  graphPaper: graphPaper)
-                        .id(q.id)
+                    WritingCanvas(controller: canvas, graphPaper: graphPaper)
                     Toggle(isOn: $graphPaper) { Image(systemName: "squareshape.split.3x3") }.toggleStyle(.button).padding(8)
                 }
                 .overlay(alignment: .top) {
@@ -144,6 +143,7 @@ struct ExamView: View {
         exam = session
         clock.reset()
         questionClock.reset()
+        canvas.clear()
         index = 0
         phase = .running
     }
@@ -151,6 +151,8 @@ struct ExamView: View {
     private func go(to i: Int) {
         guard questions.indices.contains(i) else { return }
         let id = questions[index].id
+        drawings[id] = canvas.drawing
+        canvas.load(drawings[questions[i].id] ?? PKDrawing())
         perQuestionSeconds[id, default: 0] += questionClock.elapsed()
         questionClock.reset()
         index = i

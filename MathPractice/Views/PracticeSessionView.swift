@@ -24,7 +24,7 @@ struct PracticeSessionView: View {
     @State private var session = SessionState()
     @State private var current: Question?
     @State private var currentPick: Pick?
-    @State private var drawing = PKDrawing()
+    @StateObject private var canvas = CanvasController()
     @State private var graphPaper = false
     @State private var questionClock = ActiveClock()
     @State private var sessionClock = ActiveClock()
@@ -35,9 +35,8 @@ struct PracticeSessionView: View {
     @State private var checkInItems: [Attempt] = []
     @State private var checkInKind: CheckInView.Kind = .regular
     @State private var finishingSince: Date?
-    @State private var now = Date()
     @State private var confirmQuit = false
-    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private let ticker = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
@@ -66,7 +65,9 @@ struct PracticeSessionView: View {
                 }
                 ToolbarItem(placement: .principal) {
                     if phase != .summary {
-                        Text("Session \(formatClock(sessionClock.elapsed(now: now))) / 30:00").monospacedDigit().font(.headline)
+                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                            Text("Session \(formatClock(sessionClock.elapsed(now: ctx.date))) / 30:00").monospacedDigit().font(.headline)
+                        }
                     }
                 }
             }
@@ -76,7 +77,6 @@ struct PracticeSessionView: View {
         }
         .onAppear(perform: start)
         .onReceive(ticker) { t in
-            now = t
             if phase == .finishing, let since = finishingSince, t.timeIntervalSince(since) > Self.finalWaitSeconds { showFinal() }
         }
         .onChange(of: grading.version) { _, _ in absorbGrades() }
@@ -115,7 +115,7 @@ struct PracticeSessionView: View {
             .background(.bar)
 
             ZStack(alignment: .topTrailing) {
-                WritingCanvas(drawing: $drawing, graphPaper: graphPaper)
+                WritingCanvas(controller: canvas, graphPaper: graphPaper)
                 Toggle(isOn: $graphPaper) { Image(systemName: "squareshape.split.3x3") }
                     .toggleStyle(.button)
                     .padding(8)
@@ -124,17 +124,8 @@ struct PracticeSessionView: View {
         }
     }
 
-    @ViewBuilder
     private func timerView(_ q: Question) -> some View {
-        let elapsed = questionClock.elapsed(now: now)
-        if LearningStore.inSpeedStage(q) {
-            let target = LearningStore.targetSeconds(for: q)
-            Label("\(formatClock(elapsed)) · goal \(formatClock(target))", systemImage: "stopwatch")
-                .monospacedDigit()
-                .foregroundStyle(elapsed > target ? .orange : .green)
-        } else {
-            Label(formatClock(elapsed), systemImage: "stopwatch").monospacedDigit().foregroundStyle(.secondary)
-        }
+        ClockLabel(clock: questionClock, target: LearningStore.inSpeedStage(q) ? LearningStore.targetSeconds(for: q) : nil)
     }
 
     /// Sits at the top of the canvas so the PencilKit tool picker never covers it.
@@ -142,12 +133,12 @@ struct PracticeSessionView: View {
         HStack(spacing: 16) {
             Button { submit(stuck: true) } label: { Label("I'm stuck", systemImage: "questionmark.bubble") }
                 .buttonStyle(.bordered)
-            Button { drawing = PKDrawing() } label: { Label("Clear", systemImage: "trash") }
+            Button { canvas.clear() } label: { Label("Clear", systemImage: "trash") }
                 .buttonStyle(.bordered)
-                .disabled(drawing.strokes.isEmpty)
+                .disabled(!canvas.hasInk)
             Button { submit(stuck: false) } label: { Label("Next", systemImage: "arrow.right").font(.title3.bold()) }
                 .buttonStyle(.borderedProminent)
-                .disabled(drawing.strokes.isEmpty)
+                .disabled(!canvas.hasInk)
         }
         .padding()
         .background(.regularMaterial, in: Capsule())
@@ -168,7 +159,7 @@ struct PracticeSessionView: View {
     }
 
     private func show(_ q: Question, pick: Pick) {
-        drawing = PKDrawing()
+        canvas.clear()
         currentPick = pick
         current = q
         questionClock.reset()
@@ -191,6 +182,7 @@ struct PracticeSessionView: View {
         questionClock.pause()
         let attempt = Attempt(mode: .practice, startedAt: Date().addingTimeInterval(-questionClock.elapsed()))
         attempt.activeSeconds = questionClock.elapsed()
+        let drawing = canvas.drawing
         attempt.inkData = drawing.dataRepresentation()
         attempt.renderedImage = ImageUtils.renderDrawing(drawing)
         attempt.wasStuck = stuck
