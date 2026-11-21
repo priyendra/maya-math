@@ -9,19 +9,34 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     /// Debug/UI tests: don't make sound, just wait a moment per line.
     var silent = false
 
-    static let voice: AVSpeechSynthesisVoice? = {
-        let voices = AVSpeechSynthesisVoice.speechVoices().filter {
-            $0.language.hasPrefix("en") && $0.gender == .female && !$0.voiceTraits.contains(.isNoveltyVoice)
-        }
-        func score(_ v: AVSpeechSynthesisVoice) -> Int {
-            var s = v.quality.rawValue * 100                     // premium > enhanced > default
-            if v.language == "en-US" { s += 20 }
-            if ["Ava", "Zoe", "Samantha", "Allison", "Susan"].contains(where: v.name.hasPrefix) { s += 5 }
-            if v.voiceTraits.contains(.isPersonalVoice) { s -= 1000 }
-            return s
-        }
-        return voices.max { score($0) < score($1) } ?? AVSpeechSynthesisVoice(language: "en-US")
-    }()
+    static let voiceKey = "tutorVoiceID"
+
+    /// Installed English voices, best first (premium > enhanced > standard; female and US English preferred).
+    static var englishVoices: [AVSpeechSynthesisVoice] {
+        AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.hasPrefix("en") && !$0.voiceTraits.contains(.isNoveltyVoice) && !$0.voiceTraits.contains(.isPersonalVoice) }
+            .sorted { score($0) > score($1) }
+    }
+
+    private static func score(_ v: AVSpeechSynthesisVoice) -> Int {
+        var s = v.quality.rawValue * 100
+        if v.gender == .female { s += 40 }
+        if v.language == "en-US" { s += 20 }
+        if ["Ava", "Zoe", "Samantha", "Allison", "Susan"].contains(where: v.name.hasPrefix) { s += 5 }
+        return s
+    }
+
+    /// The voice chosen in Settings, else the best installed female English voice.
+    static var voice: AVSpeechSynthesisVoice? {
+        if let id = UserDefaults.standard.string(forKey: voiceKey), let v = AVSpeechSynthesisVoice(identifier: id) { return v }
+        return englishVoices.first { $0.gender == .female } ?? englishVoices.first ?? AVSpeechSynthesisVoice(language: "en-US")
+    }
+
+    static func describe(_ v: AVSpeechSynthesisVoice?) -> String {
+        guard let v else { return "none" }
+        let q = v.quality == .premium ? "Premium" : v.quality == .enhanced ? "Enhanced" : "Standard"
+        return "\(v.name) (\(q), \(v.language))"
+    }
 
     override init() {
         super.init()

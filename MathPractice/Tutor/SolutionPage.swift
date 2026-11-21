@@ -313,7 +313,7 @@ final class PageInk: NSObject, ObservableObject, PKCanvasViewDelegate {
     private func applyTool() {
         switch tool {
         case .pen: canvas.tool = PKInkingTool(.pen, color: .systemBlue, width: 3)
-        case .highlighter: canvas.tool = PKInkingTool(.marker, color: .systemYellow, width: 24)
+        case .highlighter: canvas.tool = PKInkingTool(.marker, color: UIColor.systemYellow.withAlphaComponent(0.35), width: 24)
         case .eraser: canvas.tool = PKEraserTool(.vector)
         }
     }

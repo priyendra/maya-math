@@ -96,6 +96,8 @@ final class TutorSession: ObservableObject {
                 let session = AVAudioSession.sharedInstance()
                 try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothA2DP])
                 try? session.setActive(true)
+                let installed = Speaker.englishVoices.prefix(12).map { Speaker.describe($0) }
+                CallLog.event("tutor_start", ["voice": Speaker.describe(Speaker.voice), "installed_english_voices": Array(installed)])
             }
             if history.isEmpty {
                 var content = openingContext()

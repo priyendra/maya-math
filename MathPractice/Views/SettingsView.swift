@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 /// App settings: the Claude API key.
@@ -72,6 +73,7 @@ struct SettingsView: View {
                 } footer: {
                     Text("Stored in this iPad's Keychain. Create a key at console.anthropic.com and set a monthly spend limit on it.")
                 }
+                TutorVoiceSection()
                 Section {
                     if let exportURL {
                         ShareLink(item: exportURL) { Label("Share data file", systemImage: "square.and.arrow.up") }
@@ -114,5 +116,35 @@ struct SettingsView: View {
                 testState = .failed(error.localizedDescription)
             }
         }
+    }
+}
+
+/// Pick the tutor's voice by ear. Better voices are free downloads in iPadOS Settings.
+struct TutorVoiceSection: View {
+    @AppStorage(Speaker.voiceKey) private var chosen = ""
+    @State private var voices: [AVSpeechSynthesisVoice] = []
+    @State private var synth = AVSpeechSynthesizer()
+
+    var body: some View {
+        Section {
+            Picker("Voice", selection: $chosen) {
+                Text("Automatic (best installed)").tag("")
+                ForEach(voices, id: \.identifier) { v in Text(Speaker.describe(v)).tag(v.identifier) }
+            }
+            Button { preview() } label: { Label("Preview", systemImage: "play.circle") }
+        } header: {
+            Text("Tutor voice")
+        } footer: {
+            Text("Now using: \(Speaker.describe(Speaker.voice)). For a natural voice, download one for free: iPad Settings → Accessibility → Spoken Content → Voices → English → pick a voice marked Premium or Enhanced (e.g. Ava, Zoe), then come back and choose it here.")
+        }
+        .onAppear { voices = Speaker.englishVoices }
+    }
+
+    private func preview() {
+        synth.stopSpeaking(at: .immediate)
+        let u = AVSpeechUtterance(string: "Hi! Let's look at where it went wrong. The square root of nine a squared is three a.")
+        u.voice = Speaker.voice
+        u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.98
+        synth.speak(u)
     }
 }

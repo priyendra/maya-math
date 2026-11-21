@@ -14,6 +14,13 @@ enum CallLog {
 
     private static let queue = DispatchQueue(label: "CallLog")
 
+    /// A non-Claude event worth keeping for evaluation (e.g. which voice the tutor used).
+    static func event(_ kind: String, _ detail: [String: Any]) {
+        var entry: [String: Any] = ["time": ISO8601DateFormatter().string(from: Date()), "kind": kind, "app_version": appVersion]
+        for (k, v) in detail { entry[k] = v }
+        append(JSONWriter.string(entry) + "\n")
+    }
+
     static func record(kind: String, model: String, effort: String, started: Date, retries: Int,
                        usage: [String: Int], error: String?, response: String?) {
         var entry: [String: Any] = [
@@ -24,7 +31,10 @@ enum CallLog {
         ]
         if let error { entry["error"] = error }
         if let response { entry["response"] = response }
-        let line = JSONWriter.string(entry) + "\n"
+        append(JSONWriter.string(entry) + "\n")
+    }
+
+    private static func append(_ line: String) {
         queue.async {
             let u = url
             if let handle = try? FileHandle(forWritingTo: u) {
