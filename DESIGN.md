@@ -39,10 +39,17 @@ Running record of product decisions and open discussion topics. Newest decisions
   written explanations, multiple choice, and questions referring to other exercises (the referenced material is
   attached). **Calculator use never excludes a question**; the student decides whether to use one. Excluded
   questions are shown greyed out in the Read view, with an Include anyway / Exclude toggle per question.
+- **Question labels:** internal IDs + the digital chapter's section tree drive everything (scope, answer-key
+  linking, "show in chapter"). Claude links answer-key entries to questions directly while reading. The book's
+  printed exercise number is kept as display text only (finding it in the physical book; future "paste the
+  homework assignment" scopes); no logic parses it.
+- **Page numbers:** a separate dimension from the section tree. Claude records each page's printed number;
+  missing ones are inferred from neighbours (falls back to scan order if the book has none). After processing,
+  the app reports gaps or repeats in the sequence so missing pages can be rescanned. Scopes can be set by page
+  range. (First chapter: pages 185–245, complete; ~9 footers clipped by the scanner but inferable.)
 
 ## Open topics (discuss in order)
-1. Replace printed question labels with internal links into the digital chapter.
-2. Just-in-time solving: details (how far ahead, what happens offline / on failure).
-3. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
+1. Just-in-time solving: details (how far ahead, what happens offline / on failure).
+2. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
    scopes can span chapters (finals).
-4. Background grading details: check-in interval, what the check-in screen shows.
+3. Background grading details: check-in interval, what the check-in screen shows.
