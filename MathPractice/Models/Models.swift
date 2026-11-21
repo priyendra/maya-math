@@ -68,7 +68,9 @@ final class Chapter {
 
     var sortedPages: [PageImage] { pages.sorted { $0.order < $1.order } }
     var sortedConcepts: [Concept] { concepts.sorted { $0.bookOrder < $1.bookOrder } }
-    var activeQuestions: [Question] { questions.filter { $0.status == .ok } }
+    /// Questions ready for practice: trusted and already solved (large chapters solve progressively).
+    var activeQuestions: [Question] { questions.filter { $0.status == .ok && !$0.referenceAnswer.isEmpty } }
+    var unsolvedCount: Int { questions.filter { $0.referenceAnswer.isEmpty && $0.status != .retired }.count }
     var allAttempts: [Attempt] { questions.flatMap { $0.attempts } }
 
     func skill(concept: Concept, difficulty: Int) -> SkillState? {
@@ -82,6 +84,9 @@ final class PageImage {
     var order: Int = 0
     var isAnswerKey: Bool = false
     @Attribute(.externalStorage) var imageData: Data = Data()
+    /// Claude's extraction for this page (JSON), saved as soon as it arrives so an interrupted
+    /// large chapter resumes without re-reading pages already done.
+    var extractionJSON: String?
     var chapter: Chapter?
 
     init(order: Int, imageData: Data, isAnswerKey: Bool = false) {

@@ -3,10 +3,18 @@ import XCTest
 
 @MainActor
 final class PipelineTests: XCTestCase {
-    func testAnswerKeyRefMatching() {
-        XCTAssertEqual(ChapterProcessor.refKey("3.2 #14b"), "14b")
-        XCTAssertEqual(ChapterProcessor.refKey("14b"), "14b")
-        XCTAssertEqual(ChapterProcessor.refKey("#7"), "7")
+    func testAnswerKeyMatchingUsesSection() {
+        let keys = [ExtractionDTO.Key(book_ref: "3.1 #14", answer: "x = 2"),
+                    ExtractionDTO.Key(book_ref: "3.2 #14", answer: "x = 5"),
+                    ExtractionDTO.Key(book_ref: "3.2 #15b", answer: "y = 1")]
+        let m = AnswerKeyMatcher(keys: keys, questionRefs: ["3.1 #14", "3.2 #14", "3.2 #15b", "3.3 #9"])
+        XCTAssertEqual(m.answer(for: "3.1 #14"), "x = 2")
+        XCTAssertEqual(m.answer(for: "3.2 #14"), "x = 5")
+        XCTAssertEqual(m.answer(for: "Section 3.2, #15(b)"), "y = 1")
+        XCTAssertNil(m.answer(for: "3.3 #9"))
+        // Label-only fallback only when unambiguous.
+        let loose = AnswerKeyMatcher(keys: [ExtractionDTO.Key(book_ref: "#7", answer: "12")], questionRefs: ["4.1 #7"])
+        XCTAssertEqual(loose.answer(for: "4.1 #7"), "12")
     }
 
     func testGradeSchemaRequiresAllFields() throws {
@@ -20,5 +28,26 @@ final class PipelineTests: XCTestCase {
 
     func testAnswerNormalization() {
         XCTAssertEqual(ClaudeServices.normalize("$x = 3$"), ClaudeServices.normalize("X=3"))
+    }
+}
+
+@MainActor
+final class ImageUtilsTests: XCTestCase {
+    private func image(_ w: CGFloat, _ h: CGFloat) -> UIImage {
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        return UIGraphicsImageRenderer(size: CGSize(width: w, height: h), format: format).image { ctx in
+            UIColor.white.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+        }
+    }
+
+    func testSpreadIsSplitIntoTwoPortraitPages() {
+        let parts = ImageUtils.splitSpread(image(3000, 2000))
+        XCTAssertEqual(parts.count, 2)
+        XCTAssertEqual(parts[0].cgImage?.width, 1500)
+        XCTAssertEqual(parts[1].cgImage?.height, 2000)
+    }
+
+    func testPortraitPageIsNotSplit() {
+        XCTAssertEqual(ImageUtils.splitSpread(image(1500, 2000)).count, 1)
     }
 }

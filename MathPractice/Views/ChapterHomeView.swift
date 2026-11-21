@@ -20,6 +20,12 @@ struct ChapterHomeView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                if chapter.status == .processing {
+                    ProgressView(value: chapter.progressFraction) {
+                        Text("\(chapter.progressMessage). New questions join your practice as they're ready.").font(.caption)
+                    }
+                }
+
                 reviewLinks
 
                 Text("Your skills").font(.title2.bold())

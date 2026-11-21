@@ -40,8 +40,13 @@ struct ClaudeServices: Sendable {
     // MARK: Extraction
 
     /// `pages`: JPEGs for one batch; `answerKeyFlags[i]` marks answer-key pages.
-    func extract(pages: [Data], answerKeyFlags: [Bool]) async throws -> ExtractionDTO {
+    /// `contextPage`: the page just before this batch, shown only so Claude knows which section it continues.
+    func extract(pages: [Data], answerKeyFlags: [Bool], contextPage: Data? = nil) async throws -> ExtractionDTO {
         var content: [ClaudeClient.Block] = []
+        if let contextPage {
+            content.append(.text("CONTEXT ONLY — the page before this batch. Do not extract anything from it; use it only to know which section the next images continue:"))
+            content.append(.jpeg(contextPage))
+        }
         for (i, page) in pages.enumerated() {
             let label = answerKeyFlags[i] ? "Image \(i + 1) (ANSWER KEY page):" : "Image \(i + 1):"
             content.append(.text(label))
@@ -83,8 +88,22 @@ struct ClaudeServices: Sendable {
                                     schema: SolveDTO.schema, effort: .high)
     }
 
-    /// Two independent solves (plus the book's answer key if any). Trusted only when they all agree.
+    /// Trusted only when independent answers agree. With a book answer key, one solve that matches the key
+    /// is enough (two independent sources); otherwise two independent solves must agree.
     func solveVerified(_ q: QuestionContext, answerKey: String?) async throws -> VerifiedSolution {
+        if let key = answerKey, !key.isEmpty {
+            let s = try await solve(q)
+            if s.solvable {
+                if Self.normalize(s.final_answer) == Self.normalize(key) {
+                    return VerifiedSolution(solution: s.solution, finalAnswer: s.final_answer, trusted: true, note: nil)
+                }
+                let check = try await equivalent(q, candidates: [s.final_answer, key])
+                if check.all_equivalent {
+                    return VerifiedSolution(solution: s.solution, finalAnswer: key, trusted: true, note: nil)
+                }
+            }
+            // Disagreement with the key (or unsolvable): fall through to the full two-solve check below.
+        }
         async let a = solve(q)
         async let b = solve(q)
         let (s1, s2) = try await (a, b)

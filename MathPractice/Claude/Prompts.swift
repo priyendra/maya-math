@@ -17,13 +17,17 @@ enum Prompts {
     - questions: every exercise the student is meant to solve. Split multi-part exercises (a, b, c...) into separate questions, \
     each fully self-contained: repeat any shared instructions or data ("Solve each equation.", a shared table) in every part. \
     Do not include worked examples, review notes, or questions whose answer is already printed next to them.
-      - book_ref: the exercise label as printed, e.g. "3.2 #14b" (use the section number if visible).
+      - book_ref: always in the form "<section number> #<exercise label>", e.g. "3.2 #14b". Take the section number \
+    from the nearest section heading (it may be on an earlier image); if the book has no section numbers, use the \
+    section title instead of a number. Exercise numbers repeat across sections, so the section part is essential.
       - page_number: the 1-based number of the image the question appears on, in the order the images were given.
       - text: the exact question, transcribed faithfully. Do not simplify or solve it.
       - has_figure / figure_box: if the question needs a diagram, graph, table image, or number line to be answered, \
     set has_figure true and give the figure's bounding box on that page as fractions of the image width/height \
     (x, y = top-left corner; 0...1). Make the box generous rather than tight. Otherwise has_figure false and all zeros.
-    - answer_key: only for images marked as answer key pages: every answer listed, with the book_ref it belongs to.
+    - answer_key: only for images marked as answer key pages: every answer listed, with the book_ref it belongs to, \
+    in the same "<section number> #<exercise label>" form (answer keys usually group answers under section headings).
+    - If a page continues an exercise list from a previous image (no heading at the top), keep using that section.
 
     \(mathFormat)
     If a page is unreadable or contains no exercises, return empty lists for it rather than guessing.
@@ -35,7 +39,7 @@ enum Prompts {
     - chapter_title: a short, friendly title for this body of material, based on the book's own chapter/section names.
     - concepts: the distinct skills these exercises practice, in the order the book teaches them. Start from the book's \
     sections, but split a section into two concepts if it clearly mixes different skills, and merge tiny ones. \
-    Aim for 3–10 concepts. For each give a one-sentence summary and a short worked_example (one representative problem, \
+    Aim for roughly one concept per book section (typically 3–20 depending on how much material there is). For each give a one-sentence summary and a short worked_example (one representative problem, \
     solved step by step). Prefer adapting a worked example from the book if one is provided.
     - assignments: for every question (by its number in the list), the concept_number (1-based, in your concepts order), \
     difficulty (1 = direct application of one step, 2 = several steps or a twist, 3 = multi-step / word problem / \

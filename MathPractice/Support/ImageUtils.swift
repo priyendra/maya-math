@@ -20,6 +20,36 @@ enum ImageUtils {
         return resized.jpegData(compressionQuality: quality)
     }
 
+    /// A landscape image of a book is almost always a two-page spread: split it into left and right pages.
+    static func splitSpread(_ image: UIImage) -> [UIImage] {
+        let upright = uprightImage(image)
+        guard let cg = upright.cgImage, cg.width > Int(Double(cg.height) * 1.2) else { return [upright] }
+        let half = cg.width / 2
+        let left = CGRect(x: 0, y: 0, width: half, height: cg.height)
+        let right = CGRect(x: half, y: 0, width: cg.width - half, height: cg.height)
+        return [left, right].compactMap { cg.cropping(to: $0).map { UIImage(cgImage: $0) } }
+    }
+
+    static func rotated90(_ data: Data) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        let size = CGSize(width: image.size.height, height: image.size.width)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let out = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            ctx.cgContext.translateBy(x: size.width / 2, y: size.height / 2)
+            ctx.cgContext.rotate(by: .pi / 2)
+            image.draw(in: CGRect(x: -image.size.width / 2, y: -image.size.height / 2, width: image.size.width, height: image.size.height))
+        }
+        return out.jpegData(compressionQuality: 0.85)
+    }
+
+    static func uprightImage(_ image: UIImage) -> UIImage {
+        guard image.imageOrientation != .up else { return image }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = image.scale
+        return UIGraphicsImageRenderer(size: image.size, format: format).image { _ in image.draw(at: .zero) }
+    }
+
     /// Crops a region given as fractions of the image (x, y = top-left), with padding.
     static func crop(_ data: Data, x: Double, y: Double, width: Double, height: Double, padding: Double = 0.02) -> Data? {
         guard let image = UIImage(data: data), let cg = normalizedCGImage(image) else { return nil }

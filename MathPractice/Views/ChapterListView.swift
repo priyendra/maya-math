@@ -8,6 +8,7 @@ struct ChapterListView: View {
     @State private var showNewChapter = false
     @State private var showSettings = false
     @State private var path: [Chapter] = []
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -24,7 +25,7 @@ struct ChapterListView: View {
                     List {
                         ForEach(chapters) { chapter in
                             NavigationLink(value: chapter) { row(chapter) }
-                                .disabled(chapter.status != .ready)
+                                .disabled(chapter.activeQuestions.isEmpty)
                                 .swipeActions {
                                     Button("Delete", role: .destructive) {
                                         context.delete(chapter)
@@ -48,6 +49,7 @@ struct ChapterListView: View {
             .sheet(isPresented: $showNewChapter) { NewChapterView() }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .onAppear(perform: resumeInterrupted)
+            .onChange(of: scenePhase) { _, phase in if phase == .active { resumeInterrupted() } }
         }
     }
 
@@ -58,6 +60,9 @@ struct ChapterListView: View {
             switch chapter.status {
             case .processing:
                 ProgressView(value: chapter.progressFraction) { Text(chapter.progressMessage).font(.caption) }
+                if !processor.isRunning(chapter) {
+                    Text("Paused — keep the app open to continue.").font(.caption2).foregroundStyle(.secondary)
+                }
             case .failed:
                 HStack {
                     Text(chapter.errorMessage ?? "Something went wrong.").font(.caption).foregroundStyle(.red)
@@ -84,8 +89,6 @@ struct ChapterListView: View {
             path = [first]
         }
         #endif
-        for chapter in chapters where chapter.status == .processing && !processor.isRunning(chapter) {
-            processor.start(chapter, context: context)
-        }
+        processor.resumeInterrupted(chapters, context: context)
     }
 }

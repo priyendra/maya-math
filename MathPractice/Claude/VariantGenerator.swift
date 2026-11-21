@@ -13,7 +13,8 @@ final class VariantGenerator {
     var services: ClaudeServices = .live
 
     func refill(_ chapter: Chapter, context: ModelContext) {
-        guard KeychainStore.apiKey != nil else { return }
+        // Not while the chapter's own book questions are still being solved.
+        guard KeychainStore.apiKey != nil, chapter.unsolvedCount == 0 else { return }
         let planner = LearningStore.planner(chapter)
         let cells = planner.cellsNeedingVariants().filter { !inFlight.contains($0) }
         for cell in cells.prefix(max(0, Self.maxConcurrentCells - inFlight.count)) {

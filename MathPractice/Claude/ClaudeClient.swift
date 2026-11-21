@@ -58,7 +58,8 @@ struct ClaudeClient: Sendable {
     let apiKey: @Sendable () -> String?
     var model: String = ClaudeClient.defaultModel
     var session: URLSession = .shared
-    var maxRetries: Int = 3
+    /// Large chapters make hundreds of calls; new API accounts have low rate limits, so retry patiently.
+    var maxRetries: Int = 5
 
     init(apiKey: @escaping @Sendable () -> String?, model: String = ClaudeClient.defaultModel, session: URLSession = .shared) {
         self.apiKey = apiKey
@@ -98,7 +99,7 @@ struct ClaudeClient: Sendable {
                 return try await performStreaming(request)
             } catch let error as ClientError where error.isRetryable && attempt < maxRetries {
                 attempt += 1
-                try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))
+                try await Task.sleep(nanoseconds: UInt64(min(pow(2.0, Double(attempt)), 30) * 1_000_000_000))
             } catch let error as URLError where attempt < maxRetries && error.code != .cancelled {
                 attempt += 1
                 try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))

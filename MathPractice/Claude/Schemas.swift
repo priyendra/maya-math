@@ -18,11 +18,11 @@ enum Schema {
 
 // MARK: - Extraction (per batch of pages)
 
-struct ExtractionDTO: Decodable {
-    struct Box: Decodable { let x: Double; let y: Double; let width: Double; let height: Double }
-    struct Section: Decodable { let heading: String; let summary: String }
-    struct Example: Decodable { let section_heading: String; let text: String }
-    struct Item: Decodable {
+struct ExtractionDTO: Codable {
+    struct Box: Codable { let x: Double; let y: Double; let width: Double; let height: Double }
+    struct Section: Codable { let heading: String; let summary: String }
+    struct Example: Codable { let section_heading: String; let text: String }
+    struct Item: Codable {
         let book_ref: String
         let section_heading: String
         let page_number: Int
@@ -30,7 +30,7 @@ struct ExtractionDTO: Decodable {
         let has_figure: Bool
         let figure_box: Box
     }
-    struct Key: Decodable { let book_ref: String; let answer: String }
+    struct Key: Codable { let book_ref: String; let answer: String }
 
     let sections: [Section]
     let worked_examples: [Example]
