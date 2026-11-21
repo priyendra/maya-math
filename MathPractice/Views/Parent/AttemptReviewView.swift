@@ -1,0 +1,64 @@
+import SwiftUI
+import SwiftData
+
+/// Parent view of one answer: her work, Claude's grading, and an override.
+struct AttemptReviewView: View {
+    @Bindable var attempt: Attempt
+    @Environment(\.modelContext) private var context
+    @State private var mistake: MistakeType = .procedural
+
+    var body: some View {
+        Form {
+            if let q = attempt.question {
+                Section("Question") {
+                    MathText(markdown: q.text, fontSize: 18)
+                    if let fig = q.figureData, let img = UIImage(data: fig) {
+                        Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 220)
+                    }
+                    LabeledContent("Reference answer") { MathText(markdown: q.referenceAnswer, fontSize: 16).frame(width: 300) }
+                }
+            }
+            Section("Her work") {
+                if let data = attempt.renderedImage, let img = UIImage(data: data) {
+                    Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 500)
+                } else {
+                    Text("No work recorded").foregroundStyle(.secondary)
+                }
+                LabeledContent("Time", value: "\(Int(attempt.activeSeconds)) s")
+                LabeledContent("Mode", value: attempt.mode == .exam ? "Exam" : "Practice")
+            }
+            Section("Claude's grading") {
+                HStack { VerdictBadge(verdict: attempt.verdict); Text(attempt.verdict.rawValue.capitalized) }
+                if !attempt.transcribedAnswer.isEmpty { LabeledContent("Read her answer as", value: attempt.transcribedAnswer) }
+                if let m = attempt.mistakeType { LabeledContent("Mistake type", value: m.displayName) }
+                if !attempt.errorStep.isEmpty { Text("Where: \(attempt.errorStep)") }
+                if !attempt.feedback.isEmpty { MathText(markdown: attempt.feedback, fontSize: 16) }
+                LabeledContent("Confidence", value: String(format: "%.0f%%", attempt.graderConfidence * 100))
+            }
+            Section {
+                if let override = attempt.parentOverride {
+                    HStack { Text("Your override:"); VerdictBadge(verdict: override); Text(override.rawValue.capitalized) }
+                    Button("Clear override") { setOverride(nil) }
+                }
+                Button("Mark correct") { setOverride(.correct) }
+                Picker("Mistake type", selection: $mistake) {
+                    ForEach(MistakeType.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                }
+                Button("Mark incorrect") { setOverride(.incorrect) }
+            } header: {
+                Text("Override")
+            } footer: {
+                Text("Overrides update her progress for this chapter.")
+            }
+        }
+        .navigationTitle("Answer")
+        .onAppear { if let m = attempt.mistakeType { mistake = m } }
+    }
+
+    private func setOverride(_ verdict: Verdict?) {
+        attempt.parentOverride = verdict
+        if verdict == .incorrect { attempt.mistakeType = mistake }
+        if verdict == .correct { attempt.mistakeType = nil }
+        if let chapter = attempt.question?.chapter { LearningStore.rebuild(chapter, context: context) }
+    }
+}
