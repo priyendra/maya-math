@@ -5,10 +5,23 @@ import SwiftData
 /// Debug-only sample chapter (launch with `-seedSample`) for trying the UI without scanning or an API key.
 @MainActor
 enum SampleData {
+    private static func putInFolders(_ chapter: Chapter, _ context: ModelContext) {
+        let parent = Folder(name: "Student")
+        let child = Folder(name: "School algebra")
+        context.insert(parent); context.insert(child)
+        child.parent = parent
+        chapter.folder = child
+        try? context.save()
+    }
+
     static func seedIfRequested(context: ModelContext) {
         guard ProcessInfo.processInfo.arguments.contains("-seedSample") else { return }
         let existing = (try? context.fetch(FetchDescriptor<Chapter>())) ?? []
-        guard existing.isEmpty else { return }
+        if let first = existing.first {
+            // Data left by an earlier test run: just make sure the requested folder layout exists.
+            if ProcessInfo.processInfo.arguments.contains("-seedInFolder"), first.folder == nil { putInFolders(first, context) }
+            return
+        }
 
         let chapter = Chapter(title: "Ch. 2 · Solving Linear Equations")
         chapter.status = .ready
@@ -67,13 +80,7 @@ enum SampleData {
             }
         }
         chapter.outline = nodes
-        if ProcessInfo.processInfo.arguments.contains("-seedInFolder") {
-            let parent = Folder(name: "Student")
-            let child = Folder(name: "School algebra")
-            context.insert(parent); context.insert(child)
-            child.parent = parent
-            chapter.folder = child
-        }
+        if ProcessInfo.processInfo.arguments.contains("-seedInFolder") { putInFolders(chapter, context) }
         if ProcessInfo.processInfo.arguments.contains("-seedGraded"), let q = chapter.questions.first(where: { $0.difficulty == 3 }) {
             let a = Attempt(mode: .practice)
             a.question = q
