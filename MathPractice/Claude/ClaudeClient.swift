@@ -116,6 +116,39 @@ struct ClaudeClient: Sendable {
         }
     }
 
+    /// A multi-turn conversation, streamed: `onText` receives each piece of reply text as it arrives (the tutor
+    /// starts speaking before the reply is complete). Retries only if nothing has been passed on yet.
+    func converse(system: String, messages: [[String: Any]], effort: Effort, maxTokens: Int, kind: String,
+                  onText: @escaping (String) -> Void) async throws -> String {
+        guard let key = apiKey(), !key.isEmpty else { throw ClientError.missingAPIKey }
+        var body = Self.requestBody(model: model, system: system, content: [], schema: nil, effort: effort, maxTokens: maxTokens)
+        body["messages"] = messages
+        // The system prompt and the first turn's context are the same every turn: cache them.
+        body["system"] = [["type": "text", "text": system, "cache_control": ["type": "ephemeral"]]]
+        let request = try Self.urlRequest(apiKey: key, body: body)
+        final class Flag { var emitted = false }
+        let flag = Flag()
+        var attempt = 0
+        let started = Date()
+        while true {
+            do {
+                let (text, usage) = try await performStreaming(request) { flag.emitted = true; onText($0) }
+                CallLog.record(kind: kind, model: model, effort: effort.rawValue, started: started, retries: attempt,
+                               usage: usage, error: nil, response: text)
+                return text
+            } catch let error as ClientError where error.isRetryable && !flag.emitted && attempt < 2 {
+                attempt += 1
+                try await Task.sleep(nanoseconds: UInt64(attempt) * 1_000_000_000)
+            } catch {
+                if !(error is CancellationError), (error as? URLError)?.code != .cancelled {
+                    CallLog.record(kind: kind, model: model, effort: effort.rawValue, started: started, retries: attempt,
+                                   usage: [:], error: error.localizedDescription, response: nil)
+                }
+                throw error
+            }
+        }
+    }
+
     // MARK: - Request building (internal for tests)
 
     static func requestBody(model: String, system: String, content: [Block], schema: OrderedObject?, effort: Effort, maxTokens: Int) -> [String: Any] {
@@ -149,7 +182,7 @@ struct ClaudeClient: Sendable {
 
     // MARK: - Streaming
 
-    private func performStreaming(_ request: URLRequest) async throws -> (String, [String: Int]) {
+    private func performStreaming(_ request: URLRequest, onText: ((String) -> Void)? = nil) async throws -> (String, [String: Int]) {
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse else { throw ClientError.stream("no HTTP response") }
         if http.statusCode != 200 {
@@ -159,7 +192,7 @@ struct ClaudeClient: Sendable {
         }
         var parser = SSEAccumulator()
         for try await line in bytes.lines {
-            try parser.consume(line: line)
+            if let delta = try parser.consume(line: line), let onText { onText(delta) }
         }
         return (try parser.finish(), parser.usage)
     }
@@ -189,12 +222,14 @@ struct SSEAccumulator {
         for (k, v) in u { if let n = v as? Int { usage[k] = n } }
     }
 
-    mutating func consume(line: String) throws {
-        guard line.hasPrefix("data:") else { return }
+    /// Returns newly arrived reply text, if this line carried any.
+    @discardableResult
+    mutating func consume(line: String) throws -> String? {
+        guard line.hasPrefix("data:") else { return nil }
         let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
         guard let data = payload.data(using: .utf8),
               let event = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let type = event["type"] as? String else { return }
+              let type = event["type"] as? String else { return nil }
 
         switch type {
         case "message_start":
@@ -204,7 +239,9 @@ struct SSEAccumulator {
                let block = event["content_block"] as? [String: Any],
                block["type"] as? String == "text" {
                 textBlockIndices.insert(index)
-                textByIndex[index] = (block["text"] as? String) ?? ""
+                let initial = (block["text"] as? String) ?? ""
+                textByIndex[index] = initial
+                if !initial.isEmpty { return initial }
             }
         case "content_block_delta":
             if let index = event["index"] as? Int, textBlockIndices.contains(index),
@@ -212,6 +249,7 @@ struct SSEAccumulator {
                delta["type"] as? String == "text_delta",
                let text = delta["text"] as? String {
                 textByIndex[index, default: ""] += text
+                return text
             }
         case "message_delta":
             mergeUsage(event["usage"])
@@ -234,6 +272,7 @@ struct SSEAccumulator {
         default:
             break
         }
+        return nil
     }
 
     func finish() throws -> String {

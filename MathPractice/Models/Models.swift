@@ -229,6 +229,8 @@ final class Attempt {
     var wasStuck: Bool = false
     /// The hint she asked for before answering ("" if none). Hinted answers don't move mastery.
     var hintText: String = ""
+    /// Voice conversations with the tutor about this answer, in order.
+    @Relationship(deleteRule: .cascade, inverse: \TutorTurn.attempt) var tutorTurns: [TutorTurn] = []
     var question: Question?
 
     init(mode: AttemptMode, startedAt: Date = Date()) {
@@ -359,4 +361,22 @@ final class StudyScope {
     var folder: Folder?
 
     init(name: String) { self.name = name }
+}
+
+/// One turn of a tutor conversation about an answer: what she said (with a picture of her page and pencil
+/// marks), or the tutor's reply (its raw SAY/WRITE/POINT script).
+@Model
+final class TutorTurn {
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var fromStudent: Bool = false
+    var text: String = ""
+    @Attribute(.externalStorage) var snapshot: Data?
+    var attempt: Attempt?
+
+    init(fromStudent: Bool, text: String, snapshot: Data? = nil) {
+        self.fromStudent = fromStudent
+        self.text = text
+        self.snapshot = snapshot
+    }
 }

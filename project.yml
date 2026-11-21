@@ -34,6 +34,8 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSCameraUsageDescription: Scan textbook pages to create a practice chapter.
         NSPhotoLibraryUsageDescription: Import photos of textbook pages.
+        NSMicrophoneUsageDescription: So you can talk with the math tutor about a question.
+        NSSpeechRecognitionUsageDescription: So the tutor can understand what you say. Speech is recognized on this iPad when possible.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.family.mathpractice.app

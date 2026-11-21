@@ -14,6 +14,6 @@ struct MathPracticeApp: App {
             #endif
         }
         .modelContainer(for: [Chapter.self, PageImage.self, Concept.self, Question.self, Attempt.self,
-                              SkillState.self, ExamSession.self, ContentBlock.self, Folder.self, StudyScope.self])
+                              SkillState.self, ExamSession.self, ContentBlock.self, Folder.self, StudyScope.self, TutorTurn.self])
     }
 }

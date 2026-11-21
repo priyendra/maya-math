@@ -22,8 +22,12 @@
 	<string>1</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Scan textbook pages to create a practice chapter.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>So you can talk with the math tutor about a question.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Import photos of textbook pages.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>So the tutor can understand what you say. Speech is recognized on this iPad when possible.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiresFullScreen</key>

@@ -39,6 +39,11 @@ struct AttemptReviewView: View {
                     Button { showSolution = true } label: { Label("Show solution", systemImage: "doc.text.magnifyingglass") }
                 }
             }
+            if !attempt.tutorTurns.isEmpty {
+                Section("Your talks with the tutor") {
+                    ForEach(attempt.tutorTurns.sorted { $0.createdAt < $1.createdAt }) { t in TutorTurnRow(turn: t) }
+                }
+            }
             Section {
                 if let override = attempt.correction {
                     HStack { Text("You changed the grade to:"); VerdictBadge(verdict: override); Text(override.rawValue.capitalized) }
@@ -58,7 +63,7 @@ struct AttemptReviewView: View {
         }
         .navigationTitle("Answer")
         .fullScreenCover(isPresented: $showSolution) {
-            if let q = attempt.question { SolutionSheet(question: q, solution: attempt.workedSolution) }
+            SolutionPage(attempt: attempt)
         }
         .onAppear { if let m = attempt.mistakeType { mistake = m } }
     }
@@ -68,5 +73,40 @@ struct AttemptReviewView: View {
         if verdict == .incorrect { attempt.mistakeType = mistake }
         if verdict == .correct { attempt.mistakeType = nil }
         if let chapter = attempt.question?.chapter { LearningStore.rebuild(chapter, context: context) }
+    }
+}
+
+/// One saved turn of a tutor conversation: what she said (with her page), or what the tutor said and wrote.
+struct TutorTurnRow: View {
+    let turn: TutorTurn
+    @State private var zoom = false
+
+    var body: some View {
+        if turn.fromStudent {
+            HStack(alignment: .top, spacing: 12) {
+                Label("You", systemImage: "person.fill").font(.subheadline.bold()).foregroundStyle(.green).frame(width: 80, alignment: .leading)
+                Text(turn.text)
+                Spacer()
+                if let d = turn.snapshot, let img = UIImage(data: d) {
+                    Image(uiImage: img).resizable().scaledToFit().frame(height: 70)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .onTapGesture { zoom = true }
+                        .sheet(isPresented: $zoom) { Image(uiImage: img).resizable().scaledToFit().padding() }
+                }
+            }
+        } else {
+            HStack(alignment: .top, spacing: 12) {
+                Label("Tutor", systemImage: "graduationcap.fill").font(.subheadline.bold()).foregroundStyle(.purple).frame(width: 80, alignment: .leading)
+                let beats = turn.text.components(separatedBy: "\n").compactMap(TutorScriptParser.beat)
+                let md = beats.compactMap { b -> String? in
+                    switch b {
+                    case let .say(s): return s
+                    case let .write(w): return "> " + w
+                    case .point: return nil
+                    }
+                }.joined(separator: "\n\n")
+                MathText(markdown: md, fontSize: 16)
+            }
+        }
     }
 }

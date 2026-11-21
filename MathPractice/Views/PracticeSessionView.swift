@@ -43,6 +43,8 @@ struct PracticeSessionView: View {
     @State private var solutionText = ""
     @State private var helpError: String?
     /// Break: clocks stopped, question and canvas hidden.
+    @State private var solutionAttempt: Attempt?
+    @State private var tutorOpen = false
     @State private var paused = false
     /// Looking back at earlier questions of this session: clocks stopped.
     @State private var browsing = false
@@ -109,6 +111,9 @@ struct PracticeSessionView: View {
             }
         }
         .onAppear(perform: start)
+        .fullScreenCover(isPresented: $tutorOpen, onDismiss: { if !onHold { questionClock.resume() } }) {
+            if let solutionAttempt { SolutionPage(attempt: solutionAttempt) }
+        }
         .onReceive(ticker) { t in
             if phase == .finishing, let since = finishingSince, t.timeIntervalSince(since) > Self.finalWaitSeconds { showFinal() }
         }
@@ -212,8 +217,16 @@ struct PracticeSessionView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Label("Solution", systemImage: "checkmark.seal.fill").font(.headline).foregroundStyle(.blue)
                 MathText(markdown: solutionText, fontSize: 18, maxHeight: 380)
-                Text("Read it through, try writing it out yourself below, then tap Next. You'll get another one like this soon.")
-                    .font(.callout).foregroundStyle(.secondary)
+                HStack {
+                    Text("Read it through, try writing it out yourself below, then tap Next. You'll get another one like this soon.")
+                        .font(.callout).foregroundStyle(.secondary)
+                    if solutionAttempt != nil {
+                        Button { questionClock.pause(); tutorOpen = true } label: {
+                            Label("Talk to the tutor", systemImage: "waveform.circle.fill")
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
             }
             .padding(12).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
@@ -267,6 +280,7 @@ struct PracticeSessionView: View {
         help = .none
         hintText = ""
         solutionText = ""
+        solutionAttempt = nil
         helpError = nil
         currentPick = pick
         current = q
@@ -332,6 +346,7 @@ struct PracticeSessionView: View {
                 attempt.revealed = true
                 GradingQueue.shared.record(attempt, r, context: context)
                 solutionText = r.workedSolution
+                solutionAttempt = attempt
                 help = .solution
             } catch {
                 guard current?.id == q.id else { return }
@@ -471,6 +486,7 @@ struct FeedbackCard: View {
             if attempt.effectiveVerdict == .incorrect, !attempt.workedSolution.isEmpty {
                 if attempt.wasStuck {
                     MathText(markdown: attempt.workedSolution, fontSize: 17)
+                    Button { showSolution = true } label: { Label("Talk to the tutor about it", systemImage: "waveform.circle") }
                 } else {
                     Button { showSolution = true } label: { Label("Show solution", systemImage: "doc.text.magnifyingglass") }
                 }
@@ -484,30 +500,7 @@ struct FeedbackCard: View {
         .padding(20)
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
         .sheet(isPresented: $disagree) { NavigationStack { AttemptReviewView(attempt: attempt) } }
-        .fullScreenCover(isPresented: $showSolution) { SolutionSheet(question: question, solution: attempt.workedSolution) }
-    }
-}
-
-/// The full worked solution, with the question it answers, scrolling on its own (never clipped).
-struct SolutionSheet: View {
-    let question: Question
-    let solution: String
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                QuestionPanel(question: question, label: "Question")
-                    .padding(16)
-                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-                Text("Solution").font(.headline).foregroundStyle(.blue)
-                MathText(markdown: solution, fontSize: 18, fill: true)
-            }
-            .padding(20)
-            .navigationTitle("Solution")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-        }
+        .fullScreenCover(isPresented: $showSolution) { SolutionPage(attempt: attempt) }
     }
 }
 

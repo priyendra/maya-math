@@ -98,6 +98,14 @@ Running record of product decisions and open discussion topics. Newest decisions
   appended at the bottom) so her ink stays anchored; the tutor's cursor points into the same page. She clears ink
   herself. Conversations (words, ink snapshots, tutor replies) are saved with the answer.
 
+- **Voice turn-taking is hands-free:** after the tutor speaks it listens; ~1.5 s of silence ends her turn (pencil
+  activity keeps the turn open); tapping the page stops the tutor and listens. Gives up after ~45 s of quiet
+  ("Tap Talk"). Recognition on-device when available.
+- **Tutor v1 (built):** replies are tagged lines (SAY / WRITE / POINT) acted on while streaming; pointing is per
+  page part (question, her work, where it went wrong, each solution step, each board line); term-level pointing
+  later if needed. Context: question, her work, grading, page parts, and the textbook lesson the question belongs
+  to (nearest section with its own explanation/examples). Effort low for quick replies.
+
 ## Open topics
-- Voice turn-taking: hands-free (listens automatically after the tutor speaks, tap to interrupt) vs. push-to-talk.
+(none)
 
