@@ -20,8 +20,14 @@ Running record of product decisions and open discussion topics. Newest decisions
   difficulty 1–3, pencil-compatible (no → excluded automatically, shown greyed out in the Read view).
 - **Exercise parts** that share one stem (a, b, c…) stay together as one question; graded once.
   "Oral" vs. written is ignored.
-- **Just-in-time solving:** solve a question (once) shortly before she reaches it; book answer key used as the
-  check when present; generated questions still get two independent solves.
+- **No separate solving step** (supersedes "just-in-time solving"). The grader solves each question itself
+  first: its own answer is the first field of the grading output, before the verdict, and if it differs from her
+  answer it must explain the equivalence before marking her correct. It writes a worked solution when she's
+  wrong. The book's answer key, when present, goes into the grading request. Safeguards: the existing high-effort
+  recheck for uncertain grades, and periodic audits of stored attempts (incl. math-library checks); bring back
+  a separate solve if audits show false "correct" verdicts.
+- **Generated questions get extra validation:** an independent check when a question is created, and
+  stricter grading for attempts on generated questions.
 - **No page dewarping.** Text is re-typeset; only diagram crops use the scan, and distortion there is minor.
 - **Background grading:** "Next" moves on immediately; each answer is graded as soon as it's submitted (not
   batched); results shown at a check-in about every 10 minutes; a conceptual mistake is shown at the next
@@ -49,7 +55,6 @@ Running record of product decisions and open discussion topics. Newest decisions
   range. (First chapter: pages 185–245, complete; ~9 footers clipped by the scanner but inferable.)
 
 ## Open topics (discuss in order)
-1. Just-in-time solving: details (how far ahead, what happens offline / on failure).
-2. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
+1. Organization: folders (free-form, rearrangeable) → chapters → scopes; history stays attached to the chapter;
    scopes can span chapters (finals).
-3. Background grading details: check-in interval, what the check-in screen shows.
+2. Background grading details: check-in interval, what the check-in screen shows.
