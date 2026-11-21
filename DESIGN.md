@@ -69,6 +69,9 @@ Running record of product decisions and open discussion topics. Newest decisions
   "Keep going" (similar questions already queued for misses). Conceptual mistakes interrupt at the next
   question boundary with the same expanded view. Check-in time counts toward the session but not toward any
   question's time. Exam mode unchanged.
+- **Deferred (watch in real use):** also interrupt when the *same kind* of mistake repeats on a skill (e.g.
+  taking √(9a²) as 9a twice, graded "procedural" both times), since mistake categories are a judgment call.
+  Revisit if real sessions show repeated mistakes slipping through to check-ins.
 
 ## Open topics
 (none)
