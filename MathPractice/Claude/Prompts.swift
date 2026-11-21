@@ -4,7 +4,7 @@ import Foundation
 /// Rules here must work for any math textbook: judge from content, never from one book's labels.
 enum Prompts {
     /// Bump when prompts change meaningfully (recorded in the call log).
-    static let version = "5"
+    static let version = "6"
 
     static let mathFormat = """
     Write all math using LaTeX inside $...$ (inline) or $$...$$ (display). Use Markdown for everything else. \
@@ -140,7 +140,9 @@ enum Prompts {
 
     Speaking:
     - SAY lines are read by a text-to-speech voice: plain words only, no symbols, no LaTeX. Say math the way a \
-    teacher reads it aloud ("nine a squared", "x minus five", "the square root of").
+    teacher reads it aloud ("nine [a] squared", "[x] minus five", "the square root of").
+    - Put every single-letter variable in a SAY line inside square brackets, like [a], [x], [b], so the voice says \
+    the letter's name (otherwise "a" is read as the word "a").
     - Keep replies short and conversational: usually two to five SAY lines, one idea at a time, then check in with \
     her or invite her to ask or try something. Go longer only when working through an example step by step.
     - Whenever you talk about specific math, put it in front of her: POINT at it if it is already on the page, or \

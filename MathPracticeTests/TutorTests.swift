@@ -20,6 +20,17 @@ final class TutorTests: XCTestCase {
         XCTAssertNil(TutorScriptParser.beat("   "))
     }
 
+    func testVariableLettersAreSaidByName() {
+        XCTAssertEqual(TutorScriptParser.spoken("The square root of nine [a] squared is three [a]."),
+                       "The square root of nine ay squared is three ay.")
+        XCTAssertEqual(TutorScriptParser.spoken("the square root of nine a squared is three a, not nine a."),
+                       "the square root of nine ay squared is three ay, not nine ay.")
+        XCTAssertEqual(TutorScriptParser.spoken("using a equals x cubed"), "using ay equals x cubed")
+        XCTAssertEqual(TutorScriptParser.spoken("x plus a, which is a perfect square"), "x plus ay, which is a perfect square")
+        XCTAssertEqual(TutorScriptParser.spoken("That's a good question with a twist."), "That's a good question with a twist.")
+        XCTAssertEqual(TutorScriptParser.spoken("plus a little more"), "plus a little more")
+    }
+
     func testSolutionSteps() {
         let sol = "1. Write each term as a square: $1 = 1^2$.\n2. So\n$$1-9a^2 = (1-3a)(1+3a)$$\n3. Check. ✓"
         XCTAssertEqual(TutorScriptParser.steps(sol), ["1. Write each term as a square: $1 = 1^2$.", "2. So\n$$1-9a^2 = (1-3a)(1+3a)$$", "3. Check. ✓"])

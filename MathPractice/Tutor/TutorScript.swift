@@ -50,8 +50,31 @@ struct TutorScriptParser {
     }
 
     /// Text-to-speech reads symbols badly; the prompt asks for words, this cleans up whatever slips through.
-    static func spoken(_ s: String) -> String {
+    static let letterNames: [Character: String] = [
+        "a": "ay", "b": "bee", "c": "see", "d": "dee", "e": "ee", "f": "eff", "g": "jee", "h": "aitch", "i": "eye",
+        "j": "jay", "k": "kay", "l": "el", "m": "em", "n": "en", "o": "oh", "p": "pee", "q": "cue", "r": "ar",
+        "s": "ess", "t": "tee", "u": "you", "v": "vee", "w": "double you", "x": "ex", "y": "why", "z": "zee",
+    ]
+
+    /// Variable letters said by name: "[a]" → "ay". Also catches an unmarked variable "a" where English never puts
+    /// the article (after a number, or before squared/cubed/equals…), so "nine a squared" isn't read "nine uh squared".
+    static func nameVariables(_ s: String) -> String {
         var t = s
+        for (letter, name) in letterNames {
+            t = t.replacingOccurrences(of: "[\(letter)]", with: name)
+            t = t.replacingOccurrences(of: "[\(letter.uppercased())]", with: name)
+        }
+        let numbers = "\\d|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|hundred"
+        t = t.replacingOccurrences(of: "(?i)(\\b(?:\(numbers)))\\s+a\\b", with: "$1 ay", options: .regularExpression)
+        t = t.replacingOccurrences(of: "\\ba(?=\\s+(?:squared|cubed|equals|plus|minus|times|over|to the|and b\\b))",
+                                   with: "ay", options: .regularExpression)
+        t = t.replacingOccurrences(of: "(?<=\\b(?:plus|minus|times|over|equals)\\s)a\\b(?!\\s+(?:lot|few|bit|little|number|term|factor|perfect|difference|sum|product)\\b)",
+                                   with: "ay", options: .regularExpression)
+        return t
+    }
+
+    static func spoken(_ s: String) -> String {
+        var t = nameVariables(s)
         for (a, b) in [("\\cdot", " times "), ("\\times", " times "), ("\\sqrt", " the square root of "),
                        ("^2", " squared"), ("^3", " cubed"), ("\\pm", " plus or minus "), ("\\ne", " is not equal to ")] {
             t = t.replacingOccurrences(of: a, with: b)
