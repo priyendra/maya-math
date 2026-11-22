@@ -63,6 +63,7 @@ enum SampleData {
             // Data left by an earlier test run: just make sure the requested folder layout exists.
             if ProcessInfo.processInfo.arguments.contains("-seedInFolder"), first.folder == nil { putInFolders(first, context) }
             if ProcessInfo.processInfo.arguments.contains("-seedLessons") { seedLessons(first, context) }
+            seedGraded(first, context)
             return
         }
 
@@ -125,7 +126,17 @@ enum SampleData {
         chapter.outline = nodes
         if ProcessInfo.processInfo.arguments.contains("-seedInFolder") { putInFolders(chapter, context) }
         if ProcessInfo.processInfo.arguments.contains("-seedLessons") { seedLessons(chapter, context) }
-        if ProcessInfo.processInfo.arguments.contains("-seedGraded"), let q = chapter.questions.first(where: { $0.difficulty == 3 }) {
+        seedGraded(chapter, context)
+        try? context.save()
+        ChapterProcessor.shared.ensureSkills(chapter, context: context)
+    }
+
+    /// A graded wrong practice answer (for the check-in and tutor tests); re-added if an earlier test cleared history.
+    static func seedGraded(_ chapter: Chapter, _ context: ModelContext) {
+        guard ProcessInfo.processInfo.arguments.contains("-seedGraded"),
+              !chapter.allAttempts.contains(where: { $0.mode == .practice && $0.isGraded }),
+              let q = chapter.questions.first(where: { $0.difficulty == 3 }) else { return }
+        do {
             let a = Attempt(mode: .practice)
             a.question = q
             a.isGraded = true
@@ -140,7 +151,6 @@ enum SampleData {
             context.insert(a)
         }
         try? context.save()
-        ChapterProcessor.shared.ensureSkills(chapter, context: context)
     }
 }
 #endif
