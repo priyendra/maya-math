@@ -63,7 +63,7 @@ private struct ConceptStatsRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(concept.name).font(.headline)
+            Text(MathPlain.render(concept.name)).font(.headline)
             if attempts.isEmpty {
                 Text("Not practiced yet").font(.caption).foregroundStyle(.secondary)
             } else {

@@ -13,7 +13,7 @@ struct ReadChapterView: View {
         let nodes = chapter.outline
         HStack(spacing: 0) {
             List(nodes, selection: $selected) { node in
-                Text(node.title)
+                Text(MathPlain.render(node.title))
                     .font(node.level == 1 ? .body.weight(.semibold) : .callout)
                     .padding(.leading, CGFloat(node.level - 1) * 14)
                     .tag(Optional(node.id))

@@ -140,7 +140,7 @@ struct PracticeSessionView: View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text(q.concept?.name ?? "").font(.caption.bold()).foregroundStyle(.secondary)
+                    Text(MathPlain.render(q.concept?.name ?? "")).font(.caption.bold()).foregroundStyle(.secondary)
                     Text(String(repeating: "●", count: q.difficulty)).font(.caption2).foregroundStyle(.orange)
                     if q.isChallenge { Label("Challenge", systemImage: "flame.fill").font(.caption.bold()).foregroundStyle(.red) }
                     if currentPick?.category == .reinforcement {

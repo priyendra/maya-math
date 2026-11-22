@@ -22,6 +22,7 @@
 		3089A521B9EE14DD7F6E3567 /* HelpProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039A3E5074D38B1C5691F340 /* HelpProvider.swift */; };
 		31145991F07C4C964B38827F /* ImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20F101DFF6614D81E98D398 /* ImageUtils.swift */; };
 		32F220A0DA1B40E5CB14E7D3 /* CallLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69AD3512B5009E2D88B32F68 /* CallLog.swift */; };
+		34E56D1F000ACCACCF53420B /* SkillsGridUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF72E3D176E1F1B94545C65 /* SkillsGridUITests.swift */; };
 		3834DD38D8867CAEE75965A1 /* VariantGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4827F8EF5EF188862466590F /* VariantGenerator.swift */; };
 		3BFF72369B645C851A46E3A9 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CDC08D495F22FAF745D4927 /* KeychainStore.swift */; };
 		3F0F9F05B6F63DD558DE1329 /* MyAnswersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE0AFF579E0ADA5742DEE3 /* MyAnswersView.swift */; };
@@ -57,6 +58,7 @@
 		AE552D07DFDE0CB0C6527DEB /* Schemas.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC5BBD6E47EBFF3DAACA0B1 /* Schemas.swift */; };
 		AE7A026EA0FD47E14E085FF0 /* PipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F82F02D874D1DA98548E7D9 /* PipelineTests.swift */; };
 		B3C65C0C5E767EF1DF62F33D /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D256DEF3FCE3F340EA0475B /* Speech.swift */; };
+		B5A6B59CCC63BA4033E0CCB2 /* MathPlain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 715129D145F487DFA2575D5F /* MathPlain.swift */; };
 		B8ACC9E6E04A06D3BF0B3A6E /* VoiceTutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F4EE611821FFB2B0CBD510 /* VoiceTutor.swift */; };
 		BAACC91351094CDC58E318C0 /* CheckInUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3352EA421577C75BDC7F236 /* CheckInUITests.swift */; };
 		BB7EE8A0D18D38B0074163CD /* JSONWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A14FB27BED8FA4B1892153 /* JSONWriter.swift */; };
@@ -98,6 +100,7 @@
 		039A3E5074D38B1C5691F340 /* HelpProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpProvider.swift; sourceTree = "<group>"; };
 		07F4CF90DCA0E731483BB305 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0D8C2A0F083C2ADCD8BF5BB1 /* MathPracticeUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MathPracticeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0DF72E3D176E1F1B94545C65 /* SkillsGridUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsGridUITests.swift; sourceTree = "<group>"; };
 		0E188F46B3AB7A984271D2AB /* WritingCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WritingCanvas.swift; sourceTree = "<group>"; };
 		1188FC44FDA09FB9AF140A7E /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		14F4EE611821FFB2B0CBD510 /* VoiceTutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTutor.swift; sourceTree = "<group>"; };
@@ -126,6 +129,7 @@
 		69AD3512B5009E2D88B32F68 /* CallLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallLog.swift; sourceTree = "<group>"; };
 		6DCE0AFF579E0ADA5742DEE3 /* MyAnswersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAnswersView.swift; sourceTree = "<group>"; };
 		6ED67685E937EC514E30ED7F /* ProgressReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressReportView.swift; sourceTree = "<group>"; };
+		715129D145F487DFA2575D5F /* MathPlain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathPlain.swift; sourceTree = "<group>"; };
 		743FCCE53E1AC4308EAFE1AD /* ScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanTests.swift; sourceTree = "<group>"; };
 		75F7D607EC608E24A41A6259 /* LessonUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonUITests.swift; sourceTree = "<group>"; };
 		763D8DFC380CFEE7821043C2 /* GradingQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradingQueue.swift; sourceTree = "<group>"; };
@@ -243,6 +247,7 @@
 				75F7D607EC608E24A41A6259 /* LessonUITests.swift */,
 				A44CD57438440D0BE6E0745E /* LibraryUITests.swift */,
 				65CB75D511DE7DCCBD2D5478 /* ScanFixUITests.swift */,
+				0DF72E3D176E1F1B94545C65 /* SkillsGridUITests.swift */,
 				AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */,
 			);
 			path = MathPracticeUITests;
@@ -333,6 +338,7 @@
 				1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */,
 				D20F101DFF6614D81E98D398 /* ImageUtils.swift */,
 				4CDC08D495F22FAF745D4927 /* KeychainStore.swift */,
+				715129D145F487DFA2575D5F /* MathPlain.swift */,
 				9A1CDC9394B9629E2AEAF5FB /* MathText.swift */,
 				B55804A2BBA01524A634BFB1 /* ProblemReport.swift */,
 				EE7E0393C8469B25A370A297 /* SampleData.swift */,
@@ -490,6 +496,7 @@
 				E8CA688ECF4C09DF64F66CCB /* LessonsView.swift in Sources */,
 				86D316C7E1DC9EACB871F4CB /* LibraryView.swift in Sources */,
 				511A7DDA9EB461F2F6FE0F87 /* MasteryModel.swift in Sources */,
+				B5A6B59CCC63BA4033E0CCB2 /* MathPlain.swift in Sources */,
 				87C5B78FEB0A2AB285A0760C /* MathPracticeApp.swift in Sources */,
 				A03AB31335605891567B4841 /* MathText.swift in Sources */,
 				4BC5CA53488CFDC631DFBB6D /* Models.swift in Sources */,
@@ -531,6 +538,7 @@
 				EEE89F3E1373A579FEB1CD0F /* LessonUITests.swift in Sources */,
 				0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */,
 				46C498886EE4542552E09E0F /* ScanFixUITests.swift in Sources */,
+				34E56D1F000ACCACCF53420B /* SkillsGridUITests.swift in Sources */,
 				C9121E4B2CBE646909447359 /* TutorLiveProbeUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

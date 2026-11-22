@@ -64,6 +64,15 @@ final class LessonTests: XCTestCase {
         XCTAssertTrue(text.contains("[82] Rubric — 1 explanation paragraph"), text)
     }
 
+    func testMathInShortLabels() {
+        XCTAssertEqual(MathPlain.render("Factoring $x^2 + bx + c$ with $c$ positive"), "Factoring 𝑥² + 𝑏𝑥 + 𝑐 with 𝑐 positive")
+        XCTAssertEqual(MathPlain.render("Products $(a+b)(a-b)$"), "Products (𝑎+𝑏)(𝑎−𝑏)")
+        XCTAssertEqual(MathPlain.render("$\\frac{3}{4}$ of \\$20"), "3/4 of $20")
+        XCTAssertEqual(MathPlain.render("$\\left(x^{n+1}\\right) \\le \\sqrt{2x}$"), "(𝑥ⁿ⁺¹) ≤ √(2𝑥)")
+        XCTAssertEqual(MathPlain.render("$5\\text{ km}$ per $\\frac{a+b}{2}$"), "5 km per (𝑎+𝑏)/2")
+        XCTAssertEqual(MathPlain.render("no math here"), "no math here")
+    }
+
     func testContinueTagAndGoOnPhrases() {
         XCTAssertEqual(TutorScriptParser.beat("CONTINUE"), .resume)
         XCTAssertEqual(TutorScriptParser.beat("continue."), .resume)

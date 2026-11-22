@@ -106,7 +106,7 @@ struct ScopeEditorView: View {
             ForEach(chapter.outline) { node in
                 let key = "s|\(id)|\(node.id)"
                 Toggle(isOn: binding(key)) {
-                    Text(node.title).font(node.level == 1 ? .body.weight(.semibold) : .body)
+                    Text(MathPlain.render(node.title)).font(node.level == 1 ? .body.weight(.semibold) : .body)
                 }
                 .padding(.leading, CGFloat(node.level - 1) * 24)
                 .disabled(ancestorSelected(node, chapter))

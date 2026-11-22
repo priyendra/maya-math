@@ -69,7 +69,7 @@ struct LessonsView: View {
             HStack(spacing: 14) {
                 Image(systemName: "play.circle.fill").font(.system(size: 40))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(l.status == .inProgress ? "Continue: \(plain(l.title))" : "Start: \(plain(l.title))").font(.title3.bold())
+                    Text(l.status == .inProgress ? "Continue: \(MathPlain.render(l.title))" : "Start: \(MathPlain.render(l.title))").font(.title3.bold())
                     Text(l.status == .inProgress ? "Part \(l.partsDone + 1) of \(l.parts.count)" : "\(l.parts.count) part\(l.parts.count == 1 ? "" : "s") · about \(minutes(l)) min")
                         .font(.subheadline).opacity(0.85)
                 }
@@ -92,7 +92,7 @@ struct LessonsView: View {
                     Text("\(number)").font(.headline.monospacedDigit()).foregroundStyle(.secondary).frame(width: 22, alignment: .trailing)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 8) {
-                            MathText(markdown: l.title, fontSize: 18).fixedSize(horizontal: false, vertical: true)
+                            Text(MathPlain.render(l.title)).font(.title3)
                             if l.optional {
                                 Text("Optional").font(.caption.bold()).padding(.horizontal, 7).padding(.vertical, 2)
                                     .background(Color.secondary.opacity(0.15), in: Capsule())
@@ -115,7 +115,7 @@ struct LessonsView: View {
                         HStack(spacing: 10) {
                             Image(systemName: i < l.partsDone ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(i < l.partsDone ? .green : .secondary).font(.caption)
-                            Text("\(i + 1)  \(p.title)").font(.subheadline)
+                            Text("\(i + 1)  \(MathPlain.render(p.title))").font(.subheadline)
                         }
                     }
                     Button(l.status == .notStarted ? "Start lesson" : l.status == .done ? "Take it again" : "Continue lesson") { open = l }
@@ -145,7 +145,7 @@ struct LessonsView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     ForEach(skipped, id: \.self) { s in
                         HStack(alignment: .firstTextBaseline) {
-                            Text(titles[s.section_id] ?? "Section").font(.subheadline.weight(.medium))
+                            Text(MathPlain.render(titles[s.section_id] ?? "Section")).font(.subheadline.weight(.medium))
                             Text("— \(s.reason)").font(.subheadline).foregroundStyle(.secondary)
                         }
                     }
@@ -169,8 +169,6 @@ struct LessonsView: View {
 
     /// Rough time: about 5 minutes a part.
     private func minutes(_ l: Lesson) -> Int { max(5, l.parts.count * 5) }
-
-    private func plain(_ s: String) -> String { s.replacingOccurrences(of: "$", with: "") }
 
     private func plan() {
         planning = true

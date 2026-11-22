@@ -84,7 +84,7 @@ enum SampleData {
                 ("Write a computer program that solves $ax + b = c$ for any inputs.", 2, false, false),
                 ("Find all integers $n$ for which $\\frac{3n+7}{n+1}$ is an integer.", 3, true, true),
             ]),
-            ("2-3 Literal equations", "Solve a formula for one of its variables.", [
+            ("2-3 Literal equations like $A = lw$", "Solve a formula for one of its variables.", [
                 ("Solve $A = lw$ for $w$.", 1, true, false),
                 ("Solve $P = 2l + 2w$ for $l$.", 2, true, false),
             ]),

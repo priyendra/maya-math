@@ -23,7 +23,7 @@ struct LessonPage: View {
             InkPageView(ink: ink)
                 .background(Color(uiColor: .systemBackground))
                 .safeAreaInset(edge: .bottom) { bottomBar }
-                .navigationTitle(lesson.title)
+                .navigationTitle(MathPlain.render(lesson.title))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
@@ -56,7 +56,7 @@ struct LessonPage: View {
 
     private var progress: some View {
         VStack(spacing: 2) {
-            Text(lesson.title).font(.headline).lineLimit(1)
+            Text(MathPlain.render(lesson.title)).font(.headline).lineLimit(1)
             let n = tutor.parts.count
             if n > 0 {
                 HStack(spacing: 4) {
@@ -201,12 +201,12 @@ private struct LessonContent: View {
         switch e {
         case let .header(part, title, earlier):
             if earlier {
-                Label("Part \(part + 1) · \(title)", systemImage: "checkmark.circle.fill")
+                Label("Part \(part + 1) · \(MathPlain.render(title))", systemImage: "checkmark.circle.fill")
                     .font(.subheadline).foregroundStyle(.secondary)
             } else {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Part \(part + 1)").font(.caption.bold()).foregroundStyle(.blue)
-                    Text(title).font(.title2.bold())
+                    Text(MathPlain.render(title)).font(.title2.bold())
                 }
                 .padding(.top, part == 0 ? 0 : 18)
                 .part(e.id)

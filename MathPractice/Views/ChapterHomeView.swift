@@ -106,7 +106,7 @@ struct ChapterHomeView: View {
                     StudyActions(set: set)
                 }
 
-                HStack(spacing: 12) {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                     if chapter.status == .ready && !chapter.needsRereading && !chapter.blocks.isEmpty {
                         NavigationLink { LessonsView(chapter: chapter) } label: {
                             let done = chapter.lessons.filter { $0.status == .done }.count
@@ -280,7 +280,7 @@ struct MasteryGrid: View {
             }
             ForEach(concepts) { concept in
                 GridRow {
-                    Text(concept.name).font(.subheadline).lineLimit(2).frame(maxWidth: 260, alignment: .leading)
+                    Text(MathPlain.render(concept.name)).font(.subheadline).lineLimit(2).frame(maxWidth: 260, alignment: .leading)
                     ForEach(1...3, id: \.self) { d in
                         cell(concept: concept, difficulty: d, planner: planner, has: present.contains("\(concept.id)|\(d)"))
                     }
