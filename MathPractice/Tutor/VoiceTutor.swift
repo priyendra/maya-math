@@ -167,9 +167,14 @@ class VoiceTutor: ObservableObject {
         let fake = self.fake
         let script = fakeScript(turn: history.filter { $0["role"] as? String == "assistant" }.count)
         let network = Task.detached { () -> Error? in
+            let cloud = !fake && CloudVoice.isOn
             let onText: (String) -> Void = { chunk in
                 box.text += chunk
-                for b in box.parser.feed(chunk) { feed.yield(b) }
+                for b in box.parser.feed(chunk) {
+                    // Fetch each sentence's voice as soon as it arrives, while earlier ones are still playing.
+                    if cloud, case let .say(t) = b { Task { await CloudVoice.shared.prefetch(t) } }
+                    feed.yield(b)
+                }
             }
             do {
                 if fake {

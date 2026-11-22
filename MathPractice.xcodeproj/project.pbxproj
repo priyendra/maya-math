@@ -46,6 +46,7 @@
 		743305947D8715F10D8149F4 /* CanvasUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */; };
 		7E2BE72BBA38C3631CFAF9AF /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0393C8469B25A370A297 /* SampleData.swift */; };
 		80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */; };
+		81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */; };
 		828D0BE10F2E539503EC24BC /* TutorScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 412564532B12602F38109EFE /* TutorScript.swift */; };
 		86D316C7E1DC9EACB871F4CB /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8FEC8B73BD5C71E909B655 /* LibraryView.swift */; };
 		87C5B78FEB0A2AB285A0760C /* MathPracticeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7907F8F17ECCF8B44BA369 /* MathPracticeApp.swift */; };
@@ -111,6 +112,7 @@
 		1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanner.swift; sourceTree = "<group>"; };
 		1D256DEF3FCE3F340EA0475B /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		1E8393FD9C190CD55EF1AAE2 /* ScanFixView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanFixView.swift; sourceTree = "<group>"; };
+		204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVoice.swift; sourceTree = "<group>"; };
 		2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpAndPauseUITests.swift; sourceTree = "<group>"; };
 		23C04733293AB6BC3B01BDA9 /* LessonWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonWriter.swift; sourceTree = "<group>"; };
 		29EDDEEFC3356461554AEFFC /* LessonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonsView.swift; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 		9B643674FF01A5308BAD1ED4 /* Tutor */ = {
 			isa = PBXGroup;
 			children = (
+				204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */,
 				A9372EBC3923439A35CEAE84 /* LessonPage.swift */,
 				377F6A4A3700AD0523696B3F /* LessonSession.swift */,
 				7B619E7144F040EF32099A45 /* SolutionPage.swift */,
@@ -488,6 +491,7 @@
 				3F522BB2854B6093E1DE84C1 /* CheckInView.swift in Sources */,
 				C5E88D1B3963BA6AB97A9D40 /* ClaudeClient.swift in Sources */,
 				CC9CAAFBBE05499BD6F34B64 /* ClaudeServices.swift in Sources */,
+				81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */,
 				80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */,
 				1F28EF65C31C87942E6A464E /* ExamView.swift in Sources */,
 				297A67F5ED5BE2B258B95095 /* GradingQueue.swift in Sources */,

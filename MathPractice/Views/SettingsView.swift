@@ -122,30 +122,101 @@ struct SettingsView: View {
 /// Pick the tutor's voice by ear. Better voices are free downloads in iPadOS Settings.
 struct TutorVoiceSection: View {
     @AppStorage(Speaker.voiceKey) private var chosen = ""
+    @AppStorage(CloudVoice.engineKey) private var engine = "apple"
+    @AppStorage(CloudVoice.voiceKey) private var cloudVoice = CloudVoice.defaultVoice
     @State private var voices: [AVSpeechSynthesisVoice] = []
     @State private var synth = AVSpeechSynthesizer()
+    @State private var player: AVAudioPlayer?
+    @State private var hasKey = !(CloudVoice.apiKey ?? "").isEmpty
+    @State private var newKey = ""
+    @State private var checking = false
+    @State private var keyError: String?
+    @State private var previewing = false
+
+    private let sample = "Hi! Let's look at where it went wrong. The square root of nine a squared is three a."
 
     var body: some View {
         Section {
-            Picker("Voice", selection: $chosen) {
-                Text("Automatic (best installed)").tag("")
-                ForEach(voices, id: \.identifier) { v in Text(Speaker.describe(v)).tag(v.identifier) }
+            Picker("Voice from", selection: $engine) {
+                Text("This iPad").tag("apple")
+                Text("OpenAI (online)").tag("openai")
             }
-            Button { preview() } label: { Label("Preview", systemImage: "play.circle") }
+            .pickerStyle(.segmented)
+            if engine == "openai" {
+                if hasKey {
+                    Picker("Voice", selection: $cloudVoice) {
+                        ForEach(CloudVoice.voices, id: \.0) { v in Text("\(v.0.capitalized) — \(v.1)").tag(v.0) }
+                    }
+                    HStack {
+                        Label("OpenAI key saved", systemImage: "key.fill")
+                        Spacer()
+                        Button("Remove", role: .destructive) { KeychainStore.set(nil, for: CloudVoice.keyAccount); hasKey = false }
+                    }
+                } else {
+                    SecureField("Paste your OpenAI API key (sk-…)", text: $newKey)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Button {
+                        saveKey()
+                    } label: {
+                        if checking { ProgressView() } else { Text("Save key") }
+                    }
+                    .disabled(newKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || checking)
+                    if let keyError { Text(keyError).foregroundStyle(.red).font(.callout) }
+                }
+            } else {
+                Picker("Voice", selection: $chosen) {
+                    Text("Automatic (best installed)").tag("")
+                    ForEach(voices, id: \.identifier) { v in Text(Speaker.describe(v)).tag(v.identifier) }
+                }
+            }
+            Button { preview() } label: {
+                HStack { Label("Preview", systemImage: "play.circle"); if previewing { ProgressView().padding(.leading, 6) } }
+            }
+            .disabled(engine == "openai" && !hasKey)
         } header: {
             Text("Tutor voice")
         } footer: {
-            Text("Now using: \(Speaker.describe(Speaker.voice)). For a natural voice, download one for free: iPad Settings → Accessibility → Spoken Content → Voices → English → pick a voice marked Premium or Enhanced (e.g. Ava, Zoe), then come back and choose it here.")
+            if engine == "openai" {
+                Text("A natural voice from OpenAI. Each sentence the tutor says is sent to OpenAI to be spoken (a cent or two per minute of speech). If it can't be reached, the iPad's voice is used. The key is stored in this iPad's Keychain.")
+            } else {
+                Text("Now using: \(Speaker.describe(Speaker.voice)). For a natural voice, download one for free: iPad Settings → Accessibility → Spoken Content → Voices → English → pick a voice marked Premium or Enhanced (e.g. Ava, Zoe), then come back and choose it here.")
+            }
         }
         .onAppear { voices = Speaker.englishVoices }
     }
 
+    private func saveKey() {
+        let key = newKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        checking = true
+        keyError = nil
+        Task {
+            if let problem = await CloudVoice.test(key: key) {
+                keyError = problem
+            } else {
+                KeychainStore.set(key, for: CloudVoice.keyAccount)
+                hasKey = true
+                newKey = ""
+            }
+            checking = false
+        }
+    }
+
     private func preview() {
         synth.stopSpeaking(at: .immediate)
-        let u = AVSpeechUtterance(string: "Hi! Let's look at where it went wrong. The square root of nine a squared is three a.")
+        player?.stop()
+        if engine == "openai" {
+            previewing = true
+            Task {
+                let data = await CloudVoice.fetch(sample, voice: cloudVoice)
+                previewing = false
+                if let data, let p = try? AVAudioPlayer(data: data) { player = p; p.play() }
+                else { keyError = "Couldn't get the voice from OpenAI just now." }
+            }
+            return
+        }
+        let u = AVSpeechUtterance(string: sample)
         u.voice = Speaker.voice
         u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.98
         synth.speak(u)
     }
 }
-

@@ -3,8 +3,11 @@ import Speech
 
 /// The tutor's voice: the best installed English female voice (a downloaded Premium/Enhanced voice if there is one).
 @MainActor
-final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
+final class Speaker: NSObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
     private let synth = AVSpeechSynthesizer()
+    private var player: AVAudioPlayer?
+    /// Bumped by stop(), so a sentence whose cloud audio arrives after she interrupted isn't played.
+    private var generation = 0
     private var finished: CheckedContinuation<Void, Never>?
     /// Debug/UI tests: don't make sound, just wait a moment per line.
     var silent = false
@@ -43,12 +46,34 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
         synth.delegate = self
     }
 
-    /// Speaks one line and returns when it has finished (or was stopped).
+    /// Starts fetching a coming sentence's cloud audio, so it plays without a pause.
+    func prefetch(_ text: String) {
+        guard !silent, CloudVoice.isOn else { return }
+        Task { await CloudVoice.shared.prefetch(text) }
+    }
+
+    /// Speaks one line and returns when it has finished (or was stopped). Uses the cloud voice when it's on,
+    /// and the iPad's voice if the cloud audio can't be had.
     func speak(_ text: String) async {
         stop()
         if silent {
             try? await Task.sleep(nanoseconds: 300_000_000)
             return
+        }
+        if CloudVoice.isOn {
+            let gen = generation
+            let data = await CloudVoice.shared.audio(text)
+            guard gen == generation, !Task.isCancelled else { return }
+            if let data, let p = try? AVAudioPlayer(data: data) {
+                player = p
+                p.delegate = self
+                p.prepareToPlay()
+                await withCheckedContinuation { c in
+                    finished = c
+                    if !p.play() { resume() }
+                }
+                return
+            }
         }
         let u = AVSpeechUtterance(string: text)
         u.voice = Self.voice
@@ -61,8 +86,19 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     func stop() {
+        generation += 1
+        player?.stop()
+        player = nil
         if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
         resume()
+    }
+
+    nonisolated func audioPlayerDidFinishPlaying(_ p: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in self.resume() }
+    }
+
+    nonisolated func audioPlayerDecodeErrorDidOccur(_ p: AVAudioPlayer, error: Error?) {
+        Task { @MainActor in self.resume() }
     }
 
     private func resume() {

@@ -145,6 +145,11 @@ final class LessonSession: VoiceTutor {
         run = Task {
             while beatIndex < beats.count {
                 if Task.isCancelled { return }
+                // Have the next few sentences' voice ready before they're needed.
+                var ahead = 0
+                for b in beats[beatIndex...] where ahead < 3 {
+                    if case let .say(t) = b { speaker.prefetch(t); ahead += 1 }
+                }
                 await perform(beats[beatIndex])
                 if Task.isCancelled { return }   // interrupted mid-sentence: that sentence plays again on resume
                 if case let .say(t) = beats[beatIndex] { spoken.append(t) }
