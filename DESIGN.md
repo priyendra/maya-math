@@ -116,6 +116,14 @@ Running record of product decisions and open discussion topics. Newest decisions
 - **Deferred: one coherent visual design pass over the whole app** (type scale, spacing, buttons) rather than
   enlarging individual screens (a bigger library list looked out of proportion with the rest).
 
+- **Deferred: nicer figures in the digital chapter.** Text is transcribed well; figures are raw photo crops (grey
+  paper, shadows, tilt, loose crops with stray/duplicated prose, plus a typed "(Bar model: …)" description shown
+  under the picture). Found on "Rates and Speed" (46 of 363 blocks have crops). Options when we revisit:
+  (1) clean-up — whiten/flatten lighting, ask Claude for tighter figure boxes (local heuristics for trimming stray
+  text were fragile on tilted photos), hide the typed description when the picture shows (keep it for tutor/grading),
+  skip the photo when the text already covers it; (2) redraw structured diagrams (bar models, number lines, graphs)
+  as SVG with a compare-to-original check, keeping real illustrations as cleaned photos.
+
 ## Open topics
 (none)
 
