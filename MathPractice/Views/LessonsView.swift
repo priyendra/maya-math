@@ -15,30 +15,38 @@ struct LessonsView: View {
 
     var body: some View {
         let lessons = chapter.sortedLessons
+        let current = currentLesson(lessons)
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 20) {
                 if lessons.isEmpty {
                     prepareCard
                 } else {
-                    if let next = continueLesson(lessons) { continueCard(next) }
+                    overview(lessons)
                     VStack(spacing: 0) {
                         ForEach(Array(lessons.enumerated()), id: \.element.id) { i, l in
-                            row(l, number: lessons.first?.optional == true ? i : i + 1)  // a warm-up lesson is number 0
-                            if i < lessons.count - 1 { Divider().padding(.leading, 56) }
+                            pathStep(l, number: lessons.first?.optional == true ? i : i + 1,   // a warm-up lesson is number 0
+                                     isCurrent: l.id == current?.id, isLast: i == lessons.count - 1)
                         }
                     }
-                    .card(theme)
                     skippedList
-                    Button("Plan the lessons again") { plan() }
-                        .font(.caption).foregroundStyle(.secondary).disabled(planning)
                 }
             }
             .padding(24)
-            .frame(maxWidth: 900)
+            .frame(maxWidth: 860)
             .frame(maxWidth: .infinity)
         }
         .themedBackground(theme)
         .navigationTitle("Lessons")
+        .toolbar {
+            if !lessons.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button { plan() } label: { Label("Plan the lessons again", systemImage: "arrow.clockwise") }
+                            .disabled(planning)
+                    } label: { Label("More", systemImage: "ellipsis.circle") }
+                }
+            }
+        }
         .fullScreenCover(item: $open) { l in LessonPage(lesson: l, onNext: { next in open = nil; DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { open = next } }) }
         #if DEBUG
         .onAppear {
@@ -50,92 +58,163 @@ struct LessonsView: View {
     // MARK: Pieces
 
     private var prepareCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Learn this chapter, one lesson at a time", systemImage: "graduationcap.fill").font(theme.font(.section)).foregroundStyle(theme.learn)
+        VStack(alignment: .leading, spacing: 14) {
+            Image(systemName: "graduationcap.fill").font(.system(size: 30)).foregroundStyle(.white)
+                .frame(width: 60, height: 60).background(theme.learn, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            Text("Learn this chapter, one lesson at a time").font(theme.font(.section))
             Text("A tutor walks you through each part of the chapter out loud, with the book's examples, then gives you one to try. Ask a question any time.")
-                .foregroundStyle(.secondary)
+                .font(theme.font(.body)).foregroundStyle(.secondary)
             if planning {
-                HStack { ProgressView(); Text("Planning the lessons… (about a minute)") }
+                HStack(spacing: 10) { ProgressView(); Text("Planning the lessons… (about a minute)").foregroundStyle(.secondary) }
             } else {
-                Button { plan() } label: { Label("Prepare lessons", systemImage: "sparkles") }
+                Button { plan() } label: { Label("Prepare lessons", systemImage: "sparkles").padding(.horizontal, 6) }
                     .buttonStyle(.borderedProminent).controlSize(.large)
             }
-            if let planError { Text(planError).font(.callout).foregroundStyle(.red) }
+            if let planError { Text(planError).font(theme.font(.label)).foregroundStyle(theme.notQuite) }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card(theme)
+    }
+
+    /// How far she is through the chapter's lessons.
+    private func overview(_ lessons: [Lesson]) -> some View {
+        let done = lessons.filter { $0.status == .done }.count
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(done) of \(lessons.count) lessons done").font(theme.font(.section))
+                Spacer()
+                let parts = lessons.map(\.parts.count).reduce(0, +)
+                Text("\(parts) parts · about \(lessons.map(minutes).reduce(0, +)) min in all")
+                    .font(theme.font(.label)).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 4) {
+                ForEach(lessons) { l in
+                    Capsule().fill(l.status == .done ? theme.done : l.status == .inProgress ? theme.learn : Color.secondary.opacity(0.18))
+                        .frame(height: 8)
+                }
+            }
+            Text("Each lesson teaches one part of the book. Ask a question any time — just start talking.")
+                .font(theme.font(.label)).foregroundStyle(.secondary)
         }
         .padding(20)
-        .card(theme, tint: theme.learn)
+        .card(theme)
     }
 
-    private func continueCard(_ l: Lesson) -> some View {
-        Button { open = l } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "play.circle.fill").font(.system(size: 40))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(l.status == .inProgress ? "Continue: \(MathPlain.render(l.title))" : "Start: \(MathPlain.render(l.title))").font(theme.font(.cardTitle))
-                    Text(l.status == .inProgress ? "Part \(l.partsDone + 1) of \(l.parts.count)" : "\(l.parts.count) part\(l.parts.count == 1 ? "" : "s") · about \(minutes(l)) min")
-                        .font(theme.font(.label)).opacity(0.9)
+    /// One lesson on the path: a badge on the line, and a card.
+    private func pathStep(_ l: Lesson, number: Int, isCurrent: Bool, isLast: Bool) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(spacing: 0) {
+                badge(l, number: number)
+                if !isLast {
+                    Rectangle().fill(l.status == .done ? theme.done.opacity(0.5) : Color.secondary.opacity(0.2))
+                        .frame(width: 3).frame(maxHeight: .infinity)
                 }
-                Spacer()
             }
-            .padding(18)
-            .foregroundStyle(.white)
-            .background(theme.fill(theme.learn), in: RoundedRectangle(cornerRadius: theme.radius, style: .continuous))
-            .shadow(color: theme.shadow ? theme.learn.opacity(0.3) : .clear, radius: 10, y: 5)
+            .frame(width: 44)
+            lessonCard(l, isCurrent: isCurrent)
+                .padding(.bottom, isLast ? 0 : 14)
         }
-        .buttonStyle(.plain)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func row(_ l: Lesson, number: Int) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    @ViewBuilder private func badge(_ l: Lesson, number: Int) -> some View {
+        ZStack {
+            switch l.status {
+            case .done:
+                Circle().fill(theme.done)
+                Image(systemName: "checkmark").font(.system(size: 18, weight: .bold)).foregroundStyle(.white)
+            case .inProgress:
+                Circle().fill(theme.surface)
+                Circle().stroke(theme.learn.opacity(0.2), lineWidth: 4)
+                Circle().trim(from: 0, to: max(0.08, Double(l.partsDone) / Double(max(1, l.parts.count))))
+                    .stroke(theme.learn, style: StrokeStyle(lineWidth: 4, lineCap: .round)).rotationEffect(.degrees(-90))
+                Text("\(number)").font(.system(size: 17, weight: .bold).monospacedDigit()).foregroundStyle(theme.learn)
+            case .notStarted:
+                Circle().fill(theme.surface)
+                Circle().strokeBorder(Color.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 2, dash: l.optional ? [4, 3] : []))
+                Text("\(number)").font(.system(size: 17, weight: .semibold).monospacedDigit()).foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 44, height: 44)
+        .accessibilityHidden(true)
+    }
+
+    private func lessonCard(_ l: Lesson, isCurrent: Bool) -> some View {
+        let isOpen = expanded.contains(l.id)
+        return VStack(alignment: .leading, spacing: 12) {
             Button {
-                if expanded.contains(l.id) { expanded.remove(l.id) } else { expanded.insert(l.id) }
+                withAnimation(.snappy) { if isOpen { expanded.remove(l.id) } else { expanded.insert(l.id) } }
             } label: {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    statusIcon(l).frame(width: 28)
-                    Text("\(number)").font(theme.font(.cardTitle).monospacedDigit()).foregroundStyle(.secondary).frame(width: 22, alignment: .trailing)
-                    VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
-                            Text(MathPlain.render(l.title)).font(theme.font(.cardTitle))
-                            if l.optional {
-                                Text("Optional").font(.caption.bold()).padding(.horizontal, 7).padding(.vertical, 2)
-                                    .background(Color.secondary.opacity(0.15), in: Capsule())
-                            }
+                            if isCurrent { tag(l.status == .inProgress ? "In progress" : "Up next", theme.learn) }
+                            if l.optional { tag("Optional", .secondary) }
+                            if l.status == .done { tag("Done", theme.done) }
                         }
-                        Text("\(l.parts.count) part\(l.parts.count == 1 ? "" : "s") · about \(minutes(l)) min")
+                        Text(MathPlain.render(l.title)).font(theme.font(.cardTitle)).foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                        if !l.summary.isEmpty {
+                            Text(l.summary).font(theme.font(.label)).fontWeight(.regular).foregroundStyle(.secondary)
+                                .lineLimit(isOpen ? nil : 2).multilineTextAlignment(.leading)
+                        }
+                        Label(l.status == .inProgress ? "Part \(min(l.partsDone + 1, l.parts.count)) of \(l.parts.count)"
+                              : "\(l.parts.count) part\(l.parts.count == 1 ? "" : "s") · about \(minutes(l)) min",
+                              systemImage: "clock")
                             .font(theme.font(.caption)).foregroundStyle(.secondary)
                     }
-                    Spacer()
-                    Image(systemName: expanded.contains(l.id) ? "chevron.up" : "chevron.down").foregroundStyle(.tertiary)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down").font(.subheadline.weight(.semibold)).foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(isOpen ? 180 : 0))
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("lessonRow")
-            if expanded.contains(l.id) {
-                VStack(alignment: .leading, spacing: 6) {
-                    if !l.summary.isEmpty { Text(l.summary).font(.subheadline).foregroundStyle(.secondary) }
+            if isOpen {
+                VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(l.parts.enumerated()), id: \.offset) { i, p in
-                        HStack(spacing: 10) {
-                            Image(systemName: i < l.partsDone ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(i < l.partsDone ? .green : .secondary).font(.caption)
-                            Text("\(i + 1)  \(MathPlain.render(p.title))").font(.subheadline)
+                        HStack(spacing: 12) {
+                            Image(systemName: i < l.partsDone ? "checkmark.circle.fill" : i == l.partsDone && l.status == .inProgress ? "circle.inset.filled" : "circle")
+                                .foregroundStyle(i < l.partsDone ? theme.done : i == l.partsDone && l.status == .inProgress ? theme.learn : Color.secondary.opacity(0.5))
+                            Text("Part \(i + 1)").font(theme.font(.caption)).foregroundStyle(.secondary).frame(width: 44, alignment: .leading)
+                            Text(MathPlain.render(p.title)).font(theme.font(.body))
                         }
+                        .padding(.vertical, 7)
                     }
-                    Button(l.status == .notStarted ? "Start lesson" : l.status == .done ? "Take it again" : "Continue lesson") { open = l }
-                        .buttonStyle(.borderedProminent).padding(.top, 4)
                 }
-                .padding(.leading, 74)
+                .padding(.horizontal, 14).padding(.vertical, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(theme.background, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            if isCurrent || isOpen {
+                Button { open = l } label: {
+                    Label(l.status == .notStarted ? "Start lesson" : l.status == .done ? "Take it again" : "Continue lesson",
+                          systemImage: l.status == .done ? "arrow.counterclockwise" : "play.fill")
+                        .font(theme.font(.label).weight(.semibold))
+                        .padding(.horizontal, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(l.status == .done ? .secondary : theme.learn)
+                .controlSize(.large)
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card(theme)
+        .overlay {
+            if isCurrent {
+                RoundedRectangle(cornerRadius: theme.radius, style: .continuous).stroke(theme.learn.opacity(0.55), lineWidth: 2)
+            }
+        }
     }
 
-    @ViewBuilder private func statusIcon(_ l: Lesson) -> some View {
-        switch l.status {
-        case .done: Image(systemName: "checkmark.circle.fill").foregroundStyle(theme.done)
-        case .inProgress: Image(systemName: "circle.lefthalf.filled").foregroundStyle(theme.learn)
-        case .notStarted: Image(systemName: "circle").foregroundStyle(.secondary)
-        }
+    private func tag(_ text: String, _ color: Color) -> some View {
+        Text(text.uppercased()).font(.system(size: 11, weight: .bold)).kerning(0.5)
+            .foregroundStyle(color)
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(color.opacity(0.12), in: Capsule())
     }
 
     @ViewBuilder private var skippedList: some View {
@@ -143,31 +222,40 @@ struct LessonsView: View {
         if !skipped.isEmpty {
             let titles = Dictionary(chapter.outline.map { ($0.id, $0.title) }, uniquingKeysWith: { a, _ in a })
             DisclosureGroup(isExpanded: $showSkipped) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("These parts of the chapter aren't taught in a lesson. Their exercises are still in practice.")
-                        .font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 10) {
                     ForEach(skipped, id: \.self) { s in
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(MathPlain.render(titles[s.section_id] ?? "Section")).font(.subheadline.weight(.medium))
-                            Text("— \(s.reason)").font(.subheadline).foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(MathPlain.render(titles[s.section_id] ?? "Section")).font(theme.font(.body).weight(.medium))
+                            Text(s.reason).font(theme.font(.label)).fontWeight(.regular).foregroundStyle(.secondary)
                         }
                     }
                 }
-                .padding(.top, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 12)
             } label: {
-                Text("Not in lessons (\(skipped.count))").font(.headline)
+                HStack(spacing: 14) {
+                    Image(systemName: "tray.full.fill").foregroundStyle(.secondary)
+                        .frame(width: 40, height: 40).background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Not in lessons (\(skipped.count))").font(theme.font(.cardTitle)).foregroundStyle(.primary)
+                        Text("Extra reading and reviews. Their exercises are still in practice.")
+                            .font(theme.font(.caption)).foregroundStyle(.secondary)
+                    }
+                }
             }
-            .padding(16)
+            .tint(.secondary)
+            .padding(18)
             .card(theme)
+            .padding(.leading, 60)
         }
     }
 
     // MARK: Helpers
 
-    private func continueLesson(_ lessons: [Lesson]) -> Lesson? {
+    /// The lesson to do next: the one in progress, else the first not started (core before optional).
+    private func currentLesson(_ lessons: [Lesson]) -> Lesson? {
         if let l = lessons.filter({ $0.status == .inProgress }).max(by: { ($0.lastOpened ?? .distantPast) < ($1.lastOpened ?? .distantPast) }) { return l }
-        guard lessons.contains(where: { $0.status != .notStarted }) else { return nil }
-        return lessons.first { $0.status == .notStarted && !$0.optional }
+        return lessons.first { $0.status == .notStarted && !$0.optional } ?? lessons.first { $0.status == .notStarted }
     }
 
     /// Rough time: about 5 minutes a part.

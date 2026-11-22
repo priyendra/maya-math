@@ -22,7 +22,7 @@ struct LessonPage: View {
     var body: some View {
         NavigationStack {
             InkPageView(ink: ink)
-                .background(theme.background)
+                .background(Color(uiColor: .systemBackground))
                 .safeAreaInset(edge: .bottom) { bottomBar }
                 .navigationTitle(MathPlain.render(lesson.title))
                 .navigationBarTitleDisplayMode(.inline)
@@ -201,8 +201,15 @@ private struct LessonContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             ForEach(tutor.elements) { e in element(e) }
-            Text("Room to write ↓").font(.caption).foregroundStyle(.tertiary)
-            Color.clear.frame(height: 420)
+            // Her space: a faint ruled area below the lesson.
+            VStack(alignment: .leading, spacing: 0) {
+                Label("Your space to write", systemImage: "pencil.tip").font(theme.font(.caption)).foregroundStyle(.tertiary)
+                    .padding(.bottom, 14)
+                ForEach(0..<8, id: \.self) { _ in
+                    Rectangle().fill(Color.secondary.opacity(0.10)).frame(height: 1).padding(.top, 48)
+                }
+            }
+            .padding(.top, 8)
         }
         .padding(28)
         .frame(maxWidth: 820, alignment: .leading)
@@ -222,13 +229,17 @@ private struct LessonContent: View {
         case let .header(part, title, earlier):
             if earlier {
                 Label("Part \(part + 1) · \(MathPlain.render(title))", systemImage: "checkmark.circle.fill")
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .font(theme.font(.label)).foregroundStyle(.secondary)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Color.secondary.opacity(0.08), in: Capsule())
             } else {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("PART \(part + 1)").font(theme.font(.caption).weight(.bold)).kerning(1).foregroundStyle(theme.learn)
+                VStack(alignment: .leading, spacing: 6) {
+                    if part > 0 { Divider().padding(.bottom, 18) }
+                    Text("PART \(part + 1) OF \(tutor.lesson.parts.count)").font(theme.font(.caption).weight(.bold)).kerning(1)
+                        .foregroundStyle(theme.learn)
                     Text(MathPlain.render(title)).font(theme.font(.pageTitle))
                 }
-                .padding(.top, part == 0 ? 0 : 18)
+                .padding(.top, part == 0 ? 0 : 10)
                 .part(e.id)
             }
         case let .item(item):
@@ -238,37 +249,56 @@ private struct LessonContent: View {
                 Image(systemName: "pencil.line").foregroundStyle(theme.board)
                 MathText(markdown: b.markdown, fontSize: 21)
             }
-            .padding(.horizontal, 14).padding(.vertical, 8)
-            .card(theme, tint: theme.board, radius: min(theme.radius, 12))
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .background(theme.board.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(alignment: .leading) { Capsule().fill(theme.board.opacity(0.6)).frame(width: 3).padding(.vertical, 8) }
             .part(b.id)
         case let .turn(id, qid):
             if let q = tutor.questionsByID[qid] {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Label("Your turn", systemImage: "pencil.and.outline").font(theme.font(.cardTitle)).foregroundStyle(theme.done)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "pencil.and.outline").font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 32, height: 32).background(theme.done, in: Circle())
+                        Text("Your turn").font(theme.font(.cardTitle))
                         Spacer()
-                        if !q.printedNumber.isEmpty { Text("Book #\(q.printedNumber)").font(.caption).foregroundStyle(.secondary) }
+                        if !q.printedNumber.isEmpty { Text("Book #\(q.printedNumber)").font(theme.font(.caption)).foregroundStyle(.secondary) }
                         if let a = tutor.answers[id] { verdict(a) }
                     }
                     QuestionPanel(question: q)
+                    Text("Work it out below, then tap Check.").font(theme.font(.caption)).foregroundStyle(.secondary)
                 }
-                .padding(16)
-                .card(theme, tint: theme.done)
-                .overlay(RoundedRectangle(cornerRadius: theme.radius, style: .continuous).stroke(theme.done.opacity(0.4), lineWidth: 1.5))
+                .padding(18)
+                .background(theme.done.opacity(0.06), in: RoundedRectangle(cornerRadius: theme.radius, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: theme.radius, style: .continuous).stroke(theme.done.opacity(0.45), lineWidth: 1.5))
                 .part(id)
                 Color.clear.frame(height: 260).part(id + "_room")   // room for her answer
             }
         case .finished:
-            VStack(alignment: .leading, spacing: 6) {
-                Label("Lesson done!", systemImage: "party.popper.fill").font(theme.font(.section)).foregroundStyle(theme.done)
-                let results = tutor.answers.values.sorted { $0.startedAt < $1.startedAt }
-                if !results.isEmpty {
-                    Text("Your turns: " + results.map { $0.effectiveVerdict == .correct ? "✓" : $0.effectiveVerdict == .incorrect ? "✗" : "?" }.joined(separator: "  "))
-                        .font(.headline)
+            HStack(alignment: .center, spacing: 18) {
+                Image(systemName: "star.fill").font(.system(size: 30)).foregroundStyle(.white)
+                    .frame(width: 64, height: 64).background(theme.done.gradient, in: Circle())
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Lesson done!").font(theme.font(.section))
+                    Text("You finished all \(tutor.lesson.parts.count) part\(tutor.lesson.parts.count == 1 ? "" : "s") of \(MathPlain.render(tutor.lesson.title)).")
+                        .font(theme.font(.body)).foregroundStyle(.secondary)
+                    let results = tutor.answers.values.sorted { $0.startedAt < $1.startedAt }
+                    if !results.isEmpty {
+                        HStack(spacing: 6) {
+                            Text("Your turns").font(theme.font(.caption)).foregroundStyle(.secondary)
+                            ForEach(results, id: \.id) { a in
+                                let v = a.effectiveVerdict
+                                Image(systemName: v == .correct ? "checkmark" : v == .incorrect ? "arrow.uturn.left" : "questionmark")
+                                    .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+                                    .frame(width: 24, height: 24)
+                                    .background(v == .correct ? theme.done : v == .incorrect ? theme.notQuite : theme.attention, in: Circle())
+                            }
+                        }
+                    }
                 }
             }
-            .padding(18)
-            .card(theme, tint: theme.done)
+            .padding(22)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.done.opacity(0.07), in: RoundedRectangle(cornerRadius: theme.radius, style: .continuous))
             .part(e.id)
         }
     }
@@ -276,20 +306,25 @@ private struct LessonContent: View {
     @ViewBuilder private func itemView(_ item: LessonPartScript.Item) -> some View {
         switch item.kind {
         case "heading":
-            MathText(markdown: "**\(item.markdown)**", fontSize: 21)
+            MathText(markdown: "**\(item.markdown)**", fontSize: 22)
+                .padding(.top, 6)
         case "example":
             MathText(markdown: item.markdown, fontSize: 21)
-                .padding(.leading, 16)
-                .overlay(alignment: .leading) { Capsule().fill(theme.attention).frame(width: 4) }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(theme.attention.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(alignment: .leading) { Capsule().fill(theme.attention).frame(width: 3).padding(.vertical, 8) }
         case "figure":
             VStack(alignment: .leading, spacing: 4) {
                 if let id = item.blockID, let data = tutor.lesson.chapter?.blocks.first(where: { $0.id == id })?.imageData,
                    let img = UIImage(data: data) {
                     Image(uiImage: img).resizable().scaledToFit().frame(maxWidth: 560, maxHeight: 360, alignment: .leading)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
-                if !item.markdown.isEmpty { MathText(markdown: item.markdown, fontSize: 16) }
+                if !item.markdown.isEmpty { MathText(markdown: item.markdown, fontSize: 16).opacity(0.75) }
             }
+            .padding(12)
+            .background(Color.secondary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         default:
             MathText(markdown: item.markdown, fontSize: 20)
         }

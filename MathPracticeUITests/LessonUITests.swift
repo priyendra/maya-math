@@ -50,7 +50,8 @@ final class LessonUITests: XCTestCase {
         shot(self, app, "lesson-4-done")
         app.buttons["Done"].tap()
         // Progress shows on the list.
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Start: Literal equations'")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["1 of 2 lessons done"].waitForExistence(timeout: 5))
+        shot(self, app, "lesson-5-list-after")
     }
 
     /// Scribble an answer low on the page (below the problem the page just scrolled to).
