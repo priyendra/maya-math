@@ -51,7 +51,6 @@
 		8950F6E0A7FC184E7D7467B8 /* katex in Resources */ = {isa = PBXBuildFile; fileRef = BC349D0C021DE632668D9028 /* katex */; };
 		8C47E904189098B59EBFD292 /* TutorSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D5EC6D81F11332A69D4823 /* TutorSession.swift */; };
 		8E7A2EBCC2EF4C9E9C1B867E /* LessonSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377F6A4A3700AD0523696B3F /* LessonSession.swift */; };
-		9153112220A7B7DDA9991A21 /* DesignShowcaseUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92EC0C80EB64A4730BF904D5 /* DesignShowcaseUITests.swift */; };
 		9A0CAD1C881B882613C489D7 /* ScanReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E69D628F248F571268EAA0 /* ScanReport.swift */; };
 		9B0022A8FD25F3C3AA9042FE /* NewChapterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A290B7BCA132EBA8AB7FD2AF /* NewChapterView.swift */; };
 		9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */; };
@@ -140,7 +139,6 @@
 		81D5EC6D81F11332A69D4823 /* TutorSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorSession.swift; sourceTree = "<group>"; };
 		87EC5E1C862487D2AE63C2D7 /* ChapterProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterProcessor.swift; sourceTree = "<group>"; };
 		8D0DA142FAAF636080E94229 /* ScanQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanQuality.swift; sourceTree = "<group>"; };
-		92EC0C80EB64A4730BF904D5 /* DesignShowcaseUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignShowcaseUITests.swift; sourceTree = "<group>"; };
 		9458FA16654054C29A418711 /* RetakeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetakeSheet.swift; sourceTree = "<group>"; };
 		971C199434CE906947C61BA7 /* ScopeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeViews.swift; sourceTree = "<group>"; };
 		9A1CDC9394B9629E2AEAF5FB /* MathText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathText.swift; sourceTree = "<group>"; };
@@ -247,7 +245,6 @@
 				F39A1B0FD6DA9CA55459FBDE /* CanvasLabUITests.swift */,
 				B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */,
 				C3352EA421577C75BDC7F236 /* CheckInUITests.swift */,
-				92EC0C80EB64A4730BF904D5 /* DesignShowcaseUITests.swift */,
 				2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */,
 				75F7D607EC608E24A41A6259 /* LessonUITests.swift */,
 				A44CD57438440D0BE6E0745E /* LibraryUITests.swift */,
@@ -541,7 +538,6 @@
 				EDAD19C0E01133D964C70366 /* CanvasLabUITests.swift in Sources */,
 				743305947D8715F10D8149F4 /* CanvasUITests.swift in Sources */,
 				BAACC91351094CDC58E318C0 /* CheckInUITests.swift in Sources */,
-				9153112220A7B7DDA9991A21 /* DesignShowcaseUITests.swift in Sources */,
 				9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */,
 				EEE89F3E1373A579FEB1CD0F /* LessonUITests.swift in Sources */,
 				0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */,

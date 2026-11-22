@@ -8,7 +8,6 @@ struct LibraryView: View {
     @Query private var chapters: [Chapter]
     @State private var showSettings = false
     @State private var path = NavigationPath()
-    @AppStorage("designOption") private var design = 0
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -17,14 +16,7 @@ struct LibraryView: View {
                     ToolbarItem(placement: .topBarLeading) {
                         Button { showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
                     }
-                    ToolbarItem(placement: .topBarLeading) {
-                        Menu {
-                            Picker("Design", selection: $design) {
-                                ForEach(Theme.all) { t in Text(t.name).tag(t.id) }
-                            }
-                        } label: { Label("Design", systemImage: "paintpalette") }
-                        .accessibilityIdentifier("designMenu")
-                    }
+
                 }
                 // Everything in the library navigates by value. Mixing closure-pushed folders with value links
                 // made a chapter inside a folder pop back to the folder instead of opening.
@@ -103,8 +95,6 @@ struct FolderView: View {
                 } actions: {
                     Button("New chapter") { showNewChapter = true }.buttonStyle(.borderedProminent)
                 }
-            } else if theme.libraryGrid {
-                grid
             } else {
                 List {
                     if !folders.isEmpty {
@@ -199,121 +189,6 @@ struct FolderView: View {
 
     static func opens(_ c: Chapter) -> Bool {
         !(c.activeQuestions.isEmpty && c.status != .ready && c.status != .needsRescan && !c.needsRereading)
-    }
-
-    // MARK: Card grid (designs with a card library)
-
-    private var grid: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                if !folders.isEmpty {
-                    gridSection("Folders") {
-                        ForEach(folders) { f in
-                            NavigationLink(value: f) {
-                                tile(icon: "folder.fill", color: theme.accent2, title: f.name,
-                                     subtitle: "\(f.chapters.count + f.scopes.count + f.children.count) items")
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu { menu(.folder(f), rename: .folder(f), name: f.name) { delete(folder: f) } }
-                        }
-                    }
-                }
-                if !scopes.isEmpty {
-                    gridSection("Study plans") {
-                        ForEach(scopes) { s in
-                            NavigationLink(value: s) {
-                                tile(icon: "target", color: theme.attention, title: s.name,
-                                     subtitle: s.testDate.map { ScopeHomeView.countdown(to: $0) } ?? "Study plan")
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu { menu(.scope(s), rename: .scope(s), name: s.name) { context.delete(s); try? context.save() } }
-                        }
-                    }
-                }
-                if !chapters.isEmpty {
-                    gridSection("Chapters") {
-                        ForEach(chapters) { c in
-                            NavigationLink(value: c) { chapterCard(c) }
-                                .buttonStyle(.plain)
-                                .disabled(!Self.opens(c))
-                                .contextMenu { menu(.chapter(c), rename: .chapter(c), name: c.title) { context.delete(c); try? context.save() } }
-                        }
-                    }
-                }
-            }
-            .padding(24)
-        }
-    }
-
-    private func gridSection<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title).font(theme.font(.section))
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 16)], spacing: 16) { content() }
-        }
-    }
-
-    private func tile(icon: String, color: Color, title: String, subtitle: String) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon).font(.title2).foregroundStyle(.white)
-                .frame(width: 52, height: 52)
-                .background(theme.fill(color), in: RoundedRectangle(cornerRadius: theme.radius * 0.6, style: .continuous))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(theme.font(.cardTitle)).foregroundStyle(.primary)
-                Text(subtitle).font(theme.font(.caption)).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-        }
-        .padding(16)
-        .card(theme)
-    }
-
-    private func chapterCard(_ c: Chapter) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .bottomLeading) {
-                Rectangle().fill(theme.gradients
-                                 ? AnyShapeStyle(LinearGradient(colors: [theme.accent, theme.accent2], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                 : AnyShapeStyle(theme.accent.opacity(0.85)))
-                Image(systemName: "function").font(.system(size: 80, weight: .bold)).foregroundStyle(.white.opacity(0.18))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(12)
-                Text(c.title).font(theme.font(.cardTitle)).foregroundStyle(.white).lineLimit(2).padding(16)
-            }
-            .frame(height: 110)
-            HStack(spacing: 14) {
-                let p = Self.progress(c)
-                ZStack {
-                    Circle().stroke(Color.secondary.opacity(0.2), lineWidth: 6)
-                    Circle().trim(from: 0, to: p.skills).stroke(theme.done, style: StrokeStyle(lineWidth: 6, lineCap: .round)).rotationEffect(.degrees(-90))
-                    Text("\(Int(p.skills * 100))%").font(.system(size: 12, weight: .bold, design: theme.design))
-                }
-                .frame(width: 46, height: 46)
-                VStack(alignment: .leading, spacing: 3) {
-                    statusLine(c)
-                    if p.lessons > 0 {
-                        Text("\(p.lessonsDone) of \(p.lessons) lessons done").font(theme.font(.caption)).foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-            }
-            .padding(16)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: theme.radius, style: .continuous))
-        .card(theme)
-    }
-
-    @ViewBuilder private func statusLine(_ c: Chapter) -> some View {
-        switch c.status {
-        case .processing: ProgressView(value: c.progressFraction) { Text(c.progressMessage).font(theme.font(.caption)) }
-        case .failed: Text(c.errorMessage ?? "Something went wrong.").font(theme.font(.caption)).foregroundStyle(theme.notQuite)
-        case .needsRescan: Label("Some pages need another scan", systemImage: "exclamationmark.triangle.fill").font(theme.font(.caption)).foregroundStyle(theme.attention)
-        case .ready: Text("\(c.activeQuestions.count) questions · \(c.concepts.count) skills").font(theme.font(.label))
-        }
-    }
-
-    /// Average skill mastery (0…1) and lesson progress.
-    static func progress(_ c: Chapter) -> (skills: Double, lessons: Int, lessonsDone: Int) {
-        let skills = c.skills.isEmpty ? 0 : c.skills.map(\.mastery).reduce(0, +) / Double(c.skills.count)
-        return (skills, c.lessons.count, c.lessons.filter { $0.status == .done }.count)
     }
 
     private func scopeRow(_ s: StudyScope) -> some View {
