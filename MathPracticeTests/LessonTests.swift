@@ -73,6 +73,13 @@ final class LessonTests: XCTestCase {
         XCTAssertEqual(MathPlain.render("no math here"), "no math here")
     }
 
+    func testSpokenMath() {
+        XCTAssertEqual(TutorScriptParser.spoken("So $\\frac{3}{4}$ of it."), "So 3 over 4 of it.")
+        XCTAssertEqual(TutorScriptParser.spoken("$x \\neq 2$"), "x is not equal to 2")
+        XCTAssertEqual(TutorScriptParser.spoken("$x^{2} + y^n$"), "x squared + y to the power of n")
+        XCTAssertEqual(TutorScriptParser.spoken("$t \\le 5$"), "t is less than or equal to 5")
+    }
+
     func testContinueTagAndGoOnPhrases() {
         XCTAssertEqual(TutorScriptParser.beat("CONTINUE"), .resume)
         XCTAssertEqual(TutorScriptParser.beat("continue."), .resume)

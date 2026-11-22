@@ -78,10 +78,18 @@ struct TutorScriptParser {
 
     static func spoken(_ s: String) -> String {
         var t = nameVariables(s)
-        for (a, b) in [("\\cdot", " times "), ("\\times", " times "), ("\\sqrt", " the square root of "),
-                       ("^2", " squared"), ("^3", " cubed"), ("\\pm", " plus or minus "), ("\\ne", " is not equal to ")] {
+        // Fractions first: "\frac{3}{4}" → "3 over 4" (not "3 4").
+        t = t.replacingOccurrences(of: "\\\\[dt]?frac\\s*\\{([^{}]*)\\}\\s*\\{([^{}]*)\\}", with: " $1 over $2 ", options: .regularExpression)
+        // Longer commands before their prefixes (\neq before \ne, \leq before \le).
+        for (a, b) in [("\\cdot", " times "), ("\\times", " times "), ("\\div", " divided by "), ("\\sqrt", " the square root of "),
+                       ("^{2}", " squared"), ("^{3}", " cubed"), ("^2", " squared"), ("^3", " cubed"),
+                       ("\\pm", " plus or minus "), ("\\neq", " is not equal to "), ("\\ne", " is not equal to "),
+                       ("\\leq", " is less than or equal to "), ("\\geq", " is greater than or equal to "),
+                       ("\\le", " is less than or equal to "), ("\\ge", " is greater than or equal to "),
+                       ("\\approx", " is about "), ("\\pi", " pi "), ("\\%", " percent"), ("\\$", " dollars ")] {
             t = t.replacingOccurrences(of: a, with: b)
         }
+        t = t.replacingOccurrences(of: "\\^\\{?([0-9a-zA-Z]+)\\}?", with: " to the power of $1", options: .regularExpression)
         t = t.replacingOccurrences(of: "\\\\[a-zA-Z]+", with: " ", options: .regularExpression)
         t = t.replacingOccurrences(of: "[$*_`{}\\\\]", with: "", options: .regularExpression)
         return t.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression).trimmingCharacters(in: .whitespaces)
