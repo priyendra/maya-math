@@ -52,12 +52,25 @@ struct ScanFixCard: View {
         }
         .padding(20)
         .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
-        .fullScreenCover(item: Binding(get: { DocumentScanner.isSupported ? fixing : nil }, set: { fixing = $0 })) { fix in
+        // One page: the retake sheet (which page to turn to, a single photo).
+        .sheet(item: Binding(get: { if case .replace = fixing { return fixing } else { return nil } }, set: { fixing = $0 })) { fix in
+            if case let .replace(page) = fix {
+                RetakeSheet(pageLabel: page.printedPageNumber.map { "page \($0)" },
+                            thumbnail: UIImage(data: page.imageData)?.preparingThumbnail(of: CGSize(width: 420, height: 560)),
+                            advice: nil,
+                            onPicked: { image in fixing = nil; received([image], for: fix) },
+                            onCancel: { fixing = nil })
+            }
+        }
+        // Missing pages (maybe several): the document scanner.
+        .fullScreenCover(item: Binding(get: { if case .fillGap = fixing, DocumentScanner.isSupported { return fixing } else { return nil } },
+                                       set: { fixing = $0 })) { fix in
             DocumentScanner(onFinish: { images in fixing = nil; received(images, for: fix) }, onCancel: { fixing = nil })
                 .ignoresSafeArea()
         }
         // Without a camera scanner (simulator), pick photos instead.
-        .photosPicker(isPresented: Binding(get: { !DocumentScanner.isSupported && fixing != nil }, set: { if !$0 && pickerItems.isEmpty { fixing = nil } }),
+        .photosPicker(isPresented: Binding(get: { if case .fillGap = fixing { return !DocumentScanner.isSupported } else { return false } },
+                                           set: { if !$0 && pickerItems.isEmpty { fixing = nil } }),
                       selection: $pickerItems, matching: .images)
         .onChange(of: pickerItems) { _, items in
             guard !items.isEmpty, let fix = fixing else { return }

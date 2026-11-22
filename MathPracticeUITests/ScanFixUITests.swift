@@ -17,6 +17,11 @@ final class ScanFixUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Re-read chapter"].exists, "old re-read banner must not show for a new chapter")
         XCTAssertTrue(app.staticTexts["Page 216 was scanned twice"].exists)
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "scan-1-list"; a.lifetime = .keepAlways; add(a)
+        // Retake names the book page and takes one photo.
+        app.buttons["Scan again"].tap()
+        XCTAssertTrue(app.staticTexts["Turn to page 213 in your book"].waitForExistence(timeout: 5))
+        let r = XCTAttachment(screenshot: app.screenshot()); r.name = "scan-2-retake"; r.lifetime = .keepAlways; add(r)
+        app.buttons["Cancel"].tap()
         app.buttons["Remove extra copy"].tap()
         XCTAssertFalse(app.staticTexts["Page 216 was scanned twice"].waitForExistence(timeout: 2))
         XCTAssertFalse(app.buttons["Check again"].isEnabled, "nothing new to check yet")

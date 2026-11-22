@@ -7,16 +7,15 @@ import Vision
 /// open. Uses only CoreGraphics/Vision (no network). Claude's reading pass does the thorough check later.
 enum ScanQuality {
     enum Issue: String, Codable, CaseIterable {
-        // (Text cut off at an edge isn't checked here: on real scans it mostly flagged harmless clipped footers or the
-        // next page peeking in, and missed cuts through blank margins. Claude's reading pass catches it reliably.)
-        case blurry, dark, noText
+        // (Not checked here: text cut off at an edge — noisy on real scans, Claude catches it reliably — and "not a
+        // book page" — sparse pages with big photos tripped it; Claude reports pages that aren't from the book.)
+        case blurry, dark
 
         /// Short, kid-friendly advice.
         var advice: String {
             switch self {
             case .blurry: return "Blurry – hold the iPad still until it takes the picture."
             case .dark: return "Too dark – scan in a brighter spot."
-            case .noText: return "This doesn't look like a book page – check it's the right page."
             }
         }
     }
@@ -25,22 +24,21 @@ enum ScanQuality {
         var sharpness: Double      // edge strength of text strokes, relative to page contrast
         var brightness: Double     // mean luminance 0…1
         var textLines: Int
-        var edgeTextSides: [String] // image edges that at least two lines of text run into
+        var pageNumber: Int?       // the printed page number, if found near the top or bottom
         var description: String {
-            String(format: "sharp=%.3f bright=%.2f lines=%d edges=%@", sharpness, brightness, textLines,
-                   edgeTextSides.joined(separator: ","))
+            String(format: "sharp=%.3f bright=%.2f lines=%d page=%@", sharpness, brightness, textLines,
+                   pageNumber.map(String.init) ?? "-")
         }
     }
 
-    // Calibrated on real textbook scans vs. blurred / darkened / cropped copies of them: sharp pages measure
-    // 0.39–0.53, a slight blur 0.09–0.18, heavy or motion blur 0.02–0.15. Real pages are ≥ 0.9 bright.
-    static let minSharpness = 0.25
+    // Calibrated on two real chapters (138 scans) vs. blurred / darkened copies of them. Sharpness is measured only
+    // inside text regions, so pages that are mostly photo or white space aren't mistaken for blurry.
+    static let minSharpness = 0.22
     static let minBrightness = 0.6
 
     static func issues(_ m: Metrics) -> [Issue] {
-        if m.sharpness < minSharpness { return [.blurry] }          // heavy blur also hides all text: say blurry
-        if m.textLines < 3 { return [.noText] }
         var out: [Issue] = []
+        if m.sharpness < minSharpness { out.append(.blurry) }
         if m.brightness < minBrightness { out.append(.dark) }
         return out
     }
@@ -49,7 +47,7 @@ enum ScanQuality {
 
     static func measure(_ image: CGImage) -> Metrics {
         let (gray, w, h) = grayscale(image, longEdge: 1200)
-        var m = Metrics(sharpness: 0, brightness: 0, textLines: 0, edgeTextSides: [])
+        var m = Metrics(sharpness: 0, brightness: 0, textLines: 0, pageNumber: nil)
         guard w > 2, h > 2 else { return m }
 
         // Brightness and contrast.
@@ -65,20 +63,40 @@ enum ScanQuality {
         }
         let contrast = max(percentile(0.95) - percentile(0.02), 1)
 
+        // Text regions (and the page number).
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .fast
+        request.usesLanguageCorrection = false
+        try? VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+        let obs = request.results ?? []
+        m.textLines = obs.count
+        m.pageNumber = pageNumber(obs)
+
+        // Mask: text boxes (padded). With no text found (e.g. heavy blur), use the whole page.
+        var mask = [Bool](repeating: obs.isEmpty, count: w * h)
+        for o in obs {
+            let b = o.boundingBox   // normalized, origin bottom-left; buffer row 0 is the top
+            let pad = 0.01
+            let x0 = max(Int((b.minX - pad) * Double(w)), 1), x1 = min(Int((b.maxX + pad) * Double(w)), w - 2)
+            let y0 = max(Int((1 - b.maxY - pad) * Double(h)), 1), y1 = min(Int((1 - b.minY + pad) * Double(h)), h - 2)
+            guard x0 < x1, y0 < y1 else { continue }
+            for y in y0...y1 { for x in x0...x1 { mask[y * w + x] = true } }
+        }
+
         // Sharpness: strong Laplacian responses (text strokes) relative to contrast. Blur flattens them.
         var lap = [Int](repeating: 0, count: 1021)
         var count = 0
         for y in 1..<(h - 1) {
             let row = y * w
-            for x in 1..<(w - 1) {
+            for x in 1..<(w - 1) where mask[row + x] {
                 let i = row + x
                 let l = 4 * Int(gray[i]) - Int(gray[i - 1]) - Int(gray[i + 1]) - Int(gray[i - w]) - Int(gray[i + w])
                 lap[min(abs(l), 1020)] += 1
                 count += 1
             }
         }
-        // Mean of the strongest 0.5% of responses.
-        let top = max(count / 200, 1)
+        // Mean of the strongest 2% of responses within text.
+        let top = max(count / 50, 1)
         var taken = 0, total = 0
         for v in stride(from: 1020, through: 0, by: -1) where taken < top {
             let n = min(lap[v], top - taken)
@@ -86,26 +104,26 @@ enum ScanQuality {
             total += n * v
         }
         m.sharpness = Double(total) / Double(taken) / contrast / 4
-
-        // Text: how much, how confidently read, and whether it runs into an edge of the image.
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .fast
-        request.usesLanguageCorrection = false
-        try? VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
-        let obs = request.results ?? []
-        m.textLines = obs.count
-        // A single clipped line is usually just the running footer/header; two or more means content is cut off.
-        let margin = 0.006
-        var touches: [String: Int] = [:]
-        for o in obs where o.boundingBox.height > 0.008 {
-            let b = o.boundingBox   // normalized, origin bottom-left
-            if b.minX < margin { touches["left", default: 0] += 1 }
-            if b.maxX > 1 - margin { touches["right", default: 0] += 1 }
-            if b.minY < margin { touches["bottom", default: 0] += 1 }
-            if b.maxY > 1 - margin { touches["top", default: 0] += 1 }
-        }
-        m.edgeTextSides = touches.filter { $0.value >= 2 }.keys.sorted()
         return m
+    }
+
+    /// A standalone number (1–4 digits) near the top or bottom of the page: the printed page number.
+    private static func pageNumber(_ obs: [VNRecognizedTextObservation]) -> Int? {
+        var best: (Int, Double)?
+        for o in obs {
+            guard let text = o.topCandidates(1).first?.string else { continue }
+            let b = o.boundingBox
+            let nearEdge = b.minY < 0.1 || b.maxY > 0.9
+            guard nearEdge else { continue }
+            // "293", or "293 Chapter 5" / "Chapter 5 293": take a number at either end.
+            let tokens = text.split(separator: " ")
+            for t in [tokens.first, tokens.last].compactMap({ $0 }) {
+                guard t.count <= 4, let n = Int(t), n > 0 else { continue }
+                let edgeness = Double(min(b.minY, 1 - b.maxY))   // closer to the edge wins
+                if best == nil || edgeness < best!.1 { best = (n, edgeness) }
+            }
+        }
+        return best?.0
     }
 
     private static func grayscale(_ image: CGImage, longEdge: Int) -> ([UInt8], Int, Int) {
@@ -130,6 +148,7 @@ struct ScannedPage: Sendable {
     let jpeg: Data
     let thumbnail: Data
     let issues: [ScanQuality.Issue]
+    let pageNumber: Int?
 
     /// Straightens, compresses and checks new pages off the main thread.
     static func process(_ images: [UIImage]) async -> [ScannedPage] {
@@ -140,8 +159,9 @@ struct ScannedPage: Sendable {
                     let page = ImageUtils.uprightImage(image)
                     guard let jpeg = ImageUtils.jpeg(page, maxEdge: 2400, quality: 0.85),
                           let thumb = ImageUtils.jpeg(page, maxEdge: 400, quality: 0.7) else { return }
-                    let issues = UIImage(data: jpeg)?.cgImage.map(ScanQuality.check) ?? []
-                    out.append(ScannedPage(jpeg: jpeg, thumbnail: thumb, issues: issues))
+                    let m = UIImage(data: jpeg)?.cgImage.map(ScanQuality.measure)
+                    out.append(ScannedPage(jpeg: jpeg, thumbnail: thumb, issues: m.map(ScanQuality.issues) ?? [],
+                                           pageNumber: m?.pageNumber))
                 }
             }
             return out

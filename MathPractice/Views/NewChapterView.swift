@@ -15,6 +15,8 @@ struct NewChapterView: View {
         var thumbnail: UIImage
         var isAnswerKey = false
         var issues: [ScanQuality.Issue] = []
+        /// Printed page number read on the iPad (only shown when it agrees with a neighbouring page).
+        var pageNumber: Int?
     }
 
     @State private var pages: [DraftPage] = []
@@ -85,10 +87,19 @@ struct NewChapterView: View {
             .fullScreenCover(isPresented: $showScanner) {
                 DocumentScanner(onFinish: { images in
                     showScanner = false
-                    add(images, replacing: retakeID)
-                    retakeID = nil
-                }, onCancel: { showScanner = false; retakeID = nil })
+                    add(images)
+                }, onCancel: { showScanner = false })
                 .ignoresSafeArea()
+            }
+            .sheet(item: Binding(get: { retakeID.map { PreviewTarget(id: $0) } }, set: { retakeID = $0?.id })) { target in
+                let i = pages.firstIndex { $0.id == target.id }
+                RetakeSheet(pageLabel: i.flatMap { trustedNumber($0) }.map { "page \($0)" },
+                            thumbnail: i.map { pages[$0].thumbnail },
+                            advice: i.flatMap { pages[$0].issues.first?.advice },
+                            allowKeep: true,
+                            onPicked: { image in retakeID = nil; add([image], replacing: target.id) },
+                            onKeep: { if let i { pages[i].issues = [] }; retakeID = nil },
+                            onCancel: { retakeID = nil })
             }
             .alert("Some pages need another try", isPresented: $confirmCreate) {
                 Button("Retake them", role: .cancel) {}
@@ -141,20 +152,28 @@ struct NewChapterView: View {
                         Image(systemName: "exclamationmark.triangle.fill").font(.title2).foregroundStyle(.white, .orange).padding(4)
                     }
                 }
-            Text("Page \(index)").font(.caption)
+            Text(trustedNumber(index - 1).map { "Page \($0)" } ?? "Scan \(index)").font(.caption)
             if let issue = page.wrappedValue.issues.first {
                 Text(issue.advice).font(.caption2).foregroundStyle(.orange).multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                if DocumentScanner.isSupported {
-                    Button { retakeID = page.wrappedValue.id; showScanner = true } label: {
-                        Label("Retake", systemImage: "camera.rotate")
-                    }
-                    .buttonStyle(.borderedProminent).tint(.orange).controlSize(.small)
+                Button { retakeID = page.wrappedValue.id } label: {
+                    Label("Retake", systemImage: "camera.rotate")
                 }
+                .buttonStyle(.borderedProminent).tint(.orange).controlSize(.small)
             } else {
                 Toggle("Answer key", isOn: page.isAnswerKey).font(.caption).toggleStyle(.button)
             }
         }
+    }
+
+    /// The printed page number of page `i`, if it fits a neighbour (n next to n±1, allowing a skipped page) — the
+    /// iPad sometimes reads an exercise number near the edge instead, so a lone number isn't trusted.
+    private func trustedNumber(_ i: Int) -> Int? {
+        guard pages.indices.contains(i), let n = pages[i].pageNumber else { return nil }
+        for d in [-2, -1, 1, 2] where pages.indices.contains(i + d) {
+            if let m = pages[i + d].pageNumber, m - n == d { return n }
+        }
+        return nil
     }
 
     static let tips = """
@@ -173,7 +192,7 @@ struct NewChapterView: View {
         Task {
             let scanned = await ScannedPage.process(images)
             let drafts = scanned.compactMap { s in
-                UIImage(data: s.thumbnail).map { DraftPage(jpeg: s.jpeg, thumbnail: $0, issues: s.issues) }
+                UIImage(data: s.thumbnail).map { DraftPage(jpeg: s.jpeg, thumbnail: $0, issues: s.issues, pageNumber: s.pageNumber) }
             }
             if let replacing, let i = pages.firstIndex(where: { $0.id == replacing }), let first = drafts.first {
                 var fixed = first

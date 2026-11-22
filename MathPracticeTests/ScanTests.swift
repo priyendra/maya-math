@@ -64,6 +64,18 @@ final class ScanTests: XCTestCase {
         XCTAssertEqual(ScanReport.pendingCount(ch), 3)
     }
 
+    func testReadsPrintedPageNumberAtTheBottom() throws {
+        let page = UIGraphicsImageRenderer(size: CGSize(width: 1700, height: 2200)).image { ctx in
+            UIColor.white.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 1700, height: 2200))
+            for row in 0..<30 {
+                ("\(row + 1). Solve 4x − \(row) = 2x + 9 and check your answer" as NSString)
+                    .draw(at: CGPoint(x: 120, y: 160 + row * 55), withAttributes: [.font: UIFont.systemFont(ofSize: 30)])
+            }
+            ("293" as NSString).draw(at: CGPoint(x: 1500, y: 2110), withAttributes: [.font: UIFont.boldSystemFont(ofSize: 34)])
+        }.cgImage!
+        XCTAssertEqual(ScanQuality.measure(page).pageNumber, 293)
+    }
+
     func testOnDeviceCheckFlagsBlurNotSharpText() throws {
         let sharp = UIGraphicsImageRenderer(size: CGSize(width: 1700, height: 2200)).image { ctx in
             UIColor.white.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 1700, height: 2200))

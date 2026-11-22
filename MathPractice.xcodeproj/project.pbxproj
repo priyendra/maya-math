@@ -32,6 +32,7 @@
 		4BC5CA53488CFDC631DFBB6D /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1188FC44FDA09FB9AF140A7E /* Models.swift */; };
 		511A7DDA9EB461F2F6FE0F87 /* MasteryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B2FD60C9EA822A5F8F2E7D /* MasteryModel.swift */; };
 		575014BC4A385DA58CAD447A /* QuestionPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3036FE3260923B369E442F /* QuestionPanel.swift */; };
+		59217186A5DA715961A83A64 /* RetakeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9458FA16654054C29A418711 /* RetakeSheet.swift */; };
 		5C059E756AF170920DE53132 /* CanvasLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 605F34558094F3610E52AF83 /* CanvasLab.swift */; };
 		5F6BABF6127EC431F724EB4C /* ScopeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971C199434CE906947C61BA7 /* ScopeViews.swift */; };
 		6BC3A89C98ECE9D5D90CD3EC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */; };
@@ -119,6 +120,7 @@
 		81D5EC6D81F11332A69D4823 /* TutorSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorSession.swift; sourceTree = "<group>"; };
 		87EC5E1C862487D2AE63C2D7 /* ChapterProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterProcessor.swift; sourceTree = "<group>"; };
 		8D0DA142FAAF636080E94229 /* ScanQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanQuality.swift; sourceTree = "<group>"; };
+		9458FA16654054C29A418711 /* RetakeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetakeSheet.swift; sourceTree = "<group>"; };
 		971C199434CE906947C61BA7 /* ScopeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeViews.swift; sourceTree = "<group>"; };
 		9A1CDC9394B9629E2AEAF5FB /* MathText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathText.swift; sourceTree = "<group>"; };
 		9ABDC763B9CB199D4590C26B /* MathPractice.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MathPractice.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -247,6 +249,7 @@
 				F231E9BAE8BE9B8CC0ED4760 /* PracticeSessionView.swift */,
 				2D3036FE3260923B369E442F /* QuestionPanel.swift */,
 				0311F8682A7570D87C58B443 /* ReadChapterView.swift */,
+				9458FA16654054C29A418711 /* RetakeSheet.swift */,
 				1E8393FD9C190CD55EF1AAE2 /* ScanFixView.swift */,
 				971C199434CE906947C61BA7 /* ScopeViews.swift */,
 				377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */,
@@ -467,6 +470,7 @@
 				068BA2E7A0C06960003E79E8 /* Prompts.swift in Sources */,
 				575014BC4A385DA58CAD447A /* QuestionPanel.swift in Sources */,
 				C0F906DCAAD9CB300CFA566D /* ReadChapterView.swift in Sources */,
+				59217186A5DA715961A83A64 /* RetakeSheet.swift in Sources */,
 				7E2BE72BBA38C3631CFAF9AF /* SampleData.swift in Sources */,
 				21207726D1026BEE0D36A8BF /* ScanFixView.swift in Sources */,
 				F240A1EE9C69CD8FC387AD09 /* ScanQuality.swift in Sources */,
