@@ -52,6 +52,16 @@ final class LessonUITests: XCTestCase {
         // Progress shows on the list.
         XCTAssertTrue(app.staticTexts["1 of 2 lessons done"].waitForExistence(timeout: 5))
         shot(self, app, "lesson-5-list-after")
+        // Clearing practice history also clears lesson progress.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons["Chapter settings"].tap()
+        app.buttons["Clear practice history"].tap()
+        app.alerts.buttons["Clear"].tap()
+        XCTAssertTrue(tile.waitForExistence(timeout: 5))
+        XCTAssertTrue(tile.label.contains("0 of 2"), tile.label)
+        tile.tap()
+        XCTAssertTrue(app.staticTexts["0 of 2 lessons done"].waitForExistence(timeout: 5))
+        shot(self, app, "lesson-6-cleared")
     }
 
     /// Scribble an answer low on the page (below the problem the page just scrolled to).

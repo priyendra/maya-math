@@ -10,6 +10,7 @@
 		022A3D499E12D2F46E00D78D /* LessonFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F572C4F8C9E2D29814F0EE /* LessonFixtures.swift */; };
 		060A7651148F1BFA44DA308F /* ChapterHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47532A0C491289D637FD2620 /* ChapterHomeView.swift */; };
 		068BA2E7A0C06960003E79E8 /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC840C4F982E6476B362357 /* Prompts.swift */; };
+		0712AB854D02F3FD6EA8AA06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C166E836241E4FB197025AEC /* Assets.xcassets */; };
 		0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44CD57438440D0BE6E0745E /* LibraryUITests.swift */; };
 		13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F231E9BAE8BE9B8CC0ED4760 /* PracticeSessionView.swift */; };
 		16D59697D7A3D274E1515F07 /* AttemptReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */; };
@@ -156,6 +157,7 @@
 		BBC42C56EAF9BE0D0E30CA94 /* ClaudeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeServices.swift; sourceTree = "<group>"; };
 		BC349D0C021DE632668D9028 /* katex */ = {isa = PBXFileReference; lastKnownFileType = folder; name = katex; path = MathPractice/Resources/katex; sourceTree = SOURCE_ROOT; };
 		BF4CA4157E303F14CC5F0D81 /* TutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorTests.swift; sourceTree = "<group>"; };
+		C166E836241E4FB197025AEC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C3352EA421577C75BDC7F236 /* CheckInUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInUITests.swift; sourceTree = "<group>"; };
 		CDFEA599FF608A11C79131F6 /* LearningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTests.swift; sourceTree = "<group>"; };
 		CE8FEC8B73BD5C71E909B655 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
@@ -320,6 +322,7 @@
 		F928DFC9ECE6AA1838524564 /* MathPractice */ = {
 			isa = PBXGroup;
 			children = (
+				C166E836241E4FB197025AEC /* Assets.xcassets */,
 				07F4CF90DCA0E731483BB305 /* Info.plist */,
 				FBD419568B1B6FA156000CC3 /* App */,
 				EFB75AA4E52F4B34248424B8 /* Claude */,
@@ -465,6 +468,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0712AB854D02F3FD6EA8AA06 /* Assets.xcassets in Resources */,
 				8950F6E0A7FC184E7D7467B8 /* katex in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
