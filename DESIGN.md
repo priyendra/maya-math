@@ -83,6 +83,11 @@ Running record of product decisions and open discussion topics. Newest decisions
   worked examples from the book, or work through a different example. Off-topic requests are steered back.
 - **Voice mode is all voice:** once she enters it, the tutor speaks and listens (on-device iPad speech, a
   high-quality built-in female voice). Anything mathematical the tutor says is also written on the board.
+  **Update:** built-in voices (even Ava Premium) sounded noticeably unclear; Siri's voices aren't
+  available to apps. The tutor now uses **OpenAI TTS (gpt-4o-mini-tts, voice "coral" by default)** when an OpenAI
+  key is saved (Settings → Tutor voice), prefetching each sentence while the previous one plays, and falling back
+  to the iPad voice on any failure. The user preferred it clearly over the system voices. Interrupt = tap the page
+  (no voice barge-in: the mic is off while speaking; echo cancellation would degrade playback).
 - **Teaching mode is opt-in** ("Learn this section"); never required before practice or exams (she may have
   learned it in class).
 - **Lessons (built):** "Lessons" on the chapter page is a table of lessons (not the book's TOC). A lesson = one
