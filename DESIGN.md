@@ -141,3 +141,22 @@ Running record of product decisions and open discussion topics. Newest decisions
 ## Open topics
 (none)
 
+
+
+## Lesson parts can split a long section
+- Some books (e.g. one long section per lesson with several worked examples, then all exercises) gave lessons of a
+  single 6-8 minute part whose "your turn" tested only one of its ideas. A part may now teach a slice of one
+  section: worked examples from…to plus the explanation leading up to them (`LessonPart.fromExample/toExample`).
+- The planner sees each multi-example section's examples (numbered, first line) and is told to split where the idea
+  changes, aiming for 3-6 minute parts; sections that already teach one idea (e.g. LEARN/TRY boxes) are not split.
+  Validation makes split ranges contiguous and complete; exercise sections can serve every part of their lesson.
+- "your turn" must practise the part's own idea. Book-agnostic: nothing depends on a particular textbook.
+- Older plans with a part covering ≥3 worked examples, and no lesson started, are replanned once automatically.
+- Part scripts with fewer than 3 spoken lines are never saved (retry, then "Try again"); bad saved ones are rewritten.
+
+## Visual design
+- Classic design chosen (from four options tried in the app). Tokens in `Theme.classic`: one accent, and colours
+  with one meaning each — learn (blue), done/correct (green), attention (orange), not quite (soft rose, never harsh
+  red), board (indigo); one type scale. Applied to library, chapter page, lessons, lesson page, practice, check-ins,
+  solution page, exam intro, My answers, My progress. App icon: white radical + gold spark on blue→indigo
+  (`tools/make-app-icon.swift`).

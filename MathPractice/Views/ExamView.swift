@@ -77,14 +77,31 @@ struct ExamView: View {
     }
 
     private var intro: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "timer").font(.system(size: 64)).foregroundStyle(.purple)
+        VStack(spacing: 22) {
+            Image(systemName: "timer").font(.system(size: 44, weight: .semibold)).foregroundStyle(.white)
+                .frame(width: 96, height: 96).background(Theme.classic.accent2.gradient, in: Circle())
             Text("Exam mode").font(.largeTitle.bold())
-            Text("A mix of questions from \(set.title), like the real test.\nYou have \(set.examMinutes) minutes. You'll see your results at the end.")
-                .multilineTextAlignment(.center)
-            Button("Start exam") { begin() }.buttonStyle(.borderedProminent).controlSize(.large)
+            Text("A mix of questions from \(MathPlain.render(set.title)), like the real test.")
+                .font(.title3).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            HStack(spacing: 12) {
+                examFact("clock", "\(set.examMinutes) minutes")
+                examFact("list.number", "\(min(set.questions.count, 20)) questions")
+                examFact("chart.bar", "Results at the end")
+            }
+            Button { begin() } label: { Text("Start exam").font(.headline).padding(.horizontal, 24) }
+                .buttonStyle(.borderedProminent).tint(Theme.classic.accent2).controlSize(.large)
         }
-        .padding()
+        .padding(40)
+        .frame(maxWidth: 620)
+        .background(Theme.classic.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.classic.background.ignoresSafeArea())
+    }
+
+    private func examFact(_ icon: String, _ text: String) -> some View {
+        Label(text, systemImage: icon).font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(Color.secondary.opacity(0.08), in: Capsule())
     }
 
     private var running: some View {
@@ -96,7 +113,7 @@ struct ExamView: View {
                             let answered = !(drawings[questions[i].id]?.strokes.isEmpty ?? true)
                             Button("\(i + 1)") { go(to: i) }
                                 .frame(width: 36, height: 36)
-                                .background(i == index ? Color.purple : (answered ? Color.purple.opacity(0.25) : Color.secondary.opacity(0.12)),
+                                .background(i == index ? Theme.classic.accent2 : (answered ? Theme.classic.accent2.opacity(0.25) : Color.secondary.opacity(0.12)),
                                             in: Circle())
                                 .foregroundStyle(i == index ? .white : .primary)
                         }
@@ -105,8 +122,8 @@ struct ExamView: View {
                 Spacer()
                 Label(formatClock(remaining), systemImage: "timer")
                     .font(.title3.bold().monospacedDigit())
-                    .foregroundStyle(remaining < 120 ? .red : .primary)
-                Button("Hand in") { if questions.indices.contains(index) { drawings[questions[index].id] = canvas.drawing }; confirmSubmit = true }.buttonStyle(.borderedProminent).tint(.purple)
+                    .foregroundStyle(remaining < 120 ? Theme.classic.notQuite : .primary)
+                Button("Hand in") { if questions.indices.contains(index) { drawings[questions[index].id] = canvas.drawing }; confirmSubmit = true }.buttonStyle(.borderedProminent).tint(Theme.classic.accent2)
             }
             .padding()
             if questions.indices.contains(index) {

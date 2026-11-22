@@ -14,7 +14,7 @@ struct ProgressReportView: View {
         let mistakes = graded.compactMap { $0.effectiveVerdict == .incorrect ? $0.mistakeType : nil }
         let exams = chapter.exams.filter { $0.finishedAt != nil }.sorted { $0.startedAt < $1.startedAt }
         return List {
-            Section("Mastery (concept × difficulty)") {
+            Section("Your skills") {
                 MasteryGrid(chapter: chapter).padding(.vertical)
             }
             if !mistakes.isEmpty {
@@ -42,18 +42,29 @@ private struct MistakeChart: View {
     let mistakes: [MistakeType]
 
     var body: some View {
-        let counts = MistakeType.allCases.map { m in (m.displayName, mistakes.filter { $0 == m }.count) }
+        let counts = MistakeType.allCases.map { m in (m.displayName, mistakes.filter { $0 == m }.count) }.filter { $0.1 > 0 }
+            .sorted { $0.1 > $1.1 }
+        let top = max(1, counts.map(\.1).max() ?? 1)
         let carelessShare = Double(mistakes.filter { $0 == .careless }.count) / Double(max(mistakes.count, 1))
-        VStack(alignment: .leading) {
-            Chart(counts, id: \.0) { item in
-                BarMark(x: .value("Count", item.1), y: .value("Type", item.0))
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(counts, id: \.0) { name, n in
+                HStack(spacing: 12) {
+                    Text(name).font(.subheadline).frame(width: 130, alignment: .leading)
+                    GeometryReader { g in
+                        Capsule().fill(Theme.classic.notQuite.opacity(0.75))
+                            .frame(width: max(10, g.size.width * CGFloat(n) / CGFloat(top)), height: 12)
+                            .frame(maxHeight: .infinity, alignment: .center)
+                    }
+                    .frame(height: 20)
+                    Text("\(n)").font(.subheadline.monospacedDigit().weight(.semibold)).frame(width: 28, alignment: .trailing)
+                }
             }
-            .frame(height: 180)
             if carelessShare >= 0.4 {
                 Text("Most mistakes are careless slips — you probably understand the material. Focus on checking your work and not rushing.")
                     .font(.callout).foregroundStyle(.secondary)
             }
         }
+        .padding(.vertical, 6)
     }
 }
 
@@ -68,7 +79,7 @@ private struct ConceptStatsRow: View {
                 Text("Not practiced yet").font(.caption).foregroundStyle(.secondary)
             } else {
                 Text(summary).font(.caption)
-                if let top = topMistake { Text("Most common mistake: \(top.displayName)").font(.caption).foregroundStyle(.orange) }
+                if let top = topMistake { Text("Most common mistake: \(top.displayName)").font(.caption).foregroundStyle(Theme.classic.attention) }
             }
         }
     }
@@ -107,12 +118,20 @@ private struct DailyChart: View {
     }
 
     var body: some View {
+        let today = Calendar.current.startOfDay(for: Date())
+        let first = min(bars.map(\.day).min() ?? today, Calendar.current.date(byAdding: .day, value: -13, to: today) ?? today)
+        let end = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
         Chart(bars) { bar in
-            BarMark(x: .value("Day", bar.day, unit: .day), y: .value("Questions", bar.count))
+            BarMark(x: .value("Day", bar.day, unit: .day), y: .value("Questions", bar.count), width: .ratio(0.6))
                 .foregroundStyle(by: .value("Result", bar.result))
+                .clipShape(RoundedRectangle(cornerRadius: 3))
         }
-        .chartForegroundStyleScale(["Correct": Color.green, "Incorrect": Color.red])
+        .chartForegroundStyleScale(["Correct": Theme.classic.done, "Incorrect": Theme.classic.notQuite.opacity(0.8)])
+        .chartXScale(domain: first...end)
+        .chartXAxis { AxisMarks(values: .stride(by: .day, count: 2)) { _ in AxisGridLine(); AxisValueLabel(format: .dateTime.day().month(.abbreviated)) } }
+        .chartLegend(position: .top, alignment: .leading)
         .frame(height: 200)
+        .padding(.vertical, 6)
     }
 }
 

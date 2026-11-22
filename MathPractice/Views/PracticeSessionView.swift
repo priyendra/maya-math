@@ -138,22 +138,24 @@ struct PracticeSessionView: View {
 
     private func questionScreen(_ q: Question) -> some View {
         VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(MathPlain.render(q.concept?.name ?? "")).font(.caption.bold()).foregroundStyle(.secondary)
-                    Text(String(repeating: "●", count: q.difficulty)).font(.caption2).foregroundStyle(.orange)
-                    if q.isChallenge { Label("Challenge", systemImage: "flame.fill").font(.caption.bold()).foregroundStyle(.red) }
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 8) {
+                    chip(MathPlain.render(q.concept?.name ?? ""), Theme.classic.learn)
+                    chip(["Basic", "Medium", "Hard"][max(0, min(2, q.difficulty - 1))], .secondary)
+                    if q.isChallenge { chip("Challenge", Theme.classic.attention, icon: "flame.fill") }
                     if currentPick?.category == .reinforcement {
-                        Label("Another one like an earlier one", systemImage: "arrow.triangle.2.circlepath").font(.caption).foregroundStyle(.blue)
+                        chip("Like an earlier one", Theme.classic.learn, icon: "arrow.triangle.2.circlepath")
                     }
                     Spacer()
-                    timerView(q)
+                    timerView(q).font(Theme.classic.font(.label).monospacedDigit()).foregroundStyle(.secondary)
                 }
                 QuestionPanel(question: q)
                 helpPanel
             }
-            .padding()
-            .background(.bar)
+            .padding(.horizontal, 24).padding(.vertical, 18)
+            .background(Theme.classic.surface)
+            .overlay(alignment: .bottom) { Divider() }
+            .shadow(color: .black.opacity(0.04), radius: 6, y: 3)
 
             ZStack(alignment: .topTrailing) {
                 WritingCanvas(controller: canvas, graphPaper: graphPaper)
@@ -195,27 +197,27 @@ struct PracticeSessionView: View {
     private var helpPanel: some View {
         switch help {
         case .none:
-            if let helpError { Text(helpError).font(.callout).foregroundStyle(.red) }
+            if let helpError { Text(helpError).font(.callout).foregroundStyle(Theme.classic.notQuite) }
         case .loadingHint, .loadingSolution:
             HStack(spacing: 10) {
                 ProgressView()
                 Text(help == .loadingHint ? "Getting a hint…" : "Getting the solution…").foregroundStyle(.secondary)
             }
-            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.classic.attention.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         case .hint:
             VStack(alignment: .leading, spacing: 6) {
                 if !hintText.isEmpty {
-                    Label("Hint", systemImage: "lightbulb.fill").font(.headline).foregroundStyle(.orange)
+                    Label("Hint", systemImage: "lightbulb.fill").font(.headline).foregroundStyle(Theme.classic.attention)
                     MathText(markdown: hintText, fontSize: 18)
                 }
                 if let helpError { Text(helpError).font(.callout).foregroundStyle(.secondary) }
             }
-            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.classic.attention.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         case .solution:
             VStack(alignment: .leading, spacing: 6) {
-                Label("Solution", systemImage: "checkmark.seal.fill").font(.headline).foregroundStyle(.blue)
+                Label("Solution", systemImage: "checkmark.seal.fill").font(.headline).foregroundStyle(Theme.classic.learn)
                 MathText(markdown: solutionText, fontSize: 18, maxHeight: 380)
                 HStack {
                     Text("Read it through, try writing it out yourself below, then tap Next. You'll get another one like this soon.")
@@ -233,17 +235,28 @@ struct PracticeSessionView: View {
         }
     }
 
+    private func chip(_ text: String, _ color: Color, icon: String? = nil) -> some View {
+        HStack(spacing: 4) {
+            if let icon { Image(systemName: icon) }
+            Text(text).lineLimit(1)
+        }
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(color)
+        .padding(.horizontal, 10).padding(.vertical, 4)
+        .background(color.opacity(0.12), in: Capsule())
+    }
+
     private func timerView(_ q: Question) -> some View {
         ClockLabel(clock: questionClock, target: LearningStore.inSpeedStage(q) ? LearningStore.targetSeconds(for: q) : nil)
     }
 
     /// Sits at the top of the canvas so the PencilKit tool picker never covers it.
     private var actionBar: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             switch help {
             case .none, .loadingHint:
-                Button { getHint() } label: { Label("I'm stuck", systemImage: "questionmark.bubble") }
-                    .buttonStyle(.bordered).disabled(help == .loadingHint)
+                Button { getHint() } label: { Label("I'm stuck", systemImage: "lightbulb") }
+                    .buttonStyle(.bordered).tint(Theme.classic.attention).disabled(help == .loadingHint)
             case .hint, .loadingSolution:
                 Button { getSolution() } label: { Label("Show solution", systemImage: "eye") }
                     .buttonStyle(.bordered).disabled(help == .loadingSolution)
@@ -251,14 +264,18 @@ struct PracticeSessionView: View {
                 EmptyView()
             }
             Button { canvas.clear() } label: { Label("Clear", systemImage: "trash") }
-                .buttonStyle(.bordered)
+                .buttonStyle(.bordered).tint(.secondary)
                 .disabled(!canvas.hasInk)
-            Button { next() } label: { Label("Next", systemImage: "arrow.right").font(.title3.bold()) }
+            Button { next() } label: {
+                Label("Next", systemImage: "arrow.right").font(.headline).padding(.horizontal, 8)
+            }
                 .buttonStyle(.borderedProminent)
                 .disabled(help == .solution ? false : (!canvas.hasInk || help == .loadingHint || help == .loadingSolution))
         }
-        .padding()
+        .controlSize(.large)
+        .padding(.horizontal, 14).padding(.vertical, 10)
         .background(.regularMaterial, in: Capsule())
+        .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
     }
 
     // MARK: Flow
@@ -463,7 +480,8 @@ struct FeedbackCard: View {
                 case .needsReview: Text("Couldn't check this one for sure").font(.title2.bold())
                 }
                 if attempt.effectiveVerdict == .incorrect, !attempt.wasStuck, let m = attempt.mistakeType {
-                    Text(m.displayName).font(.subheadline).padding(6).background(.red.opacity(0.12), in: Capsule())
+                    Text(m.displayName).font(.subheadline.weight(.medium)).foregroundStyle(Theme.classic.notQuite)
+                        .padding(.horizontal, 10).padding(.vertical, 4).background(Theme.classic.notQuite.opacity(0.12), in: Capsule())
                 }
                 Spacer()
                 Text(formatClock(attempt.activeSeconds)).monospacedDigit().foregroundStyle(.secondary)
@@ -471,7 +489,7 @@ struct FeedbackCard: View {
             QuestionPanel(question: question, label: "Question")
             if !attempt.hintText.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label("Hint you used", systemImage: "lightbulb.fill").font(.subheadline.bold()).foregroundStyle(.orange)
+                    Label("Hint you used", systemImage: "lightbulb.fill").font(.subheadline.bold()).foregroundStyle(Theme.classic.attention)
                     MathText(markdown: attempt.hintText, fontSize: 16)
                 }
             }
@@ -481,6 +499,8 @@ struct FeedbackCard: View {
             }
             if attempt.effectiveVerdict == .incorrect, !attempt.errorStep.isEmpty, !attempt.wasStuck {
                 MathText(markdown: "**Where it went wrong:** \(attempt.errorStep)", fontSize: 17)
+                    .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.classic.notQuite.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             if !attempt.feedback.isEmpty, !attempt.wasStuck { MathText(markdown: attempt.feedback, fontSize: 17) }
             if attempt.effectiveVerdict == .incorrect, !attempt.workedSolution.isEmpty {

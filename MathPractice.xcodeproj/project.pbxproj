@@ -66,6 +66,7 @@
 		BAACC91351094CDC58E318C0 /* CheckInUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3352EA421577C75BDC7F236 /* CheckInUITests.swift */; };
 		BB7EE8A0D18D38B0074163CD /* JSONWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A14FB27BED8FA4B1892153 /* JSONWriter.swift */; };
 		C0F906DCAAD9CB300CFA566D /* ReadChapterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0311F8682A7570D87C58B443 /* ReadChapterView.swift */; };
+		C1CD2607914922CDE5BD1663 /* ScreenTourUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAFD830DD75C79719F8BA99 /* ScreenTourUITests.swift */; };
 		C4FED1BB32E43CAEC5E92DD6 /* ClaudeClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2178A03C9531E0752A2E3C4 /* ClaudeClientTests.swift */; };
 		C5E88D1B3963BA6AB97A9D40 /* ClaudeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665991869AC6129844A96D03 /* ClaudeClient.swift */; };
 		C793E5EA00A54165677A1161 /* LessonWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C04733293AB6BC3B01BDA9 /* LessonWriter.swift */; };
@@ -152,6 +153,7 @@
 		A9372EBC3923439A35CEAE84 /* LessonPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonPage.swift; sourceTree = "<group>"; };
 		AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorLiveProbeUITests.swift; sourceTree = "<group>"; };
 		AC7907F8F17ECCF8B44BA369 /* MathPracticeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathPracticeApp.swift; sourceTree = "<group>"; };
+		ADAFD830DD75C79719F8BA99 /* ScreenTourUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTourUITests.swift; sourceTree = "<group>"; };
 		B55804A2BBA01524A634BFB1 /* ProblemReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProblemReport.swift; sourceTree = "<group>"; };
 		B886E03B5A5F3BE3219DFF3F /* Planner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planner.swift; sourceTree = "<group>"; };
 		B9285B6407ACA92DBB8BD449 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -253,6 +255,7 @@
 				75F7D607EC608E24A41A6259 /* LessonUITests.swift */,
 				A44CD57438440D0BE6E0745E /* LibraryUITests.swift */,
 				65CB75D511DE7DCCBD2D5478 /* ScanFixUITests.swift */,
+				ADAFD830DD75C79719F8BA99 /* ScreenTourUITests.swift */,
 				0DF72E3D176E1F1B94545C65 /* SkillsGridUITests.swift */,
 				AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */,
 			);
@@ -550,6 +553,7 @@
 				EEE89F3E1373A579FEB1CD0F /* LessonUITests.swift in Sources */,
 				0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */,
 				46C498886EE4542552E09E0F /* ScanFixUITests.swift in Sources */,
+				C1CD2607914922CDE5BD1663 /* ScreenTourUITests.swift in Sources */,
 				34E56D1F000ACCACCF53420B /* SkillsGridUITests.swift in Sources */,
 				C9121E4B2CBE646909447359 /* TutorLiveProbeUITests.swift in Sources */,
 			);

@@ -96,7 +96,7 @@ struct TutorTurnRow: View {
             }
         } else {
             HStack(alignment: .top, spacing: 12) {
-                Label("Tutor", systemImage: "graduationcap.fill").font(.subheadline.bold()).foregroundStyle(.purple).frame(width: 80, alignment: .leading)
+                Label("Tutor", systemImage: "graduationcap.fill").font(.subheadline.bold()).foregroundStyle(Theme.classic.board).frame(width: 80, alignment: .leading)
                 let beats = turn.text.components(separatedBy: "\n").compactMap(TutorScriptParser.beat)
                 let md = beats.compactMap { b -> String? in
                     switch b {

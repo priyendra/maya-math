@@ -26,10 +26,9 @@ struct MathText: View {
 
     /// Cheap plain-text preview for long lists (no web view).
     static func plainPreview(_ markdown: String) -> String {
-        markdown.replacingOccurrences(of: "$$", with: " ")
-            .replacingOccurrences(of: "$", with: "")
+        MathPlain.render(markdown.replacingOccurrences(of: "\n", with: " "))
+            .replacingOccurrences(of: "**", with: "")
             .replacingOccurrences(of: "\\", with: "")
-            .replacingOccurrences(of: "\n", with: " ")
     }
 }
 

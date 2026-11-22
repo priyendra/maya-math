@@ -160,13 +160,13 @@ private struct PageContent: View {
             }
             if !tutor.board.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    header("Tutor's board", "rectangle.and.pencil.and.ellipsis", .purple)
+                    header("Tutor's board", "rectangle.and.pencil.and.ellipsis", Theme.classic.board)
                     ForEach(tutor.board) { b in
                         MathText(markdown: b.markdown, fontSize: 22).part(b.id)
                     }
                 }
                 .padding(16)
-                .background(Color.purple.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+                .background(Theme.classic.board.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             Text("Room to write ↓").font(.caption).foregroundStyle(.tertiary)
             Color.clear.frame(height: 420)
@@ -211,11 +211,11 @@ private struct PageContent: View {
             .part(p.id)
         case "wrong":
             VStack(alignment: .leading, spacing: 6) {
-                header("Where it went wrong", "exclamationmark.triangle.fill", .red)
+                header("Where it went wrong", "arrow.uturn.left.circle.fill", Theme.classic.notQuite)
                 MathText(markdown: p.markdown, fontSize: 19)
             }
             .padding(14)
-            .background(Color.red.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+            .background(Theme.classic.notQuite.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .part(p.id)
         default:
             EmptyView()
