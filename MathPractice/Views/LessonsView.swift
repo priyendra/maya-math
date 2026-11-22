@@ -20,6 +20,12 @@ struct LessonsView: View {
             VStack(alignment: .leading, spacing: 20) {
                 if lessons.isEmpty {
                     prepareCard
+                } else if planning {
+                    HStack(spacing: 12) {
+                        ProgressView()
+                        Text("Updating your lessons… (about a minute)").foregroundStyle(.secondary)
+                    }
+                    .padding(20).frame(maxWidth: .infinity, alignment: .leading).card(theme)
                 } else {
                     overview(lessons)
                     VStack(spacing: 0) {
@@ -48,11 +54,13 @@ struct LessonsView: View {
             }
         }
         .fullScreenCover(item: $open) { l in LessonPage(lesson: l, onNext: { next in open = nil; DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { open = next } }) }
-        #if DEBUG
         .onAppear {
+            // Lessons planned before long sections could be split get planned again (once, before any are started).
+            if !planning, LessonPlanner.shouldReplan(chapter) { plan() }
+            #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-openLesson"), open == nil { open = lessons.first }
+            #endif
         }
-        #endif
     }
 
     // MARK: Pieces

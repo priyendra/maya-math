@@ -44,13 +44,18 @@ enum LessonWriter {
         for (i, p) in lesson.parts.enumerated() {
             head += "\(i + 1). \(p.title)\(i == index ? "   ← you are preparing this part" : "")\n"
         }
+        if let f = part.fromExample, let t = part.toExample {
+            head += "\nThis part teaches worked example\(f == t ? " \(f)" : "s \(f)–\(t)") of its section and the explanation " +
+                "leading up to \(f == t ? "it" : "them"); the rest of the section is taught in the other parts. " +
+                "Choose your_turn exercises that practise what these examples teach.\n"
+        }
         input.content.append(.text(head))
 
         let teach = Set(part.sectionIDs)
         var book = "Book content for this part:\n"
         var nf = 0
-        let blocks = chapter.sortedBlocks
-        for b in blocks where teach.contains(b.sectionID) && ["heading", "text", "example", "figure"].contains(b.kind) {
+        let blocks = slice(chapter.sortedBlocks.filter { teach.contains($0.sectionID) }, part: part)
+        for b in blocks where ["heading", "text", "example", "figure"].contains(b.kind) {
             if let img = b.imageData {
                 nf += 1
                 let label = "f\(nf)"
@@ -81,6 +86,27 @@ enum LessonWriter {
         }
         input.content.append(.text(nq == 0 ? "There are no exercises for this part (your_turn must be empty)." : list))
         return input
+    }
+
+    /// The blocks a part teaches: for a part that covers examples f…t of a section, the explanation and figures
+    /// before each of those examples go with it; anything after the section's last example goes with the last part.
+    static func slice(_ blocks: [ContentBlock], part: LessonPart) -> [ContentBlock] {
+        guard let f = part.fromExample, let t = part.toExample, let split = part.sectionIDs.first else { return blocks }
+        let total = blocks.filter { $0.sectionID == split && $0.kind == "example" }.count
+        var seen = 0
+        var out: [ContentBlock] = []
+        for b in blocks {
+            if b.sectionID != split {
+                out.append(b)   // another section attached to this part: taught whole
+            } else if b.kind == "example" {
+                seen += 1
+                if seen >= f && seen <= t { out.append(b) }
+            } else {
+                let upcoming = seen + 1
+                if (upcoming >= f && upcoming <= t) || (seen >= total && t >= total) { out.append(b) }
+            }
+        }
+        return out
     }
 
     /// The saved script for a part, writing it if needed.

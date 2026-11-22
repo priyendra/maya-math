@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import MathPractice
 
 final class LessonTests: XCTestCase {
@@ -39,6 +40,72 @@ final class LessonTests: XCTestCase {
             let all = covered(r)
             for s in sections where s.teaches { XCTAssertTrue(all.contains(s.id), "\(s.title) left out") }
         }
+    }
+
+    /// A section that teaches several ideas through several worked examples can be split across parts by example.
+    func testLongSectionSplitByExamples() {
+        let dto = LessonPlanDTO(lessons: [
+            L(title: "5-1 Factoring Integers", summary: "", optional: false, parts: [
+                P(title: "Factors and primes", section_ids: [1], practice_section_ids: [2, 3], examples: [1, 2]),
+                P(title: "Greatest common factor", section_ids: [1], practice_section_ids: [2, 3], examples: [3]),
+            ]),
+        ], skipped: [])
+        let r = LessonPlanner.validate(dto, sections: LessonFixtures.factoring)
+        let l = r.lessons.first { $0.title == "5-1 Factoring Integers" }!
+        XCTAssertEqual(l.parts.count, 2)
+        XCTAssertEqual(l.parts[0].sectionIDs, [1])
+        XCTAssertEqual(l.parts[1].sectionIDs.first, 1, "later teaching sections the plan left out join the last part")
+        XCTAssertEqual(l.parts.map(\.fromExample), [1, 3])
+        XCTAssertEqual(l.parts.map(\.toExample), [2, 3])
+        XCTAssertEqual(l.parts[1].practiceSectionIDs, [2, 3], "exercise sections serve both parts")
+        XCTAssertFalse(r.lessons.contains { $0.title != l.title && $0.parts.contains { $0.sectionIDs.contains(1) } })
+    }
+
+    /// Gaps and overlaps in example ranges are repaired; a lone slice means the whole section.
+    func testExampleRangesAreRepaired() {
+        let gap = LessonPlanDTO(lessons: [L(title: "A", summary: "", optional: false, parts: [
+            P(title: "one", section_ids: [1], practice_section_ids: [], examples: [1]),
+            P(title: "three", section_ids: [1], practice_section_ids: [], examples: [3]),
+        ])], skipped: [])
+        let a = LessonPlanner.validate(gap, sections: LessonFixtures.factoring).lessons.first { $0.title == "A" }!
+        XCTAssertEqual(a.parts.map(\.fromExample), [1, 3])
+        XCTAssertEqual(a.parts.map(\.toExample), [2, 3], "example 2 joins the part before it")
+
+        let lone = LessonPlanDTO(lessons: [L(title: "B", summary: "", optional: false, parts: [
+            P(title: "two", section_ids: [1], practice_section_ids: [], examples: [2]),
+        ])], skipped: [])
+        let b = LessonPlanner.validate(lone, sections: LessonFixtures.factoring).lessons.first { $0.title == "B" }!
+        XCTAssertNil(b.parts[0].fromExample)
+
+        // Example numbers on a section with a single example (or several sections) are ignored.
+        let ignored = LessonPlanDTO(lessons: [L(title: "C", summary: "", optional: false, parts: [
+            P(title: "speed", section_ids: [45], practice_section_ids: [46], examples: [1]),
+        ])], skipped: [])
+        let c = LessonPlanner.validate(ignored, sections: LessonFixtures.ratesAndSpeed).lessons.first { $0.title == "C" }!
+        XCTAssertNil(c.parts[0].fromExample)
+    }
+
+    func testOutlineListsExamplesOfLongSections() {
+        var s = LessonFixtures.factoring
+        let i = s.firstIndex { $0.id == 1 }!
+        s[i].exampleTitles = ["**Example 1** Give all the positive factors of 56.", "**Example 2** Find the prime factorization of 504.",
+                              "**Example 3** Find the GCF of 882 and 945."]
+        let text = LessonPlanner.describe("Factoring", s)
+        XCTAssertTrue(text.contains("example 3: **Example 3** Find the GCF of 882 and 945."), text)
+    }
+
+    @MainActor
+    func testSlicingASectionBetweenParts() throws {
+        let container = try ModelContainer(for: Chapter.self, ContentBlock.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let ctx = ModelContext(container)
+        let kinds = ["heading", "text", "example", "text", "example", "text", "example", "text"]
+        let blocks = kinds.enumerated().map { i, k in ContentBlock(order: i, kind: k, markdown: "\(k)\(i)", pageIndex: 0, sectionID: 1) }
+        blocks.forEach { ctx.insert($0) }
+        func names(_ f: Int, _ t: Int) -> [String] {
+            LessonWriter.slice(blocks, part: LessonPart(title: "", sectionIDs: [1], practiceSectionIDs: [], fromExample: f, toExample: t)).map(\.markdown)
+        }
+        XCTAssertEqual(names(1, 2), ["heading0", "text1", "example2", "text3", "example4"])
+        XCTAssertEqual(names(3, 3), ["text5", "example6", "text7"])
     }
 
     func testRepeatedAndUnknownSectionsAreDropped() {

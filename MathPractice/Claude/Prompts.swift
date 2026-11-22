@@ -4,7 +4,7 @@ import Foundation
 /// Rules here must work for any math textbook: judge from content, never from one book's labels.
 enum Prompts {
     /// Bump when prompts change meaningfully (recorded in the call log).
-    static let version = "8"
+    static let version = "9"
 
     static let mathFormat = """
     Write all math using LaTeX inside $...$ (inline) or $$...$$ (display). Use Markdown for everything else. \
@@ -185,9 +185,16 @@ enum Prompts {
     one only if it is very long (more than about seven worked examples).
     - Each lesson has 1-8 parts, in book order. A part teaches one idea: its explanation and the worked example(s) \
     for it, following the book's own sub-units (for example a "learn" block, or a group of examples about one case). \
-    section_ids = the sections the part teaches. practice_section_ids = exercise sections that practise exactly that \
-    part (for example the matching "try" block); put a lesson's general exercise sections (oral/written exercises, \
-    independent practice) on its last part.
+    A part should take about 3-6 minutes: usually one to three worked examples. section_ids = the sections the part \
+    teaches. practice_section_ids = exercise sections that practise exactly that part (for example the matching \
+    "try" block); put a lesson's general exercise sections (oral/written exercises, independent practice) on its \
+    last part. examples = [] unless the part teaches only some examples of a section (below).
+    - Some books put a whole lesson in one section: an explanation with several worked examples covering different \
+    ideas, then all the exercises. Split such a section into parts by its worked examples (they are listed and \
+    numbered under the section): each of those parts has section_ids = [that one section] and examples = the \
+    numbers of the consecutive examples it teaches, e.g. [1, 2] then [3]; the explanation before an example goes \
+    with it. Split where the idea changes; keep examples of the same idea together. Give each of those parts the \
+    section's exercise sections as practice_section_ids. Do not split sections that already teach one idea.
     - Cover all the core study material: every section with explanation or worked examples must be in some part, \
     unless it is not core. Not core (put in skipped, with a short reason a student understands): enrichment and extra \
     reading (historical or career notes, computer or calculator activities, projects, journals, performance tasks, \
@@ -195,7 +202,8 @@ enum Prompts {
     cumulative review, assessment prep); those exercises stay available for practice. A review of earlier knowledge \
     at the start of the chapter can be an optional warm-up lesson; an extension topic the book marks as extra can be \
     an optional lesson.
-    - Every section id appears at most once in the whole answer. Keep book order.
+    - Every section id appears at most once in the whole answer (except a section split by examples, which appears \
+    in consecutive parts of one lesson, and its exercise sections). Keep book order.
     - title: the book's own lesson title, tidied (math as $...$ LaTeX). summary: one plain sentence saying what she \
     will learn. Part titles: short and plain (at most 8 words), saying what that part teaches.
     """
@@ -231,7 +239,9 @@ enum Prompts {
     - End with one sentence that sums up the idea, then: "Any questions before you try one?"
 
     your_turn: one or two exercise ids (q…) that practise exactly what this part taught, the most typical first (the \
-    second is used if she needs another try). Choose ones she can do with a pencil. Empty if none fits.
+    second is used if she needs another try). Choose ones she can do with a pencil. When the part teaches only one of \
+    several ideas in its section, pick exercises about this part's idea, not another idea from the section. Empty if \
+    none fits.
 
     \(mathFormat)
     """

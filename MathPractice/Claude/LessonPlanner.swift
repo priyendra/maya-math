@@ -7,6 +7,8 @@ struct LessonPlanDTO: Codable {
         let title: String
         let section_ids: [Int]
         let practice_section_ids: [Int]
+        /// Worked-example numbers of the (single) section this part teaches, when a section is split across parts.
+        var examples: [Int] = []
     }
     struct Lesson: Codable {
         let title: String
@@ -30,6 +32,7 @@ struct LessonPlanDTO: Codable {
                 "title": Schema.string,
                 "section_ids": Schema.array(Schema.integer),
                 "practice_section_ids": Schema.array(Schema.integer),
+                "examples": Schema.array(Schema.integer),
             ])),
         ])),
         "skipped": Schema.array(Schema.object(["section_id": Schema.integer, "reason": Schema.string])),
@@ -38,6 +41,21 @@ struct LessonPlanDTO: Codable {
 
 /// Divides a chapter into lessons (one Claude call) and makes sure nothing core is left out.
 enum LessonPlanner {
+    /// 2: long sections can be split across parts by worked example.
+    static let version = 2
+
+    /// Lessons planned before sections could be split, where some part covers several worked examples, and
+    /// nothing has been started yet: worth planning again (once).
+    @MainActor
+    static func shouldReplan(_ chapter: Chapter) -> Bool {
+        guard chapter.lessonPlanVersion < version, !chapter.lessons.isEmpty,
+              chapter.lessons.allSatisfy({ $0.status == .notStarted }) else { return false }
+        let examples = Dictionary(grouping: chapter.blocks.filter { $0.kind == "example" }, by: \.sectionID).mapValues(\.count)
+        return chapter.lessons.contains { l in
+            l.parts.contains { p in p.fromExample == nil && p.sectionIDs.map { examples[$0] ?? 0 }.reduce(0, +) >= 3 }
+        }
+    }
+
     /// What the planner (and the coverage check) knows about one section.
     struct SectionInfo: Equatable {
         let id: Int
@@ -47,6 +65,8 @@ enum LessonPlanner {
         var paragraphs = 0, examples = 0, figures = 0, exercises = 0
         var teachingChars = 0
         var samples: [String] = []
+        /// First line of each worked example, in order.
+        var exampleTitles: [String] = []
         /// Has explanation or worked examples of its own (must be in a lesson unless deliberately skipped).
         var teaches: Bool { examples > 0 || figures > 0 || teachingChars >= 150 }
     }
@@ -78,6 +98,10 @@ enum LessonPlanner {
             case "exercise": infos[i].exercises += 1
             default: break
             }
+            if b.kind == "example" {
+                let first = b.markdown.split(separator: "\n").first.map(String.init) ?? ""
+                infos[i].exampleTitles.append(String(first.prefix(120)))
+            }
             if ["text", "example"].contains(b.kind), infos[i].samples.count < 4 {
                 let first = b.markdown.split(separator: "\n").first.map(String.init) ?? ""
                 infos[i].samples.append((b.kind == "example" ? "Example: " : "") + String(first.prefix(140)))
@@ -97,7 +121,11 @@ enum LessonPlanner {
             if s.exercises > 0 { parts.append("\(s.exercises) exercise\(s.exercises == 1 ? "" : "s")") }
             let indent = String(repeating: "  ", count: s.level)
             lines.append("\(indent)[\(s.id)] \(s.title) — \(parts.isEmpty ? "heading only" : parts.joined(separator: ", "))")
-            for sample in s.samples { lines.append("\(indent)    · \(sample)") }
+            if s.examples >= 2 {
+                for (k, t) in s.exampleTitles.enumerated() { lines.append("\(indent)    example \(k + 1): \(t)") }
+            } else {
+                for sample in s.samples { lines.append("\(indent)    · \(sample)") }
+            }
         }
         return lines.joined(separator: "\n")
     }
@@ -112,15 +140,47 @@ enum LessonPlanner {
             for id in ids where known.contains(id) && !seen.contains(id) { seen.insert(id); out.append(id) }
             return out.sorted()
         }
+        let info = Dictionary(uniqueKeysWithValues: sections.map { ($0.id, $0) })
         var lessons: [Draft] = []
         for l in dto.lessons {
             var parts: [LessonPart] = []
+            var slicedHere = Set<Int>()         // sections this lesson teaches across several parts
+            var practiceHere = Set<Int>()       // exercise sections may serve several parts of one lesson
             for p in l.parts {
-                let teach = take(p.section_ids)
-                let practice = take(p.practice_section_ids)
-                guard !teach.isEmpty || !practice.isEmpty else { continue }
+                var teach: [Int] = []
+                var from: Int?, to: Int?
+                let n = p.section_ids.count == 1 ? (info[p.section_ids[0]]?.examples ?? 0) : 0
+                let ex = p.examples.filter { $0 >= 1 && $0 <= n }
+                if n >= 2, !ex.isEmpty, let sid = p.section_ids.first, !seen.contains(sid) || slicedHere.contains(sid) {
+                    teach = [sid]; from = ex.min(); to = ex.max()
+                    seen.insert(sid); slicedHere.insert(sid)
+                } else {
+                    teach = take(p.section_ids)
+                }
+                var practice: [Int] = []
+                var newPractice = false
+                for id in p.practice_section_ids where known.contains(id) && !practice.contains(id) {
+                    if !seen.contains(id) { newPractice = true }
+                    if !seen.contains(id) || practiceHere.contains(id) { practice.append(id); seen.insert(id); practiceHere.insert(id) }
+                }
+                guard !teach.isEmpty || newPractice else { continue }
                 parts.append(LessonPart(title: p.title.trimmingCharacters(in: .whitespaces), sectionIDs: teach,
-                                        practiceSectionIDs: practice))
+                                        practiceSectionIDs: practice.sorted(), fromExample: from, toExample: to))
+            }
+            // A split section's parts cover all its examples, in order, without gaps or overlaps.
+            for sid in slicedHere {
+                let n = info[sid]?.examples ?? 0
+                let idx = parts.indices.filter { parts[$0].sectionIDs == [sid] && parts[$0].fromExample != nil }
+                    .sorted { parts[$0].fromExample! < parts[$1].fromExample! }
+                for (k, pi) in idx.enumerated() {
+                    if k == 0 { parts[pi].fromExample = 1 }
+                    parts[pi].toExample = k == idx.count - 1 ? n : parts[idx[k + 1]].fromExample! - 1
+                }
+                if idx.count == 1 { parts[idx[0]].fromExample = nil; parts[idx[0]].toExample = nil }
+            }
+            parts.removeAll { p in
+                guard let f = p.fromExample, let t = p.toExample, t < f else { return false }
+                return true   // its examples all went to a neighbouring part
             }
             guard !parts.isEmpty else { continue }
             lessons.append(Draft(title: l.title.trimmingCharacters(in: .whitespaces), summary: l.summary,
@@ -156,7 +216,7 @@ enum LessonPlanner {
                 var best: (lesson: Int, part: Int, id: Int)?
                 for (li, l) in lessons.enumerated() {
                     for (pi, p) in l.parts.enumerated() {
-                        if let m = (p.sectionIDs + p.practiceSectionIDs).filter({ $0 < s.id }).max(), m > (best?.id ?? -1) {
+                        if let m = (p.sectionIDs + p.practiceSectionIDs).filter({ $0 < s.id }).max(), m >= (best?.id ?? -1) {
                             best = (li, pi, m)
                         }
                     }
@@ -182,6 +242,8 @@ enum LessonPlanner {
         let result = validate(dto, sections: infos)
         if !result.attached.isEmpty { CallLog.event("lesson_plan_attached", ["sections": result.attached]) }
         save(result, to: chapter, context: context)
+        chapter.lessonPlanVersion = version
+        try? context.save()
     }
 
     @MainActor

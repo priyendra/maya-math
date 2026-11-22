@@ -73,6 +73,8 @@ final class Chapter {
     @Relationship(deleteRule: .cascade, inverse: \Lesson.chapter) var lessons: [Lesson] = []
     /// Sections deliberately left out of lessons, with why: JSON [LessonPlan.Skipped].
     var lessonSkippedJSON: String = ""
+    /// LessonPlanner.version the lessons were planned with (older plans may be replanned).
+    var lessonPlanVersion: Int = 0
 
     init(title: String = "New chapter") {
         self.title = title
@@ -400,6 +402,10 @@ struct LessonPart: Codable, Hashable {
     var sectionIDs: [Int]
     /// Sections whose exercises can be used for "your turn" (the part's own sections are used too).
     var practiceSectionIDs: [Int]
+    /// A long section can be taught across parts: this part teaches its worked examples fromExample…toExample
+    /// (1-based) and the explanation leading up to them. nil = the whole section.
+    var fromExample: Int? = nil
+    var toExample: Int? = nil
 }
 
 /// What the lesson page shows and says for one part (generated when she first reaches it, then saved).
