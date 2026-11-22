@@ -4,14 +4,15 @@ import SwiftData
 /// Big Practice / Exam buttons plus links, for a chapter or a scope.
 struct StudyActions: View {
     let set: StudySet
+    @Environment(\.theme) private var theme
     @State private var practicing = false
     @State private var examining = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 16) {
-                bigButton("Practice", subtitle: "30-minute session", icon: "pencil.and.scribble", color: .blue) { practicing = true }
-                bigButton("Exam mode", subtitle: "\(set.examMinutes)-minute timed test", icon: "timer", color: .purple) { examining = true }
+                bigButton("Practice", subtitle: "30-minute session", icon: "pencil.and.scribble", color: theme.accent) { practicing = true }
+                bigButton("Exam mode", subtitle: "\(set.examMinutes)-minute timed test", icon: "timer", color: theme.accent2) { examining = true }
             }
             .disabled(set.questions.isEmpty)
             if set.questions.isEmpty {
@@ -33,14 +34,15 @@ struct StudyActions: View {
             HStack(spacing: 16) {
                 Image(systemName: icon).font(.system(size: 36))
                 VStack(alignment: .leading) {
-                    Text(title).font(.title2.bold())
-                    Text(subtitle).font(.subheadline).opacity(0.85)
+                    Text(title).font(theme.font(.section))
+                    Text(subtitle).font(theme.font(.label)).opacity(0.9)
                 }
                 Spacer()
             }
             .padding(24)
             .frame(maxWidth: .infinity)
-            .background(color.gradient, in: RoundedRectangle(cornerRadius: 20))
+            .background(theme.fill(color), in: RoundedRectangle(cornerRadius: theme.radius, style: .continuous))
+            .shadow(color: theme.shadow ? color.opacity(0.3) : .clear, radius: 10, y: 5)
             .foregroundStyle(.white)
         }
         .buttonStyle(.plain)
@@ -52,26 +54,32 @@ struct LinkTile: View {
     let subtitle: String
     let icon: String
     var highlight = false
+    var color: Color? = nil
+    @Environment(\.theme) private var theme
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon).font(.title2).foregroundStyle(highlight ? .orange : .accentColor)
+        let c = highlight ? theme.attention : (color ?? theme.accent)
+        HStack(spacing: 14) {
+            Image(systemName: icon).font(.title3.weight(.semibold)).foregroundStyle(c)
+                .frame(width: 44, height: 44)
+                .background(c.opacity(0.13), in: RoundedRectangle(cornerRadius: theme.radius * 0.55, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.headline)
-                Text(subtitle).font(.caption).foregroundStyle(highlight ? .orange : .secondary)
+                Text(title).font(theme.font(.cardTitle)).foregroundStyle(.primary)
+                Text(subtitle).font(theme.font(.caption)).foregroundStyle(highlight ? theme.attention : .secondary)
             }
             Spacer()
             Image(systemName: "chevron.right").foregroundStyle(.tertiary)
         }
-        .padding(16)
+        .padding(14)
         .frame(maxWidth: .infinity)
-        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+        .card(theme)
     }
 }
 
 struct ChapterHomeView: View {
     @Bindable var chapter: Chapter
     @Environment(\.modelContext) private var context
+    @Environment(\.theme) private var theme
     @ObservedObject private var processor = ChapterProcessor.shared
     @State private var showSettings = false
     @State private var confirmReread = false
@@ -103,6 +111,7 @@ struct ChapterHomeView: View {
                 }
 
                 if chapter.status == .ready && !chapter.needsRereading {
+                    nextStep
                     StudyActions(set: set)
                 }
 
@@ -112,29 +121,33 @@ struct ChapterHomeView: View {
                             let done = chapter.lessons.filter { $0.status == .done }.count
                             LinkTile(title: "Lessons",
                                      subtitle: chapter.lessons.isEmpty ? "Learn it step by step with a tutor" : "\(done) of \(chapter.lessons.count) done",
-                                     icon: "graduationcap")
+                                     icon: "graduationcap.fill", color: theme.learn)
                         }
                         .accessibilityIdentifier("lessonsTile")
                     }
                     if !chapter.needsRereading && !chapter.blocks.isEmpty {
                         NavigationLink { ReadChapterView(chapter: chapter) } label: {
-                            LinkTile(title: "Read chapter", subtitle: "The book, section by section", icon: "book")
+                            LinkTile(title: "Read chapter", subtitle: "The book, section by section", icon: "book.fill", color: theme.accent2)
                         }
                     }
                     NavigationLink { MyAnswersView(set: set) } label: {
                         let toCheck = set.allAttempts.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.count
                         LinkTile(title: "My answers", subtitle: toCheck > 0 ? "\(toCheck) to check" : "Your work and how it was graded",
-                                 icon: "list.bullet.rectangle", highlight: toCheck > 0)
+                                 icon: "list.bullet.rectangle.fill", highlight: toCheck > 0, color: theme.board)
                     }
                     NavigationLink { ProgressReportView(chapter: chapter) } label: {
-                        LinkTile(title: "My progress", subtitle: "Mistake patterns, speed, practice days", icon: "chart.bar.xaxis")
+                        LinkTile(title: "My progress", subtitle: "Mistake patterns, speed, practice days", icon: "chart.bar.fill", color: theme.done)
                     }
                 }
                 .buttonStyle(.plain)
 
                 if !chapter.needsRereading {
-                    Text("Your skills").font(.title2.bold())
-                    MasteryGrid(set: set)
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Your skills").font(theme.font(.section))
+                        MasteryGrid(set: set)
+                    }
+                    .padding(20)
+                    .card(theme)
                     let stats = SessionStats(attempts: set.allAttempts.filter(\.isGraded))
                     if stats.total > 0 {
                         HStack(spacing: 24) {
@@ -146,7 +159,10 @@ struct ChapterHomeView: View {
                 }
             }
             .padding(24)
+            .frame(maxWidth: 980)
+            .frame(maxWidth: .infinity)
         }
+        .themedBackground(theme)
         .navigationTitle(chapter.title)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -172,8 +188,36 @@ struct ChapterHomeView: View {
 
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading) {
-            Text(value).font(.title.bold().monospacedDigit())
-            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.system(size: 28, weight: .bold, design: theme.design).monospacedDigit())
+            Text(label).font(theme.font(.caption)).foregroundStyle(.secondary)
+        }
+    }
+
+    /// One clear suggestion for what to do next.
+    @ViewBuilder private var nextStep: some View {
+        let lessons = chapter.sortedLessons
+        let current = lessons.filter { $0.status == .inProgress }.max { ($0.lastOpened ?? .distantPast) < ($1.lastOpened ?? .distantPast) }
+            ?? lessons.first { $0.status == .notStarted && !$0.optional }
+        if let l = current {
+            NavigationLink { LessonsView(chapter: chapter) } label: {
+                HStack(spacing: 16) {
+                    Image(systemName: "play.fill").font(.title2).foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(theme.fill(theme.learn), in: Circle())
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(l.status == .inProgress ? "Up next: keep going with your lesson" : "Up next: start learning")
+                            .font(theme.font(.caption)).foregroundStyle(.secondary)
+                        Text(MathPlain.render(l.title)).font(theme.font(.cardTitle)).foregroundStyle(.primary)
+                        Text(l.status == .inProgress ? "Part \(l.partsDone + 1) of \(l.parts.count)" : "\(l.parts.count) parts · about \(max(5, l.parts.count * 5)) min")
+                            .font(theme.font(.caption)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                }
+                .padding(18)
+                .card(theme, tint: theme.learn)
+            }
+            .buttonStyle(.plain)
         }
     }
 }
@@ -254,6 +298,7 @@ struct SessionStats {
 /// Concept × difficulty grid colored by mastery, for a chapter or scope.
 struct MasteryGrid: View {
     let set: StudySet
+    @Environment(\.theme) private var theme
 
     init(set: StudySet) { self.set = set }
     init(chapter: Chapter) { self.set = .chapter(chapter) }
@@ -274,13 +319,13 @@ struct MasteryGrid: View {
             GridRow {
                 Text("")
                 ForEach(1...3, id: \.self) { d in
-                    Text(["Basic", "Medium", "Hard"][d - 1]).font(.caption.bold()).foregroundStyle(.secondary)
+                    Text(["Basic", "Medium", "Hard"][d - 1]).font(theme.font(.label)).foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                 }
             }
             ForEach(concepts) { concept in
                 GridRow {
-                    Text(MathPlain.render(concept.name)).font(.subheadline).lineLimit(2).frame(maxWidth: 260, alignment: .leading)
+                    Text(MathPlain.render(concept.name)).font(theme.font(.body)).lineLimit(2).frame(maxWidth: 280, alignment: .leading)
                     ForEach(1...3, id: \.self) { d in
                         cell(concept: concept, difficulty: d, planner: planner, has: present.contains("\(concept.id)|\(d)"))
                     }
@@ -292,19 +337,32 @@ struct MasteryGrid: View {
     @ViewBuilder
     private func cell(concept: Concept, difficulty: Int, planner: Planner, has: Bool) -> some View {
         let key = CellKey(conceptID: concept.id, conceptOrder: concept.bookOrder, difficulty: difficulty)
+        let r = min(theme.radius * 0.5, 10)
         if !has {
-            RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.08)).frame(height: 44)
+            RoundedRectangle(cornerRadius: r).strokeBorder(Color.secondary.opacity(0.12), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                .frame(height: 46)
         } else {
             let p = planner.progress(key)
             let mastered = planner.isMastered(key)
             let open = planner.isOpen(key)
-            RoundedRectangle(cornerRadius: 8)
-                .fill(open ? Self.color(p.mastery, attempted: p.attemptCount > 0) : Color.secondary.opacity(0.15))
-                .frame(height: 44)
+            let fill = open ? theme.skillColor(p.mastery, attempted: p.attemptCount > 0) : Color.secondary.opacity(0.13)
+            RoundedRectangle(cornerRadius: r, style: .continuous)
+                .fill(fill)
+                .frame(height: 46)
                 .overlay {
+                    // Icon + number, so the meaning never depends on colour alone. Dark text on light colours.
+                    let ink: Color = p.attemptCount > 0 && p.mastery >= 0.6 && !mastered ? .black.opacity(0.75) : .white
                     if !open { Image(systemName: "lock.fill").foregroundStyle(.secondary) }
-                    else if mastered { Image(systemName: "star.fill").foregroundStyle(.white) }
-                    else if p.attemptCount > 0 { Text("\(Int(p.mastery * 100))%").font(.caption.bold()).foregroundStyle(.white) }
+                    else if mastered { Label("Mastered", systemImage: "star.fill").labelStyle(.iconOnly).foregroundStyle(.white).font(.headline) }
+                    else if p.attemptCount > 0 {
+                        HStack(spacing: 4) {
+                            Image(systemName: p.mastery < 0.3 ? "arrow.down.circle.fill" : p.mastery < 0.6 ? "minus.circle.fill" : "arrow.up.circle.fill")
+                            Text("\(Int(p.mastery * 100))%")
+                        }
+                        .font(.system(size: 14, weight: .bold, design: theme.design)).foregroundStyle(ink)
+                    } else {
+                        Text("Ready").font(theme.font(.caption)).foregroundStyle(theme.learn)
+                    }
                 }
         }
     }

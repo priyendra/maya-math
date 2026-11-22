@@ -74,6 +74,7 @@ struct SettingsView: View {
                     Text("Stored in this iPad's Keychain. Create a key at console.anthropic.com and set a monthly spend limit on it.")
                 }
                 TutorVoiceSection()
+                DesignSection()
                 Section {
                     if let exportURL {
                         ShareLink(item: exportURL) { Label("Share data file", systemImage: "square.and.arrow.up") }
@@ -146,5 +147,39 @@ struct TutorVoiceSection: View {
         u.voice = Speaker.voice
         u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.98
         synth.speak(u)
+    }
+}
+
+/// Pick the app's look. Changes apply at once and stay.
+struct DesignSection: View {
+    @AppStorage("designOption") private var design = 0
+
+    var body: some View {
+        Section {
+            ForEach(Theme.all) { t in
+                Button { design = t.id } label: {
+                    HStack(spacing: 14) {
+                        HStack(spacing: 3) {
+                            ForEach(Array([t.accent, t.accent2, t.learn, t.done].enumerated()), id: \.offset) { _, c in
+                                Circle().fill(c).frame(width: 14, height: 14)
+                            }
+                        }
+                        .padding(8)
+                        .background(t.background, in: Capsule())
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(t.name).font(.system(size: 17, weight: .semibold, design: t.design)).foregroundStyle(.primary)
+                            Text(t.tagline).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if design == t.id { Image(systemName: "checkmark").foregroundStyle(t.accent).font(.headline) }
+                    }
+                }
+                .accessibilityIdentifier("design\(t.id)")
+            }
+        } header: {
+            Text("Design")
+        } footer: {
+            Text("Try each one — the whole app changes right away.")
+        }
     }
 }

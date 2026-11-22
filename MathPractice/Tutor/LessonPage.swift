@@ -11,6 +11,7 @@ struct LessonPage: View {
     @State private var practicing = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.theme) private var theme
 
     init(lesson: Lesson, onNext: ((Lesson) -> Void)? = nil) {
         self.lesson = lesson
@@ -21,7 +22,7 @@ struct LessonPage: View {
     var body: some View {
         NavigationStack {
             InkPageView(ink: ink)
-                .background(Color(uiColor: .systemBackground))
+                .background(theme.background)
                 .safeAreaInset(edge: .bottom) { bottomBar }
                 .navigationTitle(MathPlain.render(lesson.title))
                 .navigationBarTitleDisplayMode(.inline)
@@ -33,7 +34,7 @@ struct LessonPage: View {
                 }
         }
         .onAppear {
-            ink.install(LessonContent(tutor: tutor, ink: ink))
+            ink.install(LessonContent(tutor: tutor, ink: ink).environment(\.theme, theme).fontDesign(theme.design))
             ink.onInk = { [weak tutor] in tutor?.inkChanged() }
             ink.onTap = { [weak tutor] in tutor?.interrupt() }
             tutor.snapshot = { [weak ink] in ink?.snapshot() }
@@ -63,7 +64,7 @@ struct LessonPage: View {
                     Text(tutor.phase == .done ? "All \(n) parts done" : "Part \(min(tutor.currentPart + 1, n)) of \(n)")
                         .font(.caption).foregroundStyle(.secondary)
                     ForEach(0..<n, id: \.self) { i in
-                        Circle().fill(i < lesson.partsDone ? Color.green : i == tutor.currentPart ? Color.blue : Color.secondary.opacity(0.3))
+                        Circle().fill(i < lesson.partsDone ? theme.done : i == tutor.currentPart ? theme.learn : Color.secondary.opacity(0.3))
                             .frame(width: 7, height: 7)
                     }
                 }
@@ -73,25 +74,43 @@ struct LessonPage: View {
 
     // MARK: Bottom bar
 
+    /// Two pieces: her pen tools, and the tutor (what it's doing + what she can do next).
     private var bottomBar: some View {
-        HStack(spacing: 14) {
-            Picker("Tool", selection: $ink.tool) {
-                Image(systemName: "pencil.tip").accessibilityLabel("Pencil").tag(PageInk.Tool.pen)
-                Image(systemName: "highlighter").accessibilityLabel("Highlighter").tag(PageInk.Tool.highlighter)
-                Image(systemName: "eraser").accessibilityLabel("Eraser").tag(PageInk.Tool.eraser)
+        HStack(alignment: .bottom, spacing: 12) {
+            HStack(spacing: 4) {
+                toolButton(.pen, "pencil.tip", "Pencil")
+                toolButton(.highlighter, "highlighter", "Highlighter")
+                toolButton(.eraser, "eraser", "Eraser")
+                Divider().frame(height: 26).padding(.horizontal, 4)
+                Button { ink.undo() } label: { Image(systemName: "arrow.uturn.backward").frame(width: 36, height: 36) }
+                    .accessibilityLabel("Undo")
+                Button { ink.clear() } label: { Image(systemName: "trash").frame(width: 36, height: 36) }
+                    .accessibilityLabel("Clear my writing").disabled(!ink.hasInk)
             }
-            .pickerStyle(.segmented)
-            .frame(width: 160)
-            Button { ink.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel("Undo")
-            Button { ink.clear() } label: { Image(systemName: "trash") }
-                .accessibilityLabel("Clear my writing").disabled(!ink.hasInk)
-            Divider().frame(height: 30)
-            status.frame(maxWidth: .infinity, alignment: .leading)
-            controls
+            .padding(6)
+            .background(.regularMaterial, in: Capsule())
+            HStack(spacing: 12) {
+                status.frame(maxWidth: .infinity, alignment: .leading)
+                controls
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .frame(minHeight: 56)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: min(theme.radius + 6, 28), style: .continuous))
         }
-        .padding(.horizontal, 18).padding(.vertical, 12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+        .font(theme.font(.body))
         .padding(.horizontal, 16).padding(.bottom, 8)
+    }
+
+    private func toolButton(_ t: PageInk.Tool, _ icon: String, _ label: String) -> some View {
+        Button { ink.tool = t } label: {
+            Image(systemName: icon).font(.system(size: 17, weight: .semibold))
+                .frame(width: 36, height: 36)
+                .foregroundStyle(ink.tool == t ? Color.white : Color.primary)
+                .background(ink.tool == t ? AnyShapeStyle(theme.accent) : AnyShapeStyle(Color.clear), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(ink.tool == t ? .isSelected : [])
     }
 
     @ViewBuilder private var status: some View {
@@ -177,6 +196,7 @@ extension VoiceTutor.State {
 private struct LessonContent: View {
     @ObservedObject var tutor: LessonSession
     let ink: PageInk
+    @Environment(\.theme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -205,8 +225,8 @@ private struct LessonContent: View {
                     .font(.subheadline).foregroundStyle(.secondary)
             } else {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Part \(part + 1)").font(.caption.bold()).foregroundStyle(.blue)
-                    Text(MathPlain.render(title)).font(.title2.bold())
+                    Text("PART \(part + 1)").font(theme.font(.caption).weight(.bold)).kerning(1).foregroundStyle(theme.learn)
+                    Text(MathPlain.render(title)).font(theme.font(.pageTitle))
                 }
                 .padding(.top, part == 0 ? 0 : 18)
                 .part(e.id)
@@ -215,17 +235,17 @@ private struct LessonContent: View {
             itemView(item).part(item.id)
         case let .board(b):
             HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "pencil.line").foregroundStyle(.purple)
+                Image(systemName: "pencil.line").foregroundStyle(theme.board)
                 MathText(markdown: b.markdown, fontSize: 21)
             }
             .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(Color.purple.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+            .card(theme, tint: theme.board, radius: min(theme.radius, 12))
             .part(b.id)
         case let .turn(id, qid):
             if let q = tutor.questionsByID[qid] {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Label("Your turn", systemImage: "pencil.and.outline").font(.headline).foregroundStyle(.green)
+                        Label("Your turn", systemImage: "pencil.and.outline").font(theme.font(.cardTitle)).foregroundStyle(theme.done)
                         Spacer()
                         if !q.printedNumber.isEmpty { Text("Book #\(q.printedNumber)").font(.caption).foregroundStyle(.secondary) }
                         if let a = tutor.answers[id] { verdict(a) }
@@ -233,14 +253,14 @@ private struct LessonContent: View {
                     QuestionPanel(question: q)
                 }
                 .padding(16)
-                .background(Color.green.opacity(0.07), in: RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.green.opacity(0.35)))
+                .card(theme, tint: theme.done)
+                .overlay(RoundedRectangle(cornerRadius: theme.radius, style: .continuous).stroke(theme.done.opacity(0.4), lineWidth: 1.5))
                 .part(id)
                 Color.clear.frame(height: 260).part(id + "_room")   // room for her answer
             }
         case .finished:
             VStack(alignment: .leading, spacing: 6) {
-                Label("Lesson done!", systemImage: "party.popper.fill").font(.title2.bold()).foregroundStyle(.green)
+                Label("Lesson done!", systemImage: "party.popper.fill").font(theme.font(.section)).foregroundStyle(theme.done)
                 let results = tutor.answers.values.sorted { $0.startedAt < $1.startedAt }
                 if !results.isEmpty {
                     Text("Your turns: " + results.map { $0.effectiveVerdict == .correct ? "✓" : $0.effectiveVerdict == .incorrect ? "✗" : "?" }.joined(separator: "  "))
@@ -248,7 +268,7 @@ private struct LessonContent: View {
                 }
             }
             .padding(18)
-            .background(Color.green.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+            .card(theme, tint: theme.done)
             .part(e.id)
         }
     }
@@ -259,8 +279,8 @@ private struct LessonContent: View {
             MathText(markdown: "**\(item.markdown)**", fontSize: 21)
         case "example":
             MathText(markdown: item.markdown, fontSize: 21)
-                .padding(.leading, 14)
-                .overlay(alignment: .leading) { Rectangle().fill(Color.orange).frame(width: 4) }
+                .padding(.leading, 16)
+                .overlay(alignment: .leading) { Capsule().fill(theme.attention).frame(width: 4) }
         case "figure":
             VStack(alignment: .leading, spacing: 4) {
                 if let id = item.blockID, let data = tutor.lesson.chapter?.blocks.first(where: { $0.id == id })?.imageData,
@@ -280,9 +300,9 @@ private struct LessonContent: View {
             ProgressView()
         } else {
             switch a.effectiveVerdict {
-            case .correct: Label("Right", systemImage: "checkmark.circle.fill").foregroundStyle(.green).font(.headline)
-            case .incorrect: Label("Not quite", systemImage: "xmark.circle.fill").foregroundStyle(.red).font(.headline)
-            case .needsReview: Label("Couldn't read", systemImage: "questionmark.circle").foregroundStyle(.orange)
+            case .correct: Label("Right", systemImage: "checkmark.circle.fill").foregroundStyle(theme.done).font(theme.font(.label))
+            case .incorrect: Label("Not quite", systemImage: "arrow.uturn.left.circle.fill").foregroundStyle(theme.notQuite).font(theme.font(.label))
+            case .needsReview: Label("Couldn't read", systemImage: "questionmark.circle").foregroundStyle(theme.attention)
             }
         }
     }

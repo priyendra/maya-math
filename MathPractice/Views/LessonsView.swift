@@ -6,6 +6,7 @@ import SwiftData
 struct LessonsView: View {
     @Bindable var chapter: Chapter
     @Environment(\.modelContext) private var context
+    @Environment(\.theme) private var theme
     @State private var open: Lesson?
     @State private var expanded: Set<UUID> = []
     @State private var planning = false
@@ -26,7 +27,7 @@ struct LessonsView: View {
                             if i < lessons.count - 1 { Divider().padding(.leading, 56) }
                         }
                     }
-                    .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+                    .card(theme)
                     skippedList
                     Button("Plan the lessons again") { plan() }
                         .font(.caption).foregroundStyle(.secondary).disabled(planning)
@@ -36,6 +37,7 @@ struct LessonsView: View {
             .frame(maxWidth: 900)
             .frame(maxWidth: .infinity)
         }
+        .themedBackground(theme)
         .navigationTitle("Lessons")
         .fullScreenCover(item: $open) { l in LessonPage(lesson: l, onNext: { next in open = nil; DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { open = next } }) }
         #if DEBUG
@@ -49,7 +51,7 @@ struct LessonsView: View {
 
     private var prepareCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Learn this chapter, one lesson at a time", systemImage: "graduationcap.fill").font(.title3.bold())
+            Label("Learn this chapter, one lesson at a time", systemImage: "graduationcap.fill").font(theme.font(.section)).foregroundStyle(theme.learn)
             Text("A tutor walks you through each part of the chapter out loud, with the book's examples, then gives you one to try. Ask a question any time.")
                 .foregroundStyle(.secondary)
             if planning {
@@ -61,7 +63,7 @@ struct LessonsView: View {
             if let planError { Text(planError).font(.callout).foregroundStyle(.red) }
         }
         .padding(20)
-        .background(Color.blue.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
+        .card(theme, tint: theme.learn)
     }
 
     private func continueCard(_ l: Lesson) -> some View {
@@ -69,15 +71,16 @@ struct LessonsView: View {
             HStack(spacing: 14) {
                 Image(systemName: "play.circle.fill").font(.system(size: 40))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(l.status == .inProgress ? "Continue: \(MathPlain.render(l.title))" : "Start: \(MathPlain.render(l.title))").font(.title3.bold())
+                    Text(l.status == .inProgress ? "Continue: \(MathPlain.render(l.title))" : "Start: \(MathPlain.render(l.title))").font(theme.font(.cardTitle))
                     Text(l.status == .inProgress ? "Part \(l.partsDone + 1) of \(l.parts.count)" : "\(l.parts.count) part\(l.parts.count == 1 ? "" : "s") · about \(minutes(l)) min")
-                        .font(.subheadline).opacity(0.85)
+                        .font(theme.font(.label)).opacity(0.9)
                 }
                 Spacer()
             }
             .padding(18)
             .foregroundStyle(.white)
-            .background(Color.blue.gradient, in: RoundedRectangle(cornerRadius: 16))
+            .background(theme.fill(theme.learn), in: RoundedRectangle(cornerRadius: theme.radius, style: .continuous))
+            .shadow(color: theme.shadow ? theme.learn.opacity(0.3) : .clear, radius: 10, y: 5)
         }
         .buttonStyle(.plain)
     }
@@ -89,17 +92,17 @@ struct LessonsView: View {
             } label: {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     statusIcon(l).frame(width: 28)
-                    Text("\(number)").font(.headline.monospacedDigit()).foregroundStyle(.secondary).frame(width: 22, alignment: .trailing)
+                    Text("\(number)").font(theme.font(.cardTitle).monospacedDigit()).foregroundStyle(.secondary).frame(width: 22, alignment: .trailing)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 8) {
-                            Text(MathPlain.render(l.title)).font(.title3)
+                            Text(MathPlain.render(l.title)).font(theme.font(.cardTitle))
                             if l.optional {
                                 Text("Optional").font(.caption.bold()).padding(.horizontal, 7).padding(.vertical, 2)
                                     .background(Color.secondary.opacity(0.15), in: Capsule())
                             }
                         }
                         Text("\(l.parts.count) part\(l.parts.count == 1 ? "" : "s") · about \(minutes(l)) min")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(theme.font(.caption)).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Image(systemName: expanded.contains(l.id) ? "chevron.up" : "chevron.down").foregroundStyle(.tertiary)
@@ -129,8 +132,8 @@ struct LessonsView: View {
 
     @ViewBuilder private func statusIcon(_ l: Lesson) -> some View {
         switch l.status {
-        case .done: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-        case .inProgress: Image(systemName: "circle.lefthalf.filled").foregroundStyle(.blue)
+        case .done: Image(systemName: "checkmark.circle.fill").foregroundStyle(theme.done)
+        case .inProgress: Image(systemName: "circle.lefthalf.filled").foregroundStyle(theme.learn)
         case .notStarted: Image(systemName: "circle").foregroundStyle(.secondary)
         }
     }
@@ -155,7 +158,7 @@ struct LessonsView: View {
                 Text("Not in lessons (\(skipped.count))").font(.headline)
             }
             .padding(16)
-            .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+            .card(theme)
         }
     }
 

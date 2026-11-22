@@ -6,11 +6,13 @@ struct MathPracticeApp: App {
     var body: some Scene {
         WindowGroup {
             #if DEBUG
-            if let v = CanvasLab.requested { CanvasLab(variant: v) }
-            else if ProcessInfo.processInfo.arguments.contains("-checkInLab") { SeededCheckInLab() }
-            else { LibraryView() }
+            Themed {
+                if let v = CanvasLab.requested { CanvasLab(variant: v) }
+                else if ProcessInfo.processInfo.arguments.contains("-checkInLab") { SeededCheckInLab() }
+                else { LibraryView() }
+            }
             #else
-            LibraryView()
+            Themed { LibraryView() }
             #endif
         }
         .modelContainer(for: [Chapter.self, PageImage.self, Concept.self, Question.self, Attempt.self,
