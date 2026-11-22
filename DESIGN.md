@@ -113,6 +113,9 @@ Running record of product decisions and open discussion topics. Newest decisions
   A new chapter waits there (before organizing) until she fixes them or taps Continue anyway. Pages scanned out of
   order are put in book order by printed page number.
 
+- **Deferred: one coherent visual design pass over the whole app** (type scale, spacing, buttons) rather than
+  enlarging individual screens (a bigger library list looked out of proportion with the rest).
+
 ## Open topics
 (none)
 
