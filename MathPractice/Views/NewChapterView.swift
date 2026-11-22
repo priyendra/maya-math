@@ -14,6 +14,7 @@ struct NewChapterView: View {
         var jpeg: Data
         var thumbnail: UIImage
         var isAnswerKey = false
+        var issues: [ScanQuality.Issue] = []
     }
 
     @State private var pages: [DraftPage] = []
@@ -23,6 +24,9 @@ struct NewChapterView: View {
     @State private var title = ""
     @State private var importing = false
     @State private var previewID: UUID?
+    /// The page being retaken (its new photo replaces it).
+    @State private var retakeID: UUID?
+    @State private var confirmCreate = false
 
     var onCreated: (Chapter) -> Void = { _ in }
 
@@ -49,12 +53,17 @@ struct NewChapterView: View {
                     .textFieldStyle(.roundedBorder)
                     .padding(.horizontal)
 
-                if importing { ProgressView("Adding pages…") }
+                if importing { ProgressView("Checking pages…") }
 
                 if pages.isEmpty {
-                    ContentUnavailableView("No pages yet", systemImage: "book.pages",
-                                           description: Text("Scan the textbook pages with the exercises (the scanner takes up to 24 pages at a time; tap Scan more pages to continue). Add the answer-key pages too if you have them, and mark them below. Tap a page to check it."))
+                    ContentUnavailableView("No pages yet", systemImage: "book.pages", description: Text(Self.tips))
                 } else {
+                    let flagged = pages.filter { !$0.issues.isEmpty }.count
+                    if flagged > 0 {
+                        Label("\(flagged) page\(flagged == 1 ? " needs" : "s need") another try. Tap Retake under \(flagged == 1 ? "it" : "each one").",
+                              systemImage: "exclamationmark.triangle.fill")
+                            .font(.headline).foregroundStyle(.orange)
+                    }
                     Text("\(pages.count) pages · \(pages.filter(\.isAnswerKey).count) answer-key pages · tap a page to check it")
                         .font(.caption).foregroundStyle(.secondary)
                     ScrollView {
@@ -69,16 +78,23 @@ struct NewChapterView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") { create() }
+                    Button("Create") { if pages.contains(where: { !$0.issues.isEmpty }) { confirmCreate = true } else { create() } }
                         .disabled(pages.isEmpty || pages.allSatisfy(\.isAnswerKey) || importing)
                 }
             }
             .fullScreenCover(isPresented: $showScanner) {
                 DocumentScanner(onFinish: { images in
                     showScanner = false
-                    add(images)
-                }, onCancel: { showScanner = false })
+                    add(images, replacing: retakeID)
+                    retakeID = nil
+                }, onCancel: { showScanner = false; retakeID = nil })
                 .ignoresSafeArea()
+            }
+            .alert("Some pages need another try", isPresented: $confirmCreate) {
+                Button("Retake them", role: .cancel) {}
+                Button("Create anyway") { create() }
+            } message: {
+                Text("Blurry or dark pages can't be read well, so some questions may be missing. Retake them now while the book is open?")
             }
             .fileImporter(isPresented: $showPDFImporter, allowedContentTypes: [.pdf]) { result in
                 if case let .success(url) = result { add(PDFPages.images(from: url)) }
@@ -118,31 +134,56 @@ struct NewChapterView: View {
                     }
                     .padding(4)
                 }
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(page.wrappedValue.isAnswerKey ? Color.orange : Color.secondary.opacity(0.3), lineWidth: 2))
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(!page.wrappedValue.issues.isEmpty ? Color.red : page.wrappedValue.isAnswerKey ? Color.orange : Color.secondary.opacity(0.3),
+                                                                  lineWidth: page.wrappedValue.issues.isEmpty ? 2 : 4))
+                .overlay(alignment: .topLeading) {
+                    if !page.wrappedValue.issues.isEmpty {
+                        Image(systemName: "exclamationmark.triangle.fill").font(.title2).foregroundStyle(.white, .orange).padding(4)
+                    }
+                }
             Text("Page \(index)").font(.caption)
-            Toggle("Answer key", isOn: page.isAnswerKey).font(.caption).toggleStyle(.button)
+            if let issue = page.wrappedValue.issues.first {
+                Text(issue.advice).font(.caption2).foregroundStyle(.orange).multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                if DocumentScanner.isSupported {
+                    Button { retakeID = page.wrappedValue.id; showScanner = true } label: {
+                        Label("Retake", systemImage: "camera.rotate")
+                    }
+                    .buttonStyle(.borderedProminent).tint(.orange).controlSize(.small)
+                }
+            } else {
+                Toggle("Answer key", isOn: page.isAnswerKey).font(.caption).toggleStyle(.button)
+            }
         }
     }
 
-    /// Compresses new pages off the main thread and appends them.
-    private func add(_ images: [UIImage]) {
+    static let tips = """
+    Scan the pages with the lessons and exercises. Tips for a good scan:
+    • Lay the book flat in a bright spot.
+    • Fit the whole page inside the frame, page number too.
+    • Hold the iPad still until it takes the picture.
+    The scanner takes up to 24 pages at a time; tap Scan more pages to keep going. Add the answer pages from the back of the book too if you have them, and mark them below.
+    """
+
+    /// Compresses and checks new pages off the main thread. With `replacing`, the first new page takes that page's
+    /// place (a retake) and any others follow it.
+    private func add(_ images: [UIImage], replacing: UUID? = nil) {
         guard !images.isEmpty else { return }
         importing = true
-        Task.detached(priority: .userInitiated) {
-            var drafts: [DraftPage] = []
-            for image in images {
-                autoreleasepool {
-                    let page = ImageUtils.uprightImage(image)
-                    guard let jpeg = ImageUtils.jpeg(page, maxEdge: 2400, quality: 0.85),
-                          let thumbData = ImageUtils.jpeg(page, maxEdge: 400, quality: 0.7),
-                          let thumb = UIImage(data: thumbData) else { return }
-                    drafts.append(DraftPage(jpeg: jpeg, thumbnail: thumb))
-                }
+        Task {
+            let scanned = await ScannedPage.process(images)
+            let drafts = scanned.compactMap { s in
+                UIImage(data: s.thumbnail).map { DraftPage(jpeg: s.jpeg, thumbnail: $0, issues: s.issues) }
             }
-            await MainActor.run {
+            if let replacing, let i = pages.firstIndex(where: { $0.id == replacing }), let first = drafts.first {
+                var fixed = first
+                fixed.isAnswerKey = pages[i].isAnswerKey
+                pages[i] = fixed
+                pages.insert(contentsOf: drafts.dropFirst(), at: i + 1)
+            } else {
                 pages += drafts
-                importing = false
             }
+            importing = false
         }
     }
 

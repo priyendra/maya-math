@@ -1,3 +1,4 @@
+import UIKit
 #if DEBUG
 import Foundation
 import SwiftData
@@ -14,8 +15,37 @@ enum SampleData {
         try? context.save()
     }
 
+    /// A just-scanned chapter whose pages need fixing: a blurry page, a missing page, and a page scanned twice.
+    static func seedRescan(_ context: ModelContext) {
+        guard ProcessInfo.processInfo.arguments.contains("-seedRescan"),
+              ((try? context.fetch(FetchDescriptor<Chapter>()))?.contains { $0.title == "Ch. 6 · Rescan test" } ?? false) == false
+        else { return }
+        let chapter = Chapter(title: "Ch. 6 · Rescan test")
+        chapter.status = .needsRescan
+        context.insert(chapter)
+        let specs: [(Int, [ReadDTO.ScanProblem])] = [
+            (212, []), (213, [ReadDTO.ScanProblem(kind: "cut_off", detail: "the bottom is cut off (exercises 31–40 are missing)")]),
+            (216, []), (216, []), (217, []),
+        ]
+        for (i, (n, problems)) in specs.enumerated() {
+            let img = UIGraphicsImageRenderer(size: CGSize(width: 600, height: 800)).image { ctx in
+                UIColor.white.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 600, height: 800))
+                ("Page \(n)\n\n1. Solve 2x + 3 = 7\n2. Factor x² − 9" as NSString)
+                    .draw(at: CGPoint(x: 40, y: 40), withAttributes: [.font: UIFont.systemFont(ofSize: 28)])
+            }
+            let page = PageImage(order: i, imageData: img.jpegData(compressionQuality: 0.8) ?? Data())
+            let dto = ReadDTO.Page(image_number: 1, printed_page_number: n, is_answer_key: false, blocks: [], scan_problems: problems)
+            page.readJSON = String(data: (try? JSONEncoder().encode(dto)) ?? Data(), encoding: .utf8)
+            page.printedPageNumber = n
+            page.chapter = chapter
+            context.insert(page)
+        }
+        try? context.save()
+    }
+
     static func seedIfRequested(context: ModelContext) {
         guard ProcessInfo.processInfo.arguments.contains("-seedSample") else { return }
+        seedRescan(context)
         let existing = (try? context.fetch(FetchDescriptor<Chapter>())) ?? []
         if let first = existing.first {
             // Data left by an earlier test run: just make sure the requested folder layout exists.

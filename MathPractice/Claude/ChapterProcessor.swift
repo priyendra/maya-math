@@ -93,7 +93,15 @@ final class ChapterProcessor: ObservableObject {
         chapter.status = .processing
         chapter.errorMessage = nil
         try await readPages(chapter, context: context)
+        ScanReport.sortByPageNumber(chapter)
         chapter.pageWarning = Self.checkPageNumbers(chapter.sortedPages)
+        // A new chapter with pages to rescan waits here (before the costly organizing) until she fixes them or
+        // chooses to continue anyway.
+        if chapter.questions.isEmpty, !chapter.scanIssuesAccepted, !ScanReport.issues(chapter).isEmpty {
+            chapter.status = .needsRescan
+            report(chapter, "Some pages need another scan", 0.7, context)
+            return
+        }
         if chapter.formatVersion < Chapter.currentFormat || chapter.questions.isEmpty {
             try await organize(chapter, context: context)
         }

@@ -6,10 +6,12 @@ final class LibraryUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-seedSample", "-seedInFolder"]
         app.launch()
-        XCTAssertTrue(app.buttons["Student"].waitForExistence(timeout: 15))
-        app.buttons["Student"].tap()
-        XCTAssertTrue(app.buttons["School algebra"].waitForExistence(timeout: 5))
-        app.buttons["School algebra"].tap()
+        func button(_ name: String) -> XCUIElement { app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch }
+        XCTAssertTrue(button("Student").waitForExistence(timeout: 15))
+        let a = XCTAttachment(screenshot: app.screenshot()); a.name = "library-folders"; a.lifetime = .keepAlways; add(a)
+        button("Student").tap()
+        XCTAssertTrue(button("School algebra").waitForExistence(timeout: 5))
+        button("School algebra").tap()
         let chapter = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Solving Linear Equations'")).firstMatch
         XCTAssertTrue(chapter.waitForExistence(timeout: 5))
         chapter.tap()

@@ -96,31 +96,29 @@ struct FolderView: View {
             } else {
                 List {
                     if !folders.isEmpty {
-                        Section("Folders") {
+                        Section {
                             ForEach(folders) { f in
-                                NavigationLink(value: f) {
-                                    Label(f.name, systemImage: "folder")
-                                }
+                                NavigationLink(value: f) { folderRow(f) }
                                 .contextMenu { menu(.folder(f), rename: .folder(f), name: f.name) { delete(folder: f) } }
                             }
-                        }
+                        } header: { sectionHeader("Folders") }
                     }
                     if !scopes.isEmpty {
-                        Section("Study plans") {
+                        Section {
                             ForEach(scopes) { s in
                                 NavigationLink(value: s) { scopeRow(s) }
                                     .contextMenu { menu(.scope(s), rename: .scope(s), name: s.name) { context.delete(s); try? context.save() } }
                             }
-                        }
+                        } header: { sectionHeader("Study plans") }
                     }
                     if !chapters.isEmpty {
-                        Section("Chapters") {
+                        Section {
                             ForEach(chapters) { c in
                                 NavigationLink(value: c) { chapterRow(c) }
-                                    .disabled(c.activeQuestions.isEmpty && c.status != .ready && !c.needsRereading)
+                                    .disabled(c.activeQuestions.isEmpty && c.status != .ready && c.status != .needsRescan && !c.needsRereading)
                                     .contextMenu { menu(.chapter(c), rename: .chapter(c), name: c.title) { context.delete(c); try? context.save() } }
                             }
-                        }
+                        } header: { sectionHeader("Chapters") }
                     }
                 }
             }
@@ -181,18 +179,39 @@ struct FolderView: View {
         try? context.save()
     }
 
-    private func scopeRow(_ s: StudyScope) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label(s.name, systemImage: "target").font(.title3.weight(.semibold))
-            if let date = s.testDate { Text(ScopeHomeView.countdown(to: date)).font(.caption).foregroundStyle(.secondary) }
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title).font(.title3.bold()).foregroundStyle(.primary).textCase(nil).padding(.top, 8)
+    }
+
+    private func folderRow(_ f: Folder) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: "folder.fill").font(.title).foregroundStyle(.blue).frame(width: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(f.name).font(.title2.weight(.semibold))
+                let n = f.chapters.count + f.scopes.count + f.children.count
+                Text(n == 0 ? "Empty" : "\(n) item\(n == 1 ? "" : "s")").font(.subheadline).foregroundStyle(.secondary)
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 10)
+    }
+
+    private func scopeRow(_ s: StudyScope) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: "target").font(.title).foregroundStyle(.purple).frame(width: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(s.name).font(.title2.weight(.semibold))
+                if let date = s.testDate { Text(ScopeHomeView.countdown(to: date)).font(.subheadline).foregroundStyle(.secondary) }
+            }
+        }
+        .padding(.vertical, 10)
     }
 
     @ViewBuilder
     private func chapterRow(_ chapter: Chapter) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(chapter.title).font(.title3.weight(.semibold))
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: "book.closed.fill").font(.title).foregroundStyle(.teal).frame(width: 40)
+            VStack(alignment: .leading, spacing: 6) {
+            Text(chapter.title).font(.title2.weight(.semibold))
             switch chapter.status {
             case .processing:
                 ProgressView(value: chapter.progressFraction) { Text(chapter.progressMessage).font(.caption) }
@@ -206,6 +225,9 @@ struct FolderView: View {
                     Button("Retry") { processor.start(chapter, context: context) }.buttonStyle(.bordered)
                     ReportProblemButton(subject: .chapter(chapter)).buttonStyle(.bordered)
                 }
+            case .needsRescan:
+                Label("Some pages need another scan", systemImage: "exclamationmark.triangle.fill")
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.orange)
             case .ready:
                 if chapter.needsRereading {
                     Text("Ready to re-read with the new reader").font(.caption).foregroundStyle(.orange)
@@ -213,11 +235,12 @@ struct FolderView: View {
                     let excluded = chapter.questions.filter { !$0.isIncluded }.count
                     Text("\(chapter.activeQuestions.count) questions · \(chapter.concepts.count) concepts"
                          + (excluded > 0 ? " · \(excluded) not doable with a pencil" : ""))
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
+            }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 10)
     }
 }
 

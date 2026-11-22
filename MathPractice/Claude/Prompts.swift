@@ -4,7 +4,7 @@ import Foundation
 /// Rules here must work for any math textbook: judge from content, never from one book's labels.
 enum Prompts {
     /// Bump when prompts change meaningfully (recorded in the call log).
-    static let version = "6"
+    static let version = "7"
 
     static let mathFormat = """
     Write all math using LaTeX inside $...$ (inline) or $$...$$ (display). Use Markdown for everything else. \
@@ -19,6 +19,14 @@ enum Prompts {
     For each image return one entry in `pages` (image_number = its number in this request), with:
     - printed_page_number: the page number printed on the page, or 0 if none is visible.
     - is_answer_key: true if the page lists answers to exercises (e.g. a "selected answers" section).
+    - scan_problems: problems with this photo that make some of the page's content unreadable or missing, so the \
+    student can scan it again. A student (often a child) took these photos. Report only real losses of content: text \
+    cut off at an edge of the image (the content clearly continues beyond it), parts too blurry to read reliably, glare \
+    or shadow hiding text, a finger or object covering text, the page curving so much that text can't be read, or an \
+    image that isn't a page of this book. A cut-off page number or running header/footer alone is not a problem, and \
+    neither are cosmetic issues (tilt, a neighbouring page showing, uneven light) when everything is still readable. \
+    For each problem: kind, and detail = a few plain words a 10-year-old understands saying what is affected, e.g. \
+    "the bottom is cut off (exercises 31–40 are missing)" or "the right half is blurry". Empty when all is readable.
     - blocks: the page's content in reading order. Kinds:
       - heading: a chapter/section/subsection heading or the title of an exercise set. markdown = the heading text.
       - text: explanatory text, definitions, rules, notes, exercise-set instructions. markdown = the text.

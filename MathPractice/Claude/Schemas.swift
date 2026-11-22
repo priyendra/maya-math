@@ -44,11 +44,20 @@ struct ReadDTO: Codable {
         let pencil_reason: String
         let is_challenge: Bool
     }
+    /// Something about the photo that loses content (so the page should be scanned again).
+    struct ScanProblem: Codable, Equatable {
+        /// cut_off | blurry | covered | glare_or_shadow | curved | not_this_book | other
+        let kind: String
+        /// Plain words for a kid: what is affected.
+        let detail: String
+    }
     struct Page: Codable {
         let image_number: Int
         let printed_page_number: Int
         let is_answer_key: Bool
         let blocks: [Block]
+        /// Absent in pages read before the scan check existed.
+        var scan_problems: [ScanProblem]? = nil
     }
     let pages: [Page]
 
@@ -58,6 +67,10 @@ struct ReadDTO: Codable {
                 "image_number": Schema.integer,
                 "printed_page_number": Schema.integer,
                 "is_answer_key": Schema.boolean,
+                "scan_problems": Schema.array(Schema.object([
+                    "kind": Schema.enumeration(["cut_off", "blurry", "covered", "glare_or_shadow", "curved", "not_this_book", "other"]),
+                    "detail": Schema.string,
+                ])),
                 "blocks": Schema.array(Schema.object([
                     "kind": Schema.enumeration(["heading", "text", "example", "figure", "exercise", "answer"]),
                     "section_path": Schema.array(Schema.string),

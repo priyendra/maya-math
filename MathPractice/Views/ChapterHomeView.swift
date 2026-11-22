@@ -81,7 +81,7 @@ struct ChapterHomeView: View {
         let set = StudySet.chapter(chapter)
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                if chapter.needsRereading && chapter.status != .processing {
+                if chapter.needsRereading && chapter.status != .processing && chapter.status != .needsRescan {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("New: a clean digital version of this chapter", systemImage: "sparkles").font(.headline)
                         Text("Re-read this chapter from the pages you already scanned (no rescanning) to get the browsable chapter, sections and page numbers for study plans, and smarter question tags. It takes about 10–15 minutes; keep the app open.")
@@ -94,7 +94,9 @@ struct ChapterHomeView: View {
                 if chapter.status == .processing {
                     ProgressView(value: chapter.progressFraction) { Text(chapter.progressMessage).font(.caption) }
                 }
-                if let warning = chapter.pageWarning {
+                if chapter.status == .needsRescan {
+                    ScanFixCard(chapter: chapter)
+                } else if let warning = chapter.pageWarning {
                     Label("Check your scans: \(warning)", systemImage: "exclamationmark.triangle.fill")
                         .font(.subheadline).foregroundStyle(.orange)
                 }

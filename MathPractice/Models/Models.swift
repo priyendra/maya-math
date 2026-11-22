@@ -5,6 +5,8 @@ import SwiftData
 
 enum ChapterStatus: String, Codable, CaseIterable {
     case processing, ready, failed
+    /// Pages were read, but some need another scan (or pages are missing) before the chapter is built.
+    case needsRescan
 }
 
 enum QuestionSource: String, Codable {
@@ -56,6 +58,8 @@ final class Chapter {
     var outlineJSON: String = ""
     /// Problems found with the scanned pages (missing / repeated page numbers), shown after processing.
     var pageWarning: String?
+    /// She chose "Continue anyway" on the rescan list: build the chapter without asking again.
+    var scanIssuesAccepted: Bool = false
     var folder: Folder?
 
     @Relationship(deleteRule: .cascade, inverse: \PageImage.chapter) var pages: [PageImage] = []

@@ -106,6 +106,13 @@ Running record of product decisions and open discussion topics. Newest decisions
   later if needed. Context: question, her work, grading, page parts, and the textbook lesson the question belongs
   to (nearest section with its own explanation/examples). Effort low for quick replies.
 
+- **Scan check (kids scan their own chapters):** (1) instant on-iPad check per page while scanning: blur, too dark,
+  not a book page (calibrated on real scans; cut-off text is left to Claude, the on-device check was noisy), with
+  Retake on the page; (2) Claude reports pages whose content is lost (cut off, blurry, covered, glare, not this
+  book) while reading; with page-number gaps/duplicates this gives one kid-friendly "Rescan these pages" list.
+  A new chapter waits there (before organizing) until she fixes them or taps Continue anyway. Pages scanned out of
+  order are put in book order by printed page number.
+
 ## Open topics
 (none)
 
