@@ -120,19 +120,19 @@ struct SolutionPage: View {
 
 // MARK: - Page content (rendered under the ink)
 
-private struct PartFrames: PreferenceKey {
+struct PartFrames: PreferenceKey {
     static var defaultValue: [String: CGRect] = [:]
     static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue()) { $1 }
     }
 }
 
-private struct ContentHeight: PreferenceKey {
+struct ContentHeight: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
-private extension View {
+extension View {
     /// Marks a part of the page the tutor can point at.
     func part(_ id: String) -> some View {
         background(GeometryReader { g in
@@ -228,7 +228,7 @@ private struct PageContent: View {
 }
 
 /// The tutor's cursor: glides to what the voice is talking about and softly highlights it.
-private struct PointerOverlay: View {
+struct PointerOverlay: View {
     let target: CGRect?
 
     var body: some View {
@@ -258,7 +258,7 @@ private struct PointerOverlay: View {
 
 // MARK: - The ink layer
 
-private struct InkPageView: UIViewRepresentable {
+struct InkPageView: UIViewRepresentable {
     let ink: PageInk
     func makeUIView(context: Context) -> PKCanvasView { ink.canvas }
     func updateUIView(_ view: PKCanvasView, context: Context) {}
@@ -376,6 +376,16 @@ final class PageInk: NSObject, ObservableObject, PKCanvasViewDelegate {
     }
 
     @objc private func tapped() { onTap() }
+
+    /// Her handwriting below a part of the page (e.g. under a problem): the strokes and a picture of them.
+    func work(below id: String) -> (ink: Data, image: Data)? {
+        guard let top = frames[id]?.minY else { return nil }
+        let strokes = canvas.drawing.strokes.filter { $0.renderBounds.maxY > top + 8 }
+        guard !strokes.isEmpty else { return nil }
+        let drawing = PKDrawing(strokes: strokes)
+        guard let image = ImageUtils.renderDrawing(drawing) else { return nil }
+        return (drawing.dataRepresentation(), image)
+    }
 
     /// What she's looking at: the visible page with her ink, marks made since the last snapshot drawn in pink.
     func snapshot() -> PageSnapshot? {

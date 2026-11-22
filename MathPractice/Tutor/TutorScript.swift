@@ -9,6 +9,8 @@ enum TutorBeat: Equatable {
     case write(String)
     /// Move the cursor to a page part ("s2", "wrong", "b1"…); nil hides it.
     case point(String?)
+    /// Lessons: her question is answered, carry on with the lesson.
+    case resume
 }
 
 /// Turns streamed reply text into beats, one finished line at a time.
@@ -38,6 +40,7 @@ struct TutorScriptParser {
             guard line.uppercased().hasPrefix(tag + ":") else { return nil }
             return line.dropFirst(tag.count + 1).trimmingCharacters(in: .whitespaces)
         }
+        if line.uppercased().trimmingCharacters(in: CharacterSet(charactersIn: ":. ")) == "CONTINUE" { return .resume }
         if let v = value("SAY") { return v.isEmpty ? nil : .say(spoken(v)) }
         if let v = value("WRITE") { return v.isEmpty ? nil : .write(v) }
         if let v = value("POINT") {

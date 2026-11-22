@@ -7,7 +7,7 @@ import UIKit
 final class ScanTests: XCTestCase {
     private func chapter(_ numbers: [Int], problems: [Int: String] = [:]) throws -> (ModelContext, Chapter) {
         let container = try ModelContainer(for: Chapter.self, PageImage.self, Concept.self, Question.self, Attempt.self,
-                                           SkillState.self, ExamSession.self, ContentBlock.self, TutorTurn.self,
+                                           SkillState.self, ExamSession.self, ContentBlock.self, TutorTurn.self, Lesson.self,
                                            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         let context = container.mainContext
         let ch = Chapter(title: "T")

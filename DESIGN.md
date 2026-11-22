@@ -85,10 +85,19 @@ Running record of product decisions and open discussion topics. Newest decisions
   high-quality built-in female voice). Anything mathematical the tutor says is also written on the board.
 - **Teaching mode is opt-in** ("Learn this section"); never required before practice or exams (she may have
   learned it in class).
-- **Lesson shape (proposed):** per concept: the idea → one or two of the book's worked examples, narrated →
-  "your turn" problem graded like practice → if wrong, re-explain using her mistake + another example, one more
-  try (max two loops, then move on and let practice focus on that concept) → next concept. Resumable.
-- **Lessons are generated only when she asks** (then saved).
+- **Lessons (built):** "Lessons" on the chapter page is a table of lessons (not the book's TOC). A lesson = one
+  logical unit of the book (normally a numbered section), taught in parts (an idea + its worked examples; e.g. a
+  LEARN block), each ending with a "your turn" problem from the book. Claude plans the lessons once per chapter
+  (outline + what each section contains); code guarantees coverage: every section with explanation/examples is in
+  a part or in a visible "Not in lessons" list with a reason (enrichment, openers, reviews/tests); left-out ones
+  join the nearest earlier part, or become their own lesson if their whole unit was missed.
+- **Lesson scripts are written per part when she reaches it** (next part prepared while she listens), then saved:
+  page items (the book's content, worked examples split into pointable steps, figures) + SAY/WRITE/POINT
+  narration + 1–2 your-turn picks. Playback is local; questions go live (tap/speak any time → the tutor answers on
+  the same page → CONTINUE resumes the script). "Any questions?" pause before each your-turn ("go on" handled on
+  the device). Your-turn answers are graded like practice (mode lesson, count toward mastery); wrong → the tutor
+  goes over it, then one more problem; then move on. Resumable by part. "Practice this lesson" after.
+- **Read the chapter stays** alongside Lessons (for looking things up).
 - **Pointer (proposed):** a mouse-style cursor that glides to what the voice is talking about, plus a soft
   highlight on the target, synced to the spoken words.
 - **Cost:** not a constraint for now; build the good experience first.

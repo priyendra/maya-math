@@ -21,6 +21,8 @@ enum QuestionStatus: String, Codable {
 
 enum AttemptMode: String, Codable {
     case practice, exam
+    /// A "your turn" problem inside a lesson (counts toward mastery like practice).
+    case lesson
 }
 
 enum Verdict: String, Codable {
@@ -68,6 +70,9 @@ final class Chapter {
     @Relationship(deleteRule: .cascade, inverse: \SkillState.chapter) var skills: [SkillState] = []
     @Relationship(deleteRule: .cascade, inverse: \ExamSession.chapter) var exams: [ExamSession] = []
     @Relationship(deleteRule: .cascade, inverse: \ContentBlock.chapter) var blocks: [ContentBlock] = []
+    @Relationship(deleteRule: .cascade, inverse: \Lesson.chapter) var lessons: [Lesson] = []
+    /// Sections deliberately left out of lessons, with why: JSON [LessonPlan.Skipped].
+    var lessonSkippedJSON: String = ""
 
     init(title: String = "New chapter") {
         self.title = title
@@ -83,6 +88,7 @@ final class Chapter {
     /// Questions available for practice and exams (not removed, doable with a pencil or included by hand).
     var activeQuestions: [Question] { questions.filter(\.isAvailable) }
     var sortedBlocks: [ContentBlock] { blocks.sorted { $0.order < $1.order } }
+    var sortedLessons: [Lesson] { lessons.sorted { $0.order < $1.order } }
     /// 2 = digital chapter; 3 = outline mapped per run in reading order.
     static let currentFormat = 3
     var needsRereading: Bool { formatVersion < 2 && !pages.isEmpty }
@@ -383,4 +389,80 @@ final class TutorTurn {
         self.text = text
         self.snapshot = snapshot
     }
+}
+
+// MARK: - Lessons
+
+/// One part of a lesson: a unit of teaching (an idea with its worked example(s)), then a "your turn" problem.
+struct LessonPart: Codable, Hashable {
+    var title: String
+    /// Sections whose explanation and examples this part teaches.
+    var sectionIDs: [Int]
+    /// Sections whose exercises can be used for "your turn" (the part's own sections are used too).
+    var practiceSectionIDs: [Int]
+}
+
+/// What the lesson page shows and says for one part (generated when she first reaches it, then saved).
+struct LessonPartScript: Codable, Hashable {
+    struct Item: Codable, Hashable {
+        /// Pointable id, unique in the lesson ("p2e3").
+        var id: String
+        /// heading | text | example | figure
+        var kind: String
+        var markdown: String
+        /// For figures: the content block whose picture to show.
+        var blockID: UUID?
+    }
+    var items: [Item]
+    /// SAY / WRITE / POINT lines, played in order.
+    var narration: String
+    /// Candidate "your turn" questions, best first (the second is for a retry).
+    var questionIDs: [UUID]
+}
+
+enum LessonStatus: String, Codable { case notStarted, inProgress, done }
+
+/// A lesson: one logical unit of the chapter (usually a numbered section), taught in parts.
+@Model
+final class Lesson {
+    var id: UUID = UUID()
+    var order: Int = 0
+    var title: String = ""
+    var summary: String = ""
+    /// Extra material (not needed for the core of the chapter).
+    var optional: Bool = false
+    var partsJSON: String = "[]"
+    /// Generated scripts by part index: JSON [Int: LessonPartScript].
+    var scriptsJSON: String = "{}"
+    /// Parts finished so far (resume point).
+    var partsDone: Int = 0
+    var statusRaw: String = LessonStatus.notStarted.rawValue
+    var lastOpened: Date?
+    var chapter: Chapter?
+
+    init(order: Int, title: String, summary: String, optional: Bool, parts: [LessonPart]) {
+        self.order = order
+        self.title = title
+        self.summary = summary
+        self.optional = optional
+        self.parts = parts
+    }
+
+    var parts: [LessonPart] {
+        get { (try? JSONDecoder().decode([LessonPart].self, from: Data(partsJSON.utf8))) ?? [] }
+        set { partsJSON = (try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)) ?? "[]" }
+    }
+
+    var scripts: [Int: LessonPartScript] {
+        get { (try? JSONDecoder().decode([Int: LessonPartScript].self, from: Data(scriptsJSON.utf8))) ?? [:] }
+        set { scriptsJSON = (try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)) ?? "{}" }
+    }
+
+    var status: LessonStatus {
+        get { LessonStatus(rawValue: statusRaw) ?? .notStarted }
+        set { statusRaw = newValue.rawValue }
+    }
+
+    /// Every section the lesson touches (teaching and practice).
+    var allSectionIDs: [Int] { parts.flatMap { $0.sectionIDs + $0.practiceSectionIDs } }
 }

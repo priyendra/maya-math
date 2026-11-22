@@ -106,6 +106,13 @@ final class ChapterProcessor: ObservableObject {
             try await organize(chapter, context: context)
         }
         ensureSkills(chapter, context: context)
+        if chapter.lessons.isEmpty && !chapter.blocks.isEmpty {
+            // Lessons are a bonus: if planning fails, she can prepare them later from the Lessons screen.
+            report(chapter, "Planning lessons", 0.97, context)
+            do { try await LessonPlanner.plan(chapter, context: context) } catch {
+                CallLog.event("lesson_plan_failed", ["error": error.localizedDescription])
+            }
+        }
         chapter.formatVersion = Chapter.currentFormat
         chapter.status = .ready
         report(chapter, "Ready", 1, context)

@@ -76,6 +76,7 @@ struct ChapterHomeView: View {
     @State private var showSettings = false
     @State private var confirmReread = false
     @State private var debugRead = false
+    @State private var debugLessons = false
 
     var body: some View {
         let set = StudySet.chapter(chapter)
@@ -106,9 +107,18 @@ struct ChapterHomeView: View {
                 }
 
                 HStack(spacing: 12) {
+                    if chapter.status == .ready && !chapter.needsRereading && !chapter.blocks.isEmpty {
+                        NavigationLink { LessonsView(chapter: chapter) } label: {
+                            let done = chapter.lessons.filter { $0.status == .done }.count
+                            LinkTile(title: "Lessons",
+                                     subtitle: chapter.lessons.isEmpty ? "Learn it step by step with a tutor" : "\(done) of \(chapter.lessons.count) done",
+                                     icon: "graduationcap")
+                        }
+                        .accessibilityIdentifier("lessonsTile")
+                    }
                     if !chapter.needsRereading && !chapter.blocks.isEmpty {
                         NavigationLink { ReadChapterView(chapter: chapter) } label: {
-                            LinkTile(title: "Read chapter", subtitle: "Lessons, examples and exercises", icon: "book")
+                            LinkTile(title: "Read chapter", subtitle: "The book, section by section", icon: "book")
                         }
                     }
                     NavigationLink { MyAnswersView(set: set) } label: {
@@ -145,8 +155,12 @@ struct ChapterHomeView: View {
         }
         .sheet(isPresented: $showSettings) { ChapterSettingsView(chapter: chapter) }
         .navigationDestination(isPresented: $debugRead) { ReadChapterView(chapter: chapter) }
+        .navigationDestination(isPresented: $debugLessons) { LessonsView(chapter: chapter) }
         #if DEBUG
-        .onAppear { if ProcessInfo.processInfo.arguments.contains("-openRead") { debugRead = true } }
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-openRead") { debugRead = true }
+            if ProcessInfo.processInfo.arguments.contains("-openLessons") { debugLessons = true }
+        }
         #endif
         .alert("Re-read this chapter?", isPresented: $confirmReread) {
             Button("Cancel", role: .cancel) {}

@@ -25,7 +25,7 @@ struct AttemptReviewView: View {
                     Text("No work recorded").foregroundStyle(.secondary)
                 }
                 LabeledContent("Time", value: "\(Int(attempt.activeSeconds)) s")
-                LabeledContent("Mode", value: attempt.mode == .exam ? "Exam" : "Practice")
+                LabeledContent("Mode", value: attempt.mode == .exam ? "Exam" : attempt.mode == .lesson ? "Lesson" : "Practice")
             }
             Section("Claude's grading") {
                 HStack { VerdictBadge(verdict: attempt.verdict); Text(attempt.verdict.rawValue.capitalized) }
@@ -102,7 +102,7 @@ struct TutorTurnRow: View {
                     switch b {
                     case let .say(s): return s
                     case let .write(w): return "> " + w
-                    case .point: return nil
+                    case .point, .resume: return nil
                     }
                 }.joined(separator: "\n\n")
                 MathText(markdown: md, fontSize: 16)

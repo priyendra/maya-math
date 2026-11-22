@@ -43,6 +43,18 @@ enum SampleData {
         try? context.save()
     }
 
+    /// Two lessons as the planner would make them (fresh, not started), plus one skipped section.
+    private static func seedLessons(_ chapter: Chapter, _ context: ModelContext) {
+        let plan = LessonPlanner.Result(lessons: [
+            .init(title: "One- and multi-step equations", summary: "Undo operations to get the variable alone.", optional: false,
+                  parts: [LessonPart(title: "Undoing one operation", sectionIDs: [0], practiceSectionIDs: []),
+                          LessonPart(title: "Several steps", sectionIDs: [1], practiceSectionIDs: [])]),
+            .init(title: "Literal equations", summary: "Solve a formula for one of its letters.", optional: false,
+                  parts: [LessonPart(title: "Solving formulas", sectionIDs: [2], practiceSectionIDs: [])]),
+        ], skipped: [.init(section_id: 2, reason: "example only")], attached: [])
+        LessonPlanner.save(plan, to: chapter, context: context)
+    }
+
     static func seedIfRequested(context: ModelContext) {
         guard ProcessInfo.processInfo.arguments.contains("-seedSample") else { return }
         seedRescan(context)
@@ -50,6 +62,7 @@ enum SampleData {
         if let first = existing.first {
             // Data left by an earlier test run: just make sure the requested folder layout exists.
             if ProcessInfo.processInfo.arguments.contains("-seedInFolder"), first.folder == nil { putInFolders(first, context) }
+            if ProcessInfo.processInfo.arguments.contains("-seedLessons") { seedLessons(first, context) }
             return
         }
 
@@ -111,6 +124,7 @@ enum SampleData {
         }
         chapter.outline = nodes
         if ProcessInfo.processInfo.arguments.contains("-seedInFolder") { putInFolders(chapter, context) }
+        if ProcessInfo.processInfo.arguments.contains("-seedLessons") { seedLessons(chapter, context) }
         if ProcessInfo.processInfo.arguments.contains("-seedGraded"), let q = chapter.questions.first(where: { $0.difficulty == 3 }) {
             let a = Attempt(mode: .practice)
             a.question = q
