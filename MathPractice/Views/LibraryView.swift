@@ -8,6 +8,7 @@ struct LibraryView: View {
     @Query private var chapters: [Chapter]
     @State private var showSettings = false
     @State private var path = NavigationPath()
+    @AppStorage("designOption") private var design = 0
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -15,6 +16,14 @@ struct LibraryView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button { showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
+                    }
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            Picker("Design", selection: $design) {
+                                ForEach(Theme.all) { t in Text(t.name).tag(t.id) }
+                            }
+                        } label: { Label("Design", systemImage: "paintpalette") }
+                        .accessibilityIdentifier("designMenu")
                     }
                 }
                 // Everything in the library navigates by value. Mixing closure-pushed folders with value links

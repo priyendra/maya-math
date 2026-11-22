@@ -16,6 +16,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                DesignSection()
                 Section {
                     if let savedKey, !savedKey.isEmpty {
                         HStack(spacing: 12) {
@@ -74,7 +75,6 @@ struct SettingsView: View {
                     Text("Stored in this iPad's Keychain. Create a key at console.anthropic.com and set a monthly spend limit on it.")
                 }
                 TutorVoiceSection()
-                DesignSection()
                 Section {
                     if let exportURL {
                         ShareLink(item: exportURL) { Label("Share data file", systemImage: "square.and.arrow.up") }
