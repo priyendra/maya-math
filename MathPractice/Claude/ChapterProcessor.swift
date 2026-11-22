@@ -394,6 +394,21 @@ final class ChapterProcessor: ObservableObject {
         return parts.joined(separator: " › ")
     }
 
+    /// A fresh start: removes all answers (and their tutor talks), practice tests, skill progress and lesson progress.
+    /// Keeps the scans, the digital chapter, its questions and the lessons (with their prepared scripts).
+    func clearPracticeHistory(_ chapter: Chapter, context: ModelContext) {
+        for q in chapter.questions { for a in q.attempts { context.delete(a) } }
+        for e in chapter.exams { context.delete(e) }
+        for s in chapter.skills { context.delete(s) }
+        for l in chapter.lessons {
+            l.partsDone = 0
+            l.status = .notStarted
+            l.lastOpened = nil
+        }
+        try? context.save()
+        ensureSkills(chapter, context: context)
+    }
+
     func ensureSkills(_ chapter: Chapter, context: ModelContext) {
         for concept in chapter.concepts {
             let levels = Set(concept.questions.filter { !$0.isChallenge }.map(\.difficulty))

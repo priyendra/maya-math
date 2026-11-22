@@ -184,6 +184,7 @@ struct ChapterSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var processor = ChapterProcessor.shared
     @State private var confirmReread = false
+    @State private var confirmClear = false
 
     var body: some View {
         NavigationStack {
@@ -206,10 +207,23 @@ struct ChapterSettingsView: View {
                 } footer: {
                     Text("Rebuilds the digital chapter and its questions from the pages you scanned. Practice history for this chapter is cleared.")
                 }
+                Section {
+                    Button("Clear practice history", role: .destructive) { confirmClear = true }
+                        .disabled(processor.isRunning(chapter))
+                } footer: {
+                    Text("Start this chapter fresh: removes your answers, tutor talks, practice tests, skill progress and lesson progress. The scanned chapter, its questions and lessons stay.")
+                }
                 Section { ReportProblemButton(subject: .chapter(chapter)) }
             }
             .navigationTitle("Chapter settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { try? context.save(); dismiss() } } }
+            .alert("Clear practice history?", isPresented: $confirmClear) {
+                Button("Cancel", role: .cancel) {}
+                Button("Clear", role: .destructive) { processor.clearPracticeHistory(chapter, context: context); dismiss() }
+            } message: {
+                let n = chapter.allAttempts.count
+                Text("\(n) answer\(n == 1 ? "" : "s") and all progress in this chapter will be removed. This can't be undone.")
+            }
             .alert("Re-read this chapter?", isPresented: $confirmReread) {
                 Button("Cancel", role: .cancel) {}
                 Button("Re-read", role: .destructive) { processor.reread(chapter, context: context); dismiss() }

@@ -25,6 +25,27 @@ final class ScanTests: XCTestCase {
         return (context, ch)
     }
 
+    func testClearPracticeHistoryKeepsTheChapter() throws {
+        let (context, ch) = try chapter([212, 213])
+        let concept = Concept(name: "Rates", summary: "", bookOrder: 0, workedExample: "")
+        concept.chapter = ch; context.insert(concept)
+        let q = Question(text: "Solve $x+1=2$.", difficulty: 1, source: .book)
+        q.chapter = ch; q.concept = concept; context.insert(q)
+        let a = Attempt(mode: .practice); a.question = q; a.isGraded = true; context.insert(a)
+        let lesson = Lesson(order: 0, title: "L", summary: "", optional: false, parts: [LessonPart(title: "p", sectionIDs: [0], practiceSectionIDs: [])])
+        lesson.partsDone = 1; lesson.status = .done; lesson.chapter = ch; context.insert(lesson)
+        ChapterProcessor.shared.ensureSkills(ch, context: context)
+        ch.skills.first?.mastery = 0.9
+        ChapterProcessor.shared.clearPracticeHistory(ch, context: context)
+        XCTAssertTrue(ch.allAttempts.isEmpty)
+        XCTAssertEqual(ch.questions.count, 1)
+        XCTAssertEqual(ch.pages.count, 2)
+        XCTAssertEqual(ch.skills.count, 1)
+        XCTAssertEqual(ch.skills.first?.mastery, 0)
+        XCTAssertEqual(lesson.status, .notStarted)
+        XCTAssertEqual(lesson.partsDone, 0)
+    }
+
     func testPagesScannedOutOfOrderAreSorted() throws {
         let (_, ch) = try chapter([212, 214, 213, 215])
         XCTAssertTrue(ScanReport.sortByPageNumber(ch))
