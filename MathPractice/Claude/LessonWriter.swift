@@ -85,23 +85,42 @@ enum LessonWriter {
 
     /// The saved script for a part, writing it if needed.
     static func script(_ lesson: Lesson, part index: Int, context: ModelContext) async throws -> LessonPartScript {
-        if let s = lesson.scripts[index] { return s }
+        // A saved script with nothing to say (an earlier bad reply) is written again.
+        if let s = lesson.scripts[index], isUsable(s) { return s }
         let input = input(lesson, part: index)
-        let dto: LessonScriptDTO
+        var script: LessonPartScript?
         if ProcessInfo.processInfo.arguments.contains("-fakeTutor") {
             try await Task.sleep(nanoseconds: 300_000_000)
-            dto = fake(index, questions: input.questions.keys.sorted())
+            script = convert(fake(index, questions: input.questions.keys.sorted()), part: index, input: input)
         } else {
-            dto = try await ClaudeServices.live.client.structured(
-                LessonScriptDTO.self, system: Prompts.lessonScript, content: input.content,
-                schema: LessonScriptDTO.schema, effort: .high, maxTokens: 16000, kind: "lesson_script")
+            // Claude occasionally returns the page but an empty narration: ask again (twice at most).
+            for attempt in 0..<2 where script == nil {
+                let dto = try await ClaudeServices.live.client.structured(
+                    LessonScriptDTO.self, system: Prompts.lessonScript, content: input.content,
+                    schema: LessonScriptDTO.schema, effort: .high, maxTokens: 16000, kind: "lesson_script")
+                let s = convert(dto, part: index, input: input)
+                if isUsable(s) { script = s } else { CallLog.event("lesson_script_unusable", ["attempt": attempt, "part": index]) }
+            }
         }
-        let script = convert(dto, part: index, input: input)
+        guard let script else { throw ScriptError.empty }
         var all = lesson.scripts
         all[index] = script
         lesson.scripts = all
         try? context.save()
         return script
+    }
+
+    /// A part needs something on the page and something said about it.
+    static func isUsable(_ s: LessonPartScript) -> Bool {
+        let says = s.narration.components(separatedBy: "\n").filter { line in
+            if case .say? = TutorScriptParser.beat(line) { return true } else { return false }
+        }
+        return !s.items.isEmpty && says.count >= 3
+    }
+
+    enum ScriptError: LocalizedError {
+        case empty
+        var errorDescription: String? { "The tutor couldn't prepare this part. Try again." }
     }
 
     /// Item ids become unique in the lesson ("e3" in part 2 → "p2e3"), labels become ids.

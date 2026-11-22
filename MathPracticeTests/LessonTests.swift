@@ -90,6 +90,14 @@ final class LessonTests: XCTestCase {
     }
 
     @MainActor
+    func testScriptWithoutNarrationIsNotUsable() {
+        let page = [LessonPartScript.Item(id: "p1e1", kind: "text", markdown: "Speed is distance per unit of time.", blockID: nil)]
+        XCTAssertFalse(LessonWriter.isUsable(LessonPartScript(items: page, narration: "", questionIDs: [])))
+        XCTAssertFalse(LessonWriter.isUsable(LessonPartScript(items: page, narration: "POINT: p1e1\nSAY: Hi.", questionIDs: [])))
+        XCTAssertTrue(LessonWriter.isUsable(LessonPartScript(items: page, narration: "SAY: One.\nPOINT: p1e1\nSAY: Two.\nSAY: Three.", questionIDs: [])))
+    }
+
+    @MainActor
     func testScriptIdsArePerPartAndLabelsBecomeIDs() {
         let fig = UUID(), q1 = UUID(), q2 = UUID()
         let input = LessonWriter.Input(figures: ["f1": fig], questions: ["q1": q1, "q2": q2])
