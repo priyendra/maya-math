@@ -212,3 +212,14 @@ struct VariantsDTO: Decodable {
         ]))])
     }
 }
+
+// MARK: - Teacher's feedback
+
+struct TeacherFeedbackDTO: Decodable {
+    let headline: String
+    let feedback: String
+
+    static var schema: OrderedObject {
+        Schema.object(["headline": Schema.string, "feedback": Schema.string])
+    }
+}

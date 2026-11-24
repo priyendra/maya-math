@@ -25,6 +25,7 @@
 		32F220A0DA1B40E5CB14E7D3 /* CallLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69AD3512B5009E2D88B32F68 /* CallLog.swift */; };
 		34E56D1F000ACCACCF53420B /* SkillsGridUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF72E3D176E1F1B94545C65 /* SkillsGridUITests.swift */; };
 		3834DD38D8867CAEE75965A1 /* VariantGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4827F8EF5EF188862466590F /* VariantGenerator.swift */; };
+		39742F9F05764141F35B6AB7 /* FeedbackSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A2F6CFA61910BB216F96012 /* FeedbackSummary.swift */; };
 		3BFF72369B645C851A46E3A9 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CDC08D495F22FAF745D4927 /* KeychainStore.swift */; };
 		3F0F9F05B6F63DD558DE1329 /* MyAnswersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE0AFF579E0ADA5742DEE3 /* MyAnswersView.swift */; };
 		3F522BB2854B6093E1DE84C1 /* CheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC8971D46DCC5A0A5B86F734 /* CheckInView.swift */; };
@@ -59,7 +60,9 @@
 		8D4046D904350CAD81AA7CF4 /* SkillDisplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174EA3609106B963A98A310F /* SkillDisplayTests.swift */; };
 		8E7A2EBCC2EF4C9E9C1B867E /* LessonSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377F6A4A3700AD0523696B3F /* LessonSession.swift */; };
 		8FFFD4E62188E33567B8EC62 /* ConceptPathViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE45E28F3A284A23BFA4393 /* ConceptPathViews.swift */; };
+		971105E4ADFA1BDDBE90991A /* FeedbackSummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57A2780C8C840176E7A7791 /* FeedbackSummaryTests.swift */; };
 		9A0CAD1C881B882613C489D7 /* ScanReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E69D628F248F571268EAA0 /* ScanReport.swift */; };
+		9A7952402D3D35B34E80DCCE /* TeacherFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F85BD6B0C88F20411BFB3C /* TeacherFeedback.swift */; };
 		9B0022A8FD25F3C3AA9042FE /* NewChapterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A290B7BCA132EBA8AB7FD2AF /* NewChapterView.swift */; };
 		9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */; };
 		A01FE7B1B93184544C6809CC /* ProgressSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2824029D7571FD8AEECAB925 /* ProgressSummary.swift */; };
@@ -78,6 +81,7 @@
 		C5E88D1B3963BA6AB97A9D40 /* ClaudeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665991869AC6129844A96D03 /* ClaudeClient.swift */; };
 		C793E5EA00A54165677A1161 /* LessonWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C04733293AB6BC3B01BDA9 /* LessonWriter.swift */; };
 		C9121E4B2CBE646909447359 /* TutorLiveProbeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */; };
+		CBD0105A791DCBF8C3EBBEBF /* TeacherFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */; };
 		CC9CAAFBBE05499BD6F34B64 /* ClaudeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC42C56EAF9BE0D0E30CA94 /* ClaudeServices.swift */; };
 		D003A678215210C677EECF6E /* LearningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFEA599FF608A11C79131F6 /* LearningTests.swift */; };
 		D6CB12D480EF27DEBA4DB4E5 /* RegradeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA941616DD5E93DD1699AF11 /* RegradeUITests.swift */; };
@@ -112,6 +116,7 @@
 		0311F8682A7570D87C58B443 /* ReadChapterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadChapterView.swift; sourceTree = "<group>"; };
 		039A3E5074D38B1C5691F340 /* HelpProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpProvider.swift; sourceTree = "<group>"; };
 		07F4CF90DCA0E731483BB305 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0A2F6CFA61910BB216F96012 /* FeedbackSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSummary.swift; sourceTree = "<group>"; };
 		0D8C2A0F083C2ADCD8BF5BB1 /* MathPracticeUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MathPracticeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0DF72E3D176E1F1B94545C65 /* SkillsGridUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsGridUITests.swift; sourceTree = "<group>"; };
 		0E188F46B3AB7A984271D2AB /* WritingCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WritingCanvas.swift; sourceTree = "<group>"; };
@@ -131,6 +136,7 @@
 		2D3036FE3260923B369E442F /* QuestionPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionPanel.swift; sourceTree = "<group>"; };
 		2F82F02D874D1DA98548E7D9 /* PipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineTests.swift; sourceTree = "<group>"; };
 		304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsViews.swift; sourceTree = "<group>"; };
+		3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeacherFeedbackView.swift; sourceTree = "<group>"; };
 		377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		377F6A4A3700AD0523696B3F /* LessonSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonSession.swift; sourceTree = "<group>"; };
 		412564532B12602F38109EFE /* TutorScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorScript.swift; sourceTree = "<group>"; };
@@ -172,6 +178,7 @@
 		B53ED8CD299C1B6CE50F185C /* ChapterScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterScore.swift; sourceTree = "<group>"; };
 		B55804A2BBA01524A634BFB1 /* ProblemReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProblemReport.swift; sourceTree = "<group>"; };
 		B886E03B5A5F3BE3219DFF3F /* Planner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planner.swift; sourceTree = "<group>"; };
+		B8F85BD6B0C88F20411BFB3C /* TeacherFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeacherFeedback.swift; sourceTree = "<group>"; };
 		B9285B6407ACA92DBB8BD449 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasUITests.swift; sourceTree = "<group>"; };
 		BA225F2DCADFCF67BE911E34 /* ChapterScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterScoreChart.swift; sourceTree = "<group>"; };
@@ -186,6 +193,7 @@
 		D20F101DFF6614D81E98D398 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
 		D4C9162F6823FD48063CB394 /* LearningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningStore.swift; sourceTree = "<group>"; };
 		D51EA8A20611E606D073350E /* MathPracticeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MathPracticeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D57A2780C8C840176E7A7791 /* FeedbackSummaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSummaryTests.swift; sourceTree = "<group>"; };
 		DC8971D46DCC5A0A5B86F734 /* CheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInView.swift; sourceTree = "<group>"; };
 		DEC5BBD6E47EBFF3DAACA0B1 /* Schemas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schemas.swift; sourceTree = "<group>"; };
 		E2178A03C9531E0752A2E3C4 /* ClaudeClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeClientTests.swift; sourceTree = "<group>"; };
@@ -203,12 +211,14 @@
 			children = (
 				B53ED8CD299C1B6CE50F185C /* ChapterScore.swift */,
 				522359F6EA0EBEE54210C57F /* ConceptPath.swift */,
+				0A2F6CFA61910BB216F96012 /* FeedbackSummary.swift */,
 				763D8DFC380CFEE7821043C2 /* GradingQueue.swift */,
 				039A3E5074D38B1C5691F340 /* HelpProvider.swift */,
 				D4C9162F6823FD48063CB394 /* LearningStore.swift */,
 				80B2FD60C9EA822A5F8F2E7D /* MasteryModel.swift */,
 				B886E03B5A5F3BE3219DFF3F /* Planner.swift */,
 				2824029D7571FD8AEECAB925 /* ProgressSummary.swift */,
+				B8F85BD6B0C88F20411BFB3C /* TeacherFeedback.swift */,
 			);
 			path = Learning;
 			sourceTree = "<group>";
@@ -255,6 +265,7 @@
 			isa = PBXGroup;
 			children = (
 				E2178A03C9531E0752A2E3C4 /* ClaudeClientTests.swift */,
+				D57A2780C8C840176E7A7791 /* FeedbackSummaryTests.swift */,
 				CDFEA599FF608A11C79131F6 /* LearningTests.swift */,
 				F2F572C4F8C9E2D29814F0EE /* LessonFixtures.swift */,
 				F69B7A8577D760C736C82FFA /* LessonTests.swift */,
@@ -320,6 +331,7 @@
 				971C199434CE906947C61BA7 /* ScopeViews.swift */,
 				377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */,
 				304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */,
+				3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */,
 				0E188F46B3AB7A984271D2AB /* WritingCanvas.swift */,
 				81788D58E5C7914840E2F5CD /* Review */,
 			);
@@ -528,6 +540,7 @@
 				8FFFD4E62188E33567B8EC62 /* ConceptPathViews.swift in Sources */,
 				80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */,
 				1F28EF65C31C87942E6A464E /* ExamView.swift in Sources */,
+				39742F9F05764141F35B6AB7 /* FeedbackSummary.swift in Sources */,
 				297A67F5ED5BE2B258B95095 /* GradingQueue.swift in Sources */,
 				3089A521B9EE14DD7F6E3567 /* HelpProvider.swift in Sources */,
 				31145991F07C4C964B38827F /* ImageUtils.swift in Sources */,
@@ -566,6 +579,8 @@
 				792D0564732E64C31AED6712 /* SkillsViews.swift in Sources */,
 				F4309CD596A6C40EF24D4273 /* SolutionPage.swift in Sources */,
 				B3C65C0C5E767EF1DF62F33D /* Speech.swift in Sources */,
+				9A7952402D3D35B34E80DCCE /* TeacherFeedback.swift in Sources */,
+				CBD0105A791DCBF8C3EBBEBF /* TeacherFeedbackView.swift in Sources */,
 				63176AF6CA27B2306788850A /* Theme.swift in Sources */,
 				828D0BE10F2E539503EC24BC /* TutorScript.swift in Sources */,
 				8C47E904189098B59EBFD292 /* TutorSession.swift in Sources */,
@@ -599,6 +614,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C4FED1BB32E43CAEC5E92DD6 /* ClaudeClientTests.swift in Sources */,
+				971105E4ADFA1BDDBE90991A /* FeedbackSummaryTests.swift in Sources */,
 				D003A678215210C677EECF6E /* LearningTests.swift in Sources */,
 				022A3D499E12D2F46E00D78D /* LessonFixtures.swift in Sources */,
 				F9E1B2FFD9A72A1D18B9B1AF /* LessonTests.swift in Sources */,

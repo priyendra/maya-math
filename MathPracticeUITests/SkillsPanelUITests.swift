@@ -7,10 +7,15 @@ final class SkillsPanelUITests: XCTestCase {
         guard let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"] else { throw XCTSkip("Set SHOTS_DIR to take screenshots") }
         let app = XCUIApplication()
         app.launchArguments = ["-openFirstChapter"]
+        for key in ["FEEDBACK_DUMP", "FEEDBACK_SEED"] {
+            if let v = ProcessInfo.processInfo.environment[key] { app.launchEnvironment[key] = v }
+        }
         app.launch()
         XCTAssertTrue(app.staticTexts["Progress summary"].waitForExistence(timeout: 15))
         save(app, dir, "1-chapter-top")
         app.swipeUp(); sleep(1); save(app, dir, "2-chapter-bottom")
+        app.swipeUp(); sleep(1); save(app, dir, "2c-feedback-more")
+        app.swipeDown(); app.swipeDown(); sleep(1)
         let seeAll = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My progress'")).firstMatch
         if seeAll.waitForExistence(timeout: 3) {
             seeAll.tap(); sleep(2); save(app, dir, "3-progress")

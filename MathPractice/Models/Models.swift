@@ -75,6 +75,12 @@ final class Chapter {
     var lessonSkippedJSON: String = ""
     /// LessonPlanner.version the lessons were planned with (older plans may be replanned).
     var lessonPlanVersion: Int = 0
+    /// "Teacher's feedback": Claude's notes on her answers so far (Markdown), its one-line headline,
+    /// the practice time (seconds) it was written at, and when.
+    var feedbackHeadline: String = ""
+    var feedbackText: String = ""
+    var feedbackAtSeconds: Double = -1
+    var feedbackDate: Date?
 
     init(title: String = "New chapter") {
         self.title = title

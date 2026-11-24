@@ -150,6 +150,13 @@ struct ClaudeServices: Sendable {
         return result
     }
 
+    /// "Teacher's feedback" from a summary of her answers (see FeedbackSummary).
+    func teacherFeedback(chapter: String, summary: String) async throws -> TeacherFeedbackDTO {
+        try await client.structured(TeacherFeedbackDTO.self, system: Prompts.teacherFeedback,
+                                    content: [.text("Chapter: \(chapter)\n\n\(summary)")],
+                                    schema: TeacherFeedbackDTO.schema, effort: .medium, kind: "teacher_feedback")
+    }
+
     /// A nudge for a student who is stuck (optionally looking at her work so far). Never the final answer.
     func hint(_ q: QuestionContext, work: Data?) async throws -> String {
         var blocks = questionBlocks(q)

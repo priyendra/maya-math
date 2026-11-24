@@ -195,3 +195,14 @@ Running record of product decisions and open discussion topics. Newest decisions
   Unicode via `MathPlain`. **"Grade it again"** on an answer Claude wasn't sure about re-runs grading; the earlier
   grading log is kept below the new one, and a question the first grading retired as flawed comes back if the new
   grading finds it fine. Verdicts read "Correct / Not quite / Not sure — to check".
+
+## Teacher's feedback
+- A card below Progress summary on the chapter page: Claude's notes to the student — a bold one-line headline,
+  then **What's going well / The one habit to fix / Where to practise next**, quoting her own mistakes. Shown in
+  full (no fold): the chapter page has the room, and the specific examples are the useful part.
+- Written first after 10 answers, then after every **30 minutes of practice time** (active seconds on answers, as
+  in the chart), not clock time. Stored on the chapter (`feedbackHeadline/Text/AtSeconds/Date`).
+- Input (`FeedbackSummary`): recent work = her last hour of practice, in full (counts per skill level + the
+  grader's "where it went wrong" for every mistake); earlier work in brief (counts + latest 12 mistakes). The prompt
+  weighs recent work most but uses earlier work for context (praise a fixed habit, flag a recurring one). The app
+  computes every number; Claude only writes.
