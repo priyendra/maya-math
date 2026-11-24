@@ -142,20 +142,9 @@ struct ChapterHomeView: View {
                 .buttonStyle(.plain)
 
                 if !chapter.needsRereading {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Your skills").font(theme.font(.section))
-                        MasteryGrid(set: set)
-                    }
-                    .padding(20)
-                    .card(theme)
-                    let stats = SessionStats(attempts: set.allAttempts.filter(\.isGraded))
-                    if stats.total > 0 {
-                        HStack(spacing: 24) {
-                            stat("\(stats.total)", "answered")
-                            stat("\(Int(stats.accuracy * 100))%", "correct")
-                            stat("\(stats.minutes)", "minutes practiced")
-                        }
-                    }
+                    SkillsPanel(set: set)
+                        .padding(20)
+                        .card(theme)
                 }
             }
             .padding(24)
@@ -183,13 +172,6 @@ struct ChapterHomeView: View {
             Button("Re-read", role: .destructive) { processor.reread(chapter, context: context) }
         } message: {
             Text("Questions are rebuilt from your scanned pages, so any practice history in this chapter is cleared.")
-        }
-    }
-
-    private func stat(_ value: String, _ label: String) -> some View {
-        VStack(alignment: .leading) {
-            Text(value).font(.system(size: 28, weight: .bold, design: theme.design).monospacedDigit())
-            Text(label).font(theme.font(.caption)).foregroundStyle(.secondary)
         }
     }
 
@@ -319,7 +301,7 @@ struct MasteryGrid: View {
             GridRow {
                 Text("")
                 ForEach(1...3, id: \.self) { d in
-                    Text(["Basic", "Medium", "Hard"][d - 1]).font(theme.font(.label)).foregroundStyle(.secondary)
+                    Text(Self.levels[d - 1]).font(theme.font(.label)).foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -341,39 +323,28 @@ struct MasteryGrid: View {
         if !has {
             RoundedRectangle(cornerRadius: r).strokeBorder(Color.secondary.opacity(0.12), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
                 .frame(height: 46)
+                .accessibilityLabel("No \(Self.levels[difficulty - 1]) questions")
         } else {
-            let p = planner.progress(key)
-            let mastered = planner.isMastered(key)
             let open = planner.isOpen(key)
-            let fill = open ? theme.skillColor(p.mastery, attempted: p.attemptCount > 0) : Color.secondary.opacity(0.13)
+            let look = SkillCellLook(progress: planner.progress(key), mastered: planner.isMastered(key), estimate: planner.estimate(key))
             RoundedRectangle(cornerRadius: r, style: .continuous)
-                .fill(fill)
+                .fill(open ? theme.skillColor(look.stage) : Color.secondary.opacity(0.13))
                 .frame(height: 46)
                 .overlay {
-                    // Icon + number, so the meaning never depends on colour alone. Dark text on light colours.
-                    let ink: Color = p.attemptCount > 0 && p.mastery >= 0.6 && !mastered ? .black.opacity(0.75) : .white
-                    if !open { Image(systemName: "lock.fill").foregroundStyle(.secondary) }
-                    else if mastered { Label("Mastered", systemImage: "star.fill").labelStyle(.iconOnly).foregroundStyle(.white).font(.headline) }
-                    else if p.attemptCount > 0 {
-                        HStack(spacing: 4) {
-                            Image(systemName: p.mastery < 0.3 ? "arrow.down.circle.fill" : p.mastery < 0.6 ? "minus.circle.fill" : "arrow.up.circle.fill")
-                            Text("\(Int(p.mastery * 100))%")
+                    if !open {
+                        // Locked again after the level below dipped: keep her earlier work visible.
+                        HStack(spacing: 6) {
+                            Image(systemName: "lock.fill")
+                            if planner.progress(key).attemptCount > 0 { SkillDots(filled: look.dots, color: .secondary) }
                         }
-                        .font(.system(size: 14, weight: .bold, design: theme.design)).foregroundStyle(ink)
-                    } else {
-                        Text("Ready").font(theme.font(.caption)).foregroundStyle(theme.learn)
+                        .foregroundStyle(.secondary)
                     }
+                    else { SkillCellContent(look: look) }
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(MathPlain.render(concept.name)), \(Self.levels[difficulty - 1]): \(open ? look.spoken : look.stage == .new ? "Locked" : "Locked until the level below is Almost; \(look.dots) of 5 steps")")
         }
     }
 
-    static func color(_ mastery: Double, attempted: Bool) -> Color {
-        guard attempted else { return Color.blue.opacity(0.25) }
-        switch mastery {
-        case ..<0.3: return .red.opacity(0.75)
-        case ..<0.6: return .orange
-        case ..<0.8: return .yellow.opacity(0.9)
-        default: return .green
-        }
-    }
+    static let levels = ["Basic", "Medium", "Hard"]
 }

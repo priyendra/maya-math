@@ -14,8 +14,8 @@ struct ProgressReportView: View {
         let mistakes = graded.compactMap { $0.effectiveVerdict == .incorrect ? $0.mistakeType : nil }
         let exams = chapter.exams.filter { $0.finishedAt != nil }.sorted { $0.startedAt < $1.startedAt }
         return List {
-            Section("Your skills") {
-                MasteryGrid(chapter: chapter).padding(.vertical)
+            Section {
+                SkillsPanel(set: .chapter(chapter)).padding(.vertical)
             }
             if !mistakes.isEmpty {
                 Section("Mistake types") { MistakeChart(mistakes: mistakes) }

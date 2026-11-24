@@ -160,3 +160,16 @@ Running record of product decisions and open discussion topics. Newest decisions
   red), board (indigo); one type scale. Applied to library, chapter page, lessons, lesson page, practice, check-ins,
   solution page, exam intro, My answers, My progress. App icon: white radical + gold spark on blue→indigo
   (`tools/make-app-icon.swift`).
+
+## Skills grid and summary bar
+- The mastery rule is unchanged (the user wants the bar as is). Only how it's shown changed: a percentage read as
+  "fraction done/right", so cells show **5 dots = steps toward the star** (dots = how many right-in-a-row answers the
+  score is worth: 30/51/66/76/83%) plus a **named stage** by colour: Not started (light blue, empty dots), Learning (rose, <30%), Getting there
+  (orange, <60%), Almost (yellow, ≥60%, which also unlocks the next level), Mastered (green ★). A timer means "right
+  enough for the star, now a bit faster". A level that re-locks after the level below slips keeps its dots, greyed.
+- Legend under the grid and a "How this works" popover in second person.
+- Summary bar above the grid (chapter page, study plan, My progress): answered (+today), % right (+today), practice
+  time and days, mastered of total cells + how many are Almost, review due (only once something is mastered), days to
+  the test (when a date is set), and "N answers to check".
+- Next: tap a cell for details (step 2), then an "analyze my work" feedback feature (step 3; recent vs all history
+  still to discuss).

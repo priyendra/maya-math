@@ -44,18 +44,22 @@
 		6BC3A89C98ECE9D5D90CD3EC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */; };
 		6F1CAA2621E34F010342925A /* TutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4CA4157E303F14CC5F0D81 /* TutorTests.swift */; };
 		743305947D8715F10D8149F4 /* CanvasUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */; };
+		792D0564732E64C31AED6712 /* SkillsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */; };
 		7E2BE72BBA38C3631CFAF9AF /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0393C8469B25A370A297 /* SampleData.swift */; };
 		80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */; };
 		81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */; };
 		828D0BE10F2E539503EC24BC /* TutorScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 412564532B12602F38109EFE /* TutorScript.swift */; };
+		84EBA12E93881CBE230ABD07 /* SkillsPanelUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2BF32A956DCCF46BBB260E /* SkillsPanelUITests.swift */; };
 		86D316C7E1DC9EACB871F4CB /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8FEC8B73BD5C71E909B655 /* LibraryView.swift */; };
 		87C5B78FEB0A2AB285A0760C /* MathPracticeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7907F8F17ECCF8B44BA369 /* MathPracticeApp.swift */; };
 		8950F6E0A7FC184E7D7467B8 /* katex in Resources */ = {isa = PBXBuildFile; fileRef = BC349D0C021DE632668D9028 /* katex */; };
 		8C47E904189098B59EBFD292 /* TutorSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D5EC6D81F11332A69D4823 /* TutorSession.swift */; };
+		8D4046D904350CAD81AA7CF4 /* SkillDisplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174EA3609106B963A98A310F /* SkillDisplayTests.swift */; };
 		8E7A2EBCC2EF4C9E9C1B867E /* LessonSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377F6A4A3700AD0523696B3F /* LessonSession.swift */; };
 		9A0CAD1C881B882613C489D7 /* ScanReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E69D628F248F571268EAA0 /* ScanReport.swift */; };
 		9B0022A8FD25F3C3AA9042FE /* NewChapterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A290B7BCA132EBA8AB7FD2AF /* NewChapterView.swift */; };
 		9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */; };
+		A01FE7B1B93184544C6809CC /* ProgressSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2824029D7571FD8AEECAB925 /* ProgressSummary.swift */; };
 		A03AB31335605891567B4841 /* MathText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1CDC9394B9629E2AEAF5FB /* MathText.swift */; };
 		A5C1CC211AEB7365B7EF3DA3 /* ProblemReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55804A2BBA01524A634BFB1 /* ProblemReport.swift */; };
 		AE552D07DFDE0CB0C6527DEB /* Schemas.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC5BBD6E47EBFF3DAACA0B1 /* Schemas.swift */; };
@@ -109,6 +113,7 @@
 		1188FC44FDA09FB9AF140A7E /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		14F4EE611821FFB2B0CBD510 /* VoiceTutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTutor.swift; sourceTree = "<group>"; };
 		168B63D915F655325F6E11A2 /* ProblemReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProblemReportTests.swift; sourceTree = "<group>"; };
+		174EA3609106B963A98A310F /* SkillDisplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillDisplayTests.swift; sourceTree = "<group>"; };
 		1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttemptReviewView.swift; sourceTree = "<group>"; };
 		1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanner.swift; sourceTree = "<group>"; };
 		1D256DEF3FCE3F340EA0475B /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
@@ -116,9 +121,11 @@
 		204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVoice.swift; sourceTree = "<group>"; };
 		2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpAndPauseUITests.swift; sourceTree = "<group>"; };
 		23C04733293AB6BC3B01BDA9 /* LessonWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonWriter.swift; sourceTree = "<group>"; };
+		2824029D7571FD8AEECAB925 /* ProgressSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummary.swift; sourceTree = "<group>"; };
 		29EDDEEFC3356461554AEFFC /* LessonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonsView.swift; sourceTree = "<group>"; };
 		2D3036FE3260923B369E442F /* QuestionPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionPanel.swift; sourceTree = "<group>"; };
 		2F82F02D874D1DA98548E7D9 /* PipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineTests.swift; sourceTree = "<group>"; };
+		304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsViews.swift; sourceTree = "<group>"; };
 		377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		377F6A4A3700AD0523696B3F /* LessonSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonSession.swift; sourceTree = "<group>"; };
 		412564532B12602F38109EFE /* TutorScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorScript.swift; sourceTree = "<group>"; };
@@ -151,6 +158,7 @@
 		A290B7BCA132EBA8AB7FD2AF /* NewChapterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChapterView.swift; sourceTree = "<group>"; };
 		A44CD57438440D0BE6E0745E /* LibraryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryUITests.swift; sourceTree = "<group>"; };
 		A9372EBC3923439A35CEAE84 /* LessonPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonPage.swift; sourceTree = "<group>"; };
+		AA2BF32A956DCCF46BBB260E /* SkillsPanelUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsPanelUITests.swift; sourceTree = "<group>"; };
 		AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorLiveProbeUITests.swift; sourceTree = "<group>"; };
 		AC7907F8F17ECCF8B44BA369 /* MathPracticeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathPracticeApp.swift; sourceTree = "<group>"; };
 		ADAFD830DD75C79719F8BA99 /* ScreenTourUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTourUITests.swift; sourceTree = "<group>"; };
@@ -188,6 +196,7 @@
 				D4C9162F6823FD48063CB394 /* LearningStore.swift */,
 				80B2FD60C9EA822A5F8F2E7D /* MasteryModel.swift */,
 				B886E03B5A5F3BE3219DFF3F /* Planner.swift */,
+				2824029D7571FD8AEECAB925 /* ProgressSummary.swift */,
 			);
 			path = Learning;
 			sourceTree = "<group>";
@@ -240,6 +249,7 @@
 				2F82F02D874D1DA98548E7D9 /* PipelineTests.swift */,
 				168B63D915F655325F6E11A2 /* ProblemReportTests.swift */,
 				743FCCE53E1AC4308EAFE1AD /* ScanTests.swift */,
+				174EA3609106B963A98A310F /* SkillDisplayTests.swift */,
 				BF4CA4157E303F14CC5F0D81 /* TutorTests.swift */,
 			);
 			path = MathPracticeTests;
@@ -257,6 +267,7 @@
 				65CB75D511DE7DCCBD2D5478 /* ScanFixUITests.swift */,
 				ADAFD830DD75C79719F8BA99 /* ScreenTourUITests.swift */,
 				0DF72E3D176E1F1B94545C65 /* SkillsGridUITests.swift */,
+				AA2BF32A956DCCF46BBB260E /* SkillsPanelUITests.swift */,
 				AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */,
 			);
 			path = MathPracticeUITests;
@@ -293,6 +304,7 @@
 				1E8393FD9C190CD55EF1AAE2 /* ScanFixView.swift */,
 				971C199434CE906947C61BA7 /* ScopeViews.swift */,
 				377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */,
+				304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */,
 				0E188F46B3AB7A984271D2AB /* WritingCanvas.swift */,
 				81788D58E5C7914840E2F5CD /* Review */,
 			);
@@ -520,6 +532,7 @@
 				13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */,
 				A5C1CC211AEB7365B7EF3DA3 /* ProblemReport.swift in Sources */,
 				4A2818BFF345BF2C31262559 /* ProgressReportView.swift in Sources */,
+				A01FE7B1B93184544C6809CC /* ProgressSummary.swift in Sources */,
 				068BA2E7A0C06960003E79E8 /* Prompts.swift in Sources */,
 				575014BC4A385DA58CAD447A /* QuestionPanel.swift in Sources */,
 				C0F906DCAAD9CB300CFA566D /* ReadChapterView.swift in Sources */,
@@ -531,6 +544,7 @@
 				AE552D07DFDE0CB0C6527DEB /* Schemas.swift in Sources */,
 				5F6BABF6127EC431F724EB4C /* ScopeViews.swift in Sources */,
 				6BC3A89C98ECE9D5D90CD3EC /* SettingsView.swift in Sources */,
+				792D0564732E64C31AED6712 /* SkillsViews.swift in Sources */,
 				F4309CD596A6C40EF24D4273 /* SolutionPage.swift in Sources */,
 				B3C65C0C5E767EF1DF62F33D /* Speech.swift in Sources */,
 				63176AF6CA27B2306788850A /* Theme.swift in Sources */,
@@ -555,6 +569,7 @@
 				46C498886EE4542552E09E0F /* ScanFixUITests.swift in Sources */,
 				C1CD2607914922CDE5BD1663 /* ScreenTourUITests.swift in Sources */,
 				34E56D1F000ACCACCF53420B /* SkillsGridUITests.swift in Sources */,
+				84EBA12E93881CBE230ABD07 /* SkillsPanelUITests.swift in Sources */,
 				C9121E4B2CBE646909447359 /* TutorLiveProbeUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -570,6 +585,7 @@
 				AE7A026EA0FD47E14E085FF0 /* PipelineTests.swift in Sources */,
 				46280A64A1CC27AECCD42653 /* ProblemReportTests.swift in Sources */,
 				2A8CCA9CE28CB5DC082F8E8A /* ScanTests.swift in Sources */,
+				8D4046D904350CAD81AA7CF4 /* SkillDisplayTests.swift in Sources */,
 				6F1CAA2621E34F010342925A /* TutorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

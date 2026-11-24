@@ -37,8 +37,7 @@ struct ScopeHomeView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                Text("Your skills").font(.title2.bold())
-                MasteryGrid(set: set)
+                SkillsPanel(set: set)
             }
             .padding(24)
         }

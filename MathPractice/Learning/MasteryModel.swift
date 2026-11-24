@@ -101,3 +101,60 @@ extension SkillState {
         }
     }
 }
+
+/// How a skill cell is shown to the student: a named stage plus steps (dots) toward the star.
+/// Display only; the mastery rule itself lives in `MasteryModel`.
+enum SkillStage: Int, CaseIterable, Comparable {
+    case new, learning, gettingThere, almost, mastered
+
+    static func < (a: SkillStage, b: SkillStage) -> Bool { a.rawValue < b.rawValue }
+
+    var name: String {
+        switch self {
+        case .new: return "Not started"
+        case .learning: return "Learning"
+        case .gettingThere: return "Getting there"
+        case .almost: return "Almost"
+        case .mastered: return "Mastered"
+        }
+    }
+
+    static func of(_ p: SkillProgress, mastered: Bool) -> SkillStage {
+        if mastered { return .mastered }
+        if p.attemptCount == 0 { return .new }
+        switch p.mastery {
+        case ..<0.3: return .learning
+        case ..<0.6: return .gettingThere
+        default: return .almost
+        }
+    }
+}
+
+extension MasteryModel {
+    /// Number of dots shown toward the star.
+    static let steps = 5
+
+    /// Score after `n` right answers in a row from a fresh start.
+    static func scoreAfter(rightInARow n: Int) -> Double { 1 - pow(1 - gainRate, Double(n)) }
+
+    /// The score shown as dots: how many right-in-a-row answers it is worth (0…5).
+    static func dots(_ mastery: Double) -> Int {
+        (1...steps).filter { scoreAfter(rightInARow: $0) <= mastery + 0.005 }.count
+    }
+
+    /// More right answers in a row needed for the star (ignoring speed). 0 when the score is already there.
+    static func rightAnswersToStar(_ p: SkillProgress) -> Int {
+        var p = p, n = 0
+        while n < 20 {
+            if p.mastery >= masteredThreshold, p.attemptCount >= 3, p.recentResults.last == true { return n }
+            p = apply(correct: true, mistake: nil, seconds: nil, to: p)
+            n += 1
+        }
+        return n
+    }
+
+    /// Accurate enough for the star but held back because she's slower than expected.
+    static func heldBackBySpeed(_ p: SkillProgress, estimate: Double) -> Bool {
+        rightAnswersToStar(p) == 0 && !isMastered(p, estimate: estimate)
+    }
+}
