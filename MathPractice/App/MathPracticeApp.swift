@@ -12,6 +12,7 @@ struct MathPracticeApp: App {
                 try? FileManager.default.removeItem(at: dir.appendingPathComponent(name))
             }
             if let domain = Bundle.main.bundleIdentifier { UserDefaults.standard.removePersistentDomain(forName: domain) }
+            try? FileManager.default.removeItem(at: DraftStore.folder)
         }
         #endif
     }

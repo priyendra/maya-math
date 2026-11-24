@@ -83,6 +83,7 @@ struct ExamView: View {
         }
         .onReceive(ticker) { t in
             now = t
+            if phase == .running && Int(t.timeIntervalSince1970) % 5 == 0 { saveDraft() }
             if phase == .running && remaining <= 0 { timedOut = true; submitAll() }
         }
         .onChange(of: grading.version) { _, _ in
@@ -96,7 +97,7 @@ struct ExamView: View {
                 now = Date()
                 questionClock.resume()
                 if phase == .running && remaining <= 0 { timedOut = true; submitAll() }
-            } else { questionClock.pause() }
+            } else { questionClock.pause(); saveDraft() }
         }
         .alert("Hand in your exam?", isPresented: $confirmSubmit) {
             Button("Keep working", role: .cancel) {}
@@ -133,7 +134,7 @@ struct ExamView: View {
             }
             .accessibilityIdentifier("myExams")
         }
-        .onAppear { plan() }
+        .onAppear { if !resumeUnfinished() { plan() } }
         .onChange(of: difficultyRaw) { _, _ in plan() }
         .onChange(of: paceRaw) { _, _ in plan() }
         .onChange(of: lengthIndex) { _, _ in plan() }
@@ -223,6 +224,7 @@ struct ExamView: View {
         session.chapter = set.chapters.first
         session.startedAt = Date()
         context.insert(session)
+        try? context.save()   // so a running exam is found again if the app closes
         exam = session
         now = Date()
         timedOut = false
@@ -241,12 +243,55 @@ struct ExamView: View {
         perQuestionSeconds[id, default: 0] += questionClock.elapsed()
         questionClock.reset()
         index = i
+        saveDraft()
+    }
+
+    // MARK: Drafts (every answer survives the app closing; the clock keeps running)
+
+    /// Saves all answers so far: when she moves between questions, every few seconds, and when the app goes away.
+    private func saveDraft() {
+        guard phase == .running, let exam, questions.indices.contains(index) else { return }
+        var ink = drawings.mapValues { $0.dataRepresentation() }
+        let cur = questions[index].id
+        ink[cur] = canvas.drawing.dataRepresentation()
+        var seconds = perQuestionSeconds
+        seconds[cur, default: 0] += questionClock.elapsed()
+        DraftStore.save(Draft(questionIDs: questions.map(\.id), ink: ink, seconds: seconds, index: index),
+                        key: DraftStore.examKey(exam.id))
+    }
+
+    /// An exam that was running when the app closed: carry on where she was (time kept running meanwhile), or, if
+    /// time ran out, hand in what she had written.
+    private func resumeUnfinished() -> Bool {
+        let ids = Set(set.questions.map(\.id))
+        guard let session = set.chapters.flatMap(\.exams)
+            .filter({ $0.finishedAt == nil && $0.questionIDs.filter(ids.contains).count * 2 >= max($0.questionIDs.count, 1) })
+            .max(by: { $0.startedAt < $1.startedAt }) else { return false }
+        let draft = DraftStore.load(DraftStore.examKey(session.id))
+        let byID = Dictionary(set.chapters.flatMap(\.questions).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let qs = session.questionIDs.compactMap { byID[$0] }
+        // Nothing saved (an exam from before drafts existed): drop it rather than hand in blank answers.
+        guard let draft, !qs.isEmpty else { context.delete(session); try? context.save(); return false }
+        exam = session
+        questions = qs
+        allowed = Dictionary(zip(session.questionIDs, session.allowedSeconds), uniquingKeysWith: { a, _ in a })
+        paceRaw = session.paceRaw
+        drawings = draft.ink.compactMapValues { try? PKDrawing(data: $0) }
+        perQuestionSeconds = draft.seconds
+        index = min(max(draft.index, 0), qs.count - 1)
+        canvas.load(drawings[qs[index].id] ?? PKDrawing())
+        questionClock.reset()
+        now = Date()
+        phase = .running
+        if remaining <= 0 { timedOut = true; submitAll() }
+        return true
     }
 
     private func submitAll() {
         guard phase == .running, let exam else { return }
         confirmSubmit = false
         go(to: index) // bank time on the current question
+        DraftStore.clear(DraftStore.examKey(exam.id))
         clock.pause()
         exam.finishedAt = min(Date(), exam.startedAt.addingTimeInterval(timeLimit))
         let start = exam.startedAt

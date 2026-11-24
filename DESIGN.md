@@ -262,3 +262,10 @@ Running record of product decisions and open discussion topics. Newest decisions
   time is still stored.
 - Teacher's feedback includes **Your pace** as a key section: pace vs estimates per level, recent vs earlier, right
   vs wrong answers (slow-but-right = needs fluency; wrong much faster than right = rushing), slowest skill levels.
+- Drafts survive the app closing (files under Application Support/Drafts, one per practice set / exam):
+  practice saves the current question's ink and time every few seconds and when the app goes to the background, and
+  restores it when practice reopens on that chapter or plan (if recent and still unanswered); an exam saves every
+  answer when she moves between questions, every few seconds and on background. Reopening Exam mode returns to a
+  running exam (its clock kept running); if its time ran out meanwhile, it hands in what she wrote.
+- The practice question shows the book place ("Ex. 12 · p. 236"); tapping it opens the chapter at that exercise.
+  Clocks stop while she reads; Back returns to the question. Exams have no such link.

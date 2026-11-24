@@ -351,7 +351,7 @@ struct ChapterLink: View {
 
     var body: some View {
         let chapter = question.chapter
-        let base = question.parentQuestionID.flatMap { id in chapter?.questions.first { $0.id == id } } ?? question
+        let base = Self.base(question)
         if let chapter {
             NavigationLink { ReadChapterView(chapter: chapter, focus: base) } label: {
                 HStack(spacing: 5) {
@@ -366,6 +366,11 @@ struct ChapterLink: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("seeInChapter")
         }
+    }
+
+    /// The book question a generated one was made from (itself for a book question).
+    static func base(_ question: Question) -> Question {
+        question.parentQuestionID.flatMap { id in question.chapter?.questions.first { $0.id == id } } ?? question
     }
 
     static func label(question: Question, base: Question) -> String {

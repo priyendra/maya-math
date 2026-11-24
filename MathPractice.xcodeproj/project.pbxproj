@@ -33,6 +33,7 @@
 		3F0F9F05B6F63DD558DE1329 /* MyAnswersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE0AFF579E0ADA5742DEE3 /* MyAnswersView.swift */; };
 		3F522BB2854B6093E1DE84C1 /* CheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC8971D46DCC5A0A5B86F734 /* CheckInView.swift */; };
 		4271E3F1460E055375750FE0 /* LessonPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7D4897343A4B9D7D9DAFBC /* LessonPlanner.swift */; };
+		441EB8BB98644F2EF5E853B1 /* DraftUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD96839EE63C1AC7309DCD3F /* DraftUITests.swift */; };
 		4612A113975DFCC005B43C6B /* ChapterProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EC5E1C862487D2AE63C2D7 /* ChapterProcessor.swift */; };
 		46280A64A1CC27AECCD42653 /* ProblemReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 168B63D915F655325F6E11A2 /* ProblemReportTests.swift */; };
 		46C498886EE4542552E09E0F /* ScanFixUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CB75D511DE7DCCBD2D5478 /* ScanFixUITests.swift */; };
@@ -88,6 +89,7 @@
 		CC9CAAFBBE05499BD6F34B64 /* ClaudeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC42C56EAF9BE0D0E30CA94 /* ClaudeServices.swift */; };
 		D003A678215210C677EECF6E /* LearningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFEA599FF608A11C79131F6 /* LearningTests.swift */; };
 		D6CB12D480EF27DEBA4DB4E5 /* RegradeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA941616DD5E93DD1699AF11 /* RegradeUITests.swift */; };
+		DF487AFD85D97944BA392F0D /* DraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D743A2CD897EF73A0774219 /* DraftStore.swift */; };
 		E8CA688ECF4C09DF64F66CCB /* LessonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EDDEEFC3356461554AEFFC /* LessonsView.swift */; };
 		E8CB7C833A1146DF4D3300A5 /* ClickThroughViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6F1D48CE6E8EBC758B6BDF /* ClickThroughViews.swift */; };
 		EDAD19C0E01133D964C70366 /* CanvasLabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39A1B0FD6DA9CA55459FBDE /* CanvasLabUITests.swift */; };
@@ -145,6 +147,7 @@
 		377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		377F6A4A3700AD0523696B3F /* LessonSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonSession.swift; sourceTree = "<group>"; };
 		383690AEDDFF682EF655AE92 /* SkillBarsGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillBarsGrid.swift; sourceTree = "<group>"; };
+		3D743A2CD897EF73A0774219 /* DraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftStore.swift; sourceTree = "<group>"; };
 		412564532B12602F38109EFE /* TutorScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorScript.swift; sourceTree = "<group>"; };
 		47532A0C491289D637FD2620 /* ChapterHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterHomeView.swift; sourceTree = "<group>"; };
 		4827F8EF5EF188862466590F /* VariantGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariantGenerator.swift; sourceTree = "<group>"; };
@@ -190,6 +193,7 @@
 		BA941616DD5E93DD1699AF11 /* RegradeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegradeUITests.swift; sourceTree = "<group>"; };
 		BBC42C56EAF9BE0D0E30CA94 /* ClaudeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeServices.swift; sourceTree = "<group>"; };
 		BC349D0C021DE632668D9028 /* katex */ = {isa = PBXFileReference; lastKnownFileType = folder; name = katex; path = MathPractice/Resources/katex; sourceTree = SOURCE_ROOT; };
+		BD96839EE63C1AC7309DCD3F /* DraftUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftUITests.swift; sourceTree = "<group>"; };
 		BF4CA4157E303F14CC5F0D81 /* TutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorTests.swift; sourceTree = "<group>"; };
 		C166E836241E4FB197025AEC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C3352EA421577C75BDC7F236 /* CheckInUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInUITests.swift; sourceTree = "<group>"; };
@@ -292,6 +296,7 @@
 				F39A1B0FD6DA9CA55459FBDE /* CanvasLabUITests.swift */,
 				B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */,
 				C3352EA421577C75BDC7F236 /* CheckInUITests.swift */,
+				BD96839EE63C1AC7309DCD3F /* DraftUITests.swift */,
 				D7D53BF4703980205D2DD358 /* ExamHistoryUITests.swift */,
 				2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */,
 				75F7D607EC608E24A41A6259 /* LessonUITests.swift */,
@@ -397,6 +402,7 @@
 			children = (
 				605F34558094F3610E52AF83 /* CanvasLab.swift */,
 				1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */,
+				3D743A2CD897EF73A0774219 /* DraftStore.swift */,
 				A9CB076330F9EE5BDC18871E /* Fmt.swift */,
 				D20F101DFF6614D81E98D398 /* ImageUtils.swift */,
 				4CDC08D495F22FAF745D4927 /* KeychainStore.swift */,
@@ -550,6 +556,7 @@
 				E8CB7C833A1146DF4D3300A5 /* ClickThroughViews.swift in Sources */,
 				81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */,
 				80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */,
+				DF487AFD85D97944BA392F0D /* DraftStore.swift in Sources */,
 				FD1BA516C28D230118C3EBBF /* ExamHistoryView.swift in Sources */,
 				1F28EF65C31C87942E6A464E /* ExamView.swift in Sources */,
 				39742F9F05764141F35B6AB7 /* FeedbackSummary.swift in Sources */,
@@ -612,6 +619,7 @@
 				EDAD19C0E01133D964C70366 /* CanvasLabUITests.swift in Sources */,
 				743305947D8715F10D8149F4 /* CanvasUITests.swift in Sources */,
 				BAACC91351094CDC58E318C0 /* CheckInUITests.swift in Sources */,
+				441EB8BB98644F2EF5E853B1 /* DraftUITests.swift in Sources */,
 				175EE77FEF5C8A3A5E00E337 /* ExamHistoryUITests.swift in Sources */,
 				9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */,
 				EEE89F3E1373A579FEB1CD0F /* LessonUITests.swift in Sources */,

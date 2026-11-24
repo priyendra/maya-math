@@ -9,9 +9,11 @@ struct StudySet {
     /// Available questions in scope (generated questions follow the book question they came from).
     let questions: [Question]
     let examMinutes: Int
+    /// Stable identity of the set (chapter, study plan or lesson), e.g. for saved drafts.
+    var key = ""
 
     static func chapter(_ c: Chapter) -> StudySet {
-        StudySet(title: c.title, chapters: [c], questions: c.activeQuestions, examMinutes: c.examMinutes)
+        StudySet(title: c.title, chapters: [c], questions: c.activeQuestions, examMinutes: c.examMinutes, key: "chapter-\(c.id)")
     }
 
     static func scope(_ s: StudyScope, chapters all: [Chapter]) -> StudySet {
@@ -40,7 +42,7 @@ struct StudySet {
             }
             questions += available.filter(matches)
         }
-        return StudySet(title: s.name, chapters: chapters, questions: questions, examMinutes: s.examMinutes)
+        return StudySet(title: s.name, chapters: chapters, questions: questions, examMinutes: s.examMinutes, key: "plan-\(s.id)")
     }
 
     /// True if `section` is `ancestor` or below it.

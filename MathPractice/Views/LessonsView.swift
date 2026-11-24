@@ -295,6 +295,6 @@ struct LessonsView: View {
             let base = q.parentQuestionID.flatMap { byID[$0] } ?? q
             return sections.contains { StudySet.isWithin(base.sectionID, $0, nodes) }
         }
-        return StudySet(title: lesson.title, chapters: [c], questions: qs, examMinutes: c.examMinutes)
+        return StudySet(title: lesson.title, chapters: [c], questions: qs, examMinutes: c.examMinutes, key: "lesson-\(lesson.id)")
     }
 }

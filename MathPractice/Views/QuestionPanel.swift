@@ -41,6 +41,8 @@ struct ActiveClock {
     }
     mutating func resume(now: Date = Date()) { if resumedAt == nil { resumedAt = now } }
     mutating func reset(now: Date = Date()) { accumulated = 0; resumedAt = now }
+    /// Restart running, with time already spent (a restored draft).
+    mutating func reset(elapsed: TimeInterval, now: Date = Date()) { accumulated = elapsed; resumedAt = now }
     func elapsed(now: Date = Date()) -> TimeInterval { accumulated + (resumedAt.map { now.timeIntervalSince($0) } ?? 0) }
 }
 

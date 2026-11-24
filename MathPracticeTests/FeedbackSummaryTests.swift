@@ -120,3 +120,16 @@ final class ExamBuilderMixTests: XCTestCase {
         XCTAssertEqual(ids2.count, 10)
     }
 }
+
+final class DraftStoreTests: XCTestCase {
+    func testDraftRoundTripAndClear() {
+        let key = "test-\(UUID())"
+        let q = UUID()
+        DraftStore.save(Draft(questionIDs: [q], ink: [q: Data([1, 2, 3])], seconds: [q: 42], index: 0), key: key)
+        let d = DraftStore.load(key)
+        XCTAssertEqual(d?.ink[q], Data([1, 2, 3]))
+        XCTAssertEqual(d?.seconds[q], 42)
+        DraftStore.clear(key)
+        XCTAssertNil(DraftStore.load(key))
+    }
+}

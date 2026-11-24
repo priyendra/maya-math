@@ -48,7 +48,9 @@ struct PracticeSessionView: View {
     @State private var paused = false
     /// Looking back at earlier questions of this session: clocks stopped.
     @State private var browsing = false
-    private var onHold: Bool { paused || browsing }
+    /// Reading the question's place in the book: clocks stopped.
+    @State private var reading = false
+    private var onHold: Bool { paused || browsing || reading }
     private let ticker = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -72,10 +74,13 @@ struct PracticeSessionView: View {
                     else if let q = current { questionScreen(q) } else { noQuestions }
                 }
             }
+            .navigationDestination(isPresented: $reading) {
+                if let q = current, let chapter = q.chapter { ReadChapterView(chapter: chapter, focus: ChapterLink.base(q)) }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(phase == .summary ? "Close" : "End") {
-                        if phase == .summary || (sessionAttempts.isEmpty && !canvas.hasInk) { dismiss() } else { confirmQuit = true }
+                        if phase == .summary || (sessionAttempts.isEmpty && !canvas.hasInk) { DraftStore.clear(draftKey); dismiss() } else { confirmQuit = true }
                     }
                 }
                 ToolbarItem(placement: .principal) {
@@ -102,7 +107,7 @@ struct PracticeSessionView: View {
             // A centered alert (not a popover): hard to miss, and "Keep practicing" is the safe default.
             .alert("End this session?", isPresented: $confirmQuit) {
                 Button("Keep practicing", role: .cancel) {}
-                Button("End session") { sessionAttempts.isEmpty ? dismiss() : finish() }
+                Button("End session") { DraftStore.clear(draftKey); sessionAttempts.isEmpty ? dismiss() : finish() }
             } message: {
                 let n = sessionAttempts.count
                 let minutes = Int(sessionClock.elapsed() / 60)
@@ -111,10 +116,15 @@ struct PracticeSessionView: View {
             }
         }
         .onAppear(perform: start)
+        .onChange(of: reading) { _, now in
+            if now { questionClock.pause(); sessionClock.pause() }
+            else if !onHold { sessionClock.resume(); if phase == .answering { questionClock.resume() } }
+        }
         .fullScreenCover(isPresented: $tutorOpen, onDismiss: { if !onHold { questionClock.resume() } }) {
             if let solutionAttempt { SolutionPage(attempt: solutionAttempt) }
         }
         .onReceive(ticker) { t in
+            saveDraft()
             if phase == .finishing, let since = finishingSince, t.timeIntervalSince(since) > Self.finalWaitSeconds { showFinal() }
         }
         .onChange(of: grading.version) { _, _ in absorbGrades() }
@@ -125,7 +135,7 @@ struct PracticeSessionView: View {
                     if phase == .answering { questionClock.resume() }
                 }
                 GradingQueue.shared.resumePending(context: context)
-            } else { questionClock.pause(); sessionClock.pause() }
+            } else { questionClock.pause(); sessionClock.pause(); saveDraft() }
         }
     }
 
@@ -143,6 +153,13 @@ struct PracticeSessionView: View {
                     chip(MathPlain.render(q.concept?.name ?? ""), Theme.classic.learn)
                     chip(["Basic", "Medium", "Hard"][max(0, min(2, q.difficulty - 1))], .secondary)
                     if q.isChallenge { chip("Challenge", Theme.classic.attention, icon: "flame.fill") }
+                    if q.chapter != nil {
+                        Button { reading = true } label: {
+                            chip(ChapterLink.label(question: q, base: ChapterLink.base(q)), Theme.classic.accent, icon: "book.pages")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("practiceSeeInChapter")
+                    }
                     if currentPick?.category == .reinforcement {
                         chip("Like an earlier one", Theme.classic.learn, icon: "arrow.triangle.2.circlepath")
                     }
@@ -275,11 +292,36 @@ struct PracticeSessionView: View {
 
     // MARK: Flow
 
+    // MARK: Drafts (the current question's ink survives the app closing)
+
+    private var draftKey: String { DraftStore.practiceKey(set.key) }
+
+    /// Saves the ink on the current question (every few seconds and when the app goes to the background).
+    private func saveDraft() {
+        guard phase == .answering, help != .solution, let q = current else { return }
+        guard canvas.hasInk else { DraftStore.clear(draftKey); return }
+        DraftStore.save(Draft(questionIDs: [q.id], ink: [q.id: canvas.drawing.dataRepresentation()],
+                              seconds: [q.id: questionClock.elapsed()]), key: draftKey)
+    }
+
+    /// The question she was writing on when the app closed, if it's recent and still unanswered.
+    private func restorableDraft() -> (Question, Draft)? {
+        guard let d = DraftStore.load(draftKey), Date().timeIntervalSince(d.savedAt) < DraftStore.practiceMaxAge,
+              let id = d.questionIDs.first, let q = set.questions.first(where: { $0.id == id }),
+              !q.attempts.contains(where: { $0.startedAt > d.savedAt.addingTimeInterval(-(d.seconds[id] ?? 0) - 5) })
+        else { return nil }
+        return (q, d)
+    }
+
     private func start() {
         sessionClock.reset()
         GradingQueue.shared.resumePending(context: context)
         VariantGenerator.shared.refill(set, context: context)
-        if let id = startQuestionID, let q = set.questions.first(where: { $0.id == id }) ?? set.chapters.lazy.flatMap(\.questions).first(where: { $0.id == id }),
+        if startQuestionID == nil, let (q, d) = restorableDraft(), let cell = LearningStore.cellKey(q) {
+            show(q, pick: Pick(questionID: q.id, cell: cell, category: .weak))
+            if let data = d.ink[q.id], let drawing = try? PKDrawing(data: data) { canvas.load(drawing) }
+            questionClock.reset(elapsed: d.seconds[q.id] ?? 0)
+        } else if let id = startQuestionID, let q = set.questions.first(where: { $0.id == id }) ?? set.chapters.lazy.flatMap(\.questions).first(where: { $0.id == id }),
            let cell = LearningStore.cellKey(q) {
             show(q, pick: Pick(questionID: q.id, cell: cell, category: .weak))
         } else {
@@ -288,6 +330,7 @@ struct PracticeSessionView: View {
     }
 
     private func show(_ q: Question, pick: Pick) {
+        DraftStore.clear(draftKey)
         canvas.clear()
         help = .none
         hintText = ""
@@ -428,6 +471,7 @@ struct PracticeSessionView: View {
     }
 
     private func finish() {
+        DraftStore.clear(draftKey)
         questionClock.pause()
         current = nil
         if sessionAttempts.allSatisfy(\.isGraded) { showFinal() }

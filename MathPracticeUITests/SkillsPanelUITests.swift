@@ -85,4 +85,23 @@ final class SkillsPanelUITests: XCTestCase {
 
     }
 
+
+    /// A running exam: normal clock, then the red clock of the last 5 minutes (design review only).
+    func testExamRunningShots() throws {
+        guard let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"] else { throw XCTSkip("Set SHOTS_DIR") }
+        for (args, name) in [([String](), "r1-exam-running"), (["-examSeconds", "272"], "r2-exam-last-minutes")] {
+            let app = XCUIApplication()
+            app.launchArguments = ["-openFirstChapter"] + args
+            app.launch()
+            let exam = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Exam mode'")).firstMatch
+            XCTAssertTrue(exam.waitForExistence(timeout: 15))
+            sleep(1); exam.tap(); sleep(1)
+            app.buttons["Normal"].firstMatch.tap()
+            app.buttons["Start exam"].firstMatch.tap(); sleep(3)
+            if name == "r2-exam-last-minutes" { app.buttons["Next"].firstMatch.tap(); app.buttons["Next"].firstMatch.tap(); sleep(1) }
+            save(app, dir, name)
+            app.terminate()
+        }
+    }
+
 }
