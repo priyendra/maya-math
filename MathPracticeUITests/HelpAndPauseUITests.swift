@@ -100,7 +100,7 @@ final class EndSessionUITests: XCTestCase {
         XCTAssertTrue(canvas.waitForExistence(timeout: 3), "Keep practicing should return to the question")
         app.buttons["End"].tap()
         app.alerts["End this session?"].buttons["End session"].tap()
-        XCTAssertTrue(app.staticTexts["Checking your last answers…"].waitForExistence(timeout: 5)
+        XCTAssertTrue(app.staticTexts["Checking your answers…"].waitForExistence(timeout: 5)
                       || app.staticTexts["How you did"].waitForExistence(timeout: 5))
     }
 }

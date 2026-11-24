@@ -66,10 +66,13 @@ struct PracticeSessionView: View {
                     CheckInView(items: checkInItems, pending: sessionAttempts.filter { !$0.isGraded }.count,
                                 kind: checkInKind, onContinue: continueAfterCheckIn)
                 case .finishing:
+                    let done = sessionAttempts.filter(\.isGraded).count
                     VStack(spacing: 16) {
-                        ProgressView()
-                        Text("Checking your last answers…").font(.title3)
-                        Text("\(sessionAttempts.filter { !$0.isGraded }.count) still being checked").foregroundStyle(.secondary)
+                        Text("Checking your answers…").font(.title3)
+                        ProgressView(value: Double(done), total: Double(max(sessionAttempts.count, 1)))
+                            .frame(maxWidth: 400)
+                        Text("\(done) of \(sessionAttempts.count) checked").monospacedDigit().foregroundStyle(.secondary)
+                            .accessibilityIdentifier("checkedCount")
                     }
                 case .answering:
                     if paused { pausedScreen }

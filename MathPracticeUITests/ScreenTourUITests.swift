@@ -2,7 +2,9 @@ import XCTest
 
 /// Screenshots of the app's screens (for design review). Not a behaviour test: it only walks through.
 final class ScreenTourUITests: XCTestCase {
-    func testTour() {
+    func testTour() throws {
+        // Opt-in (about a minute): TEST_RUNNER_TOUR=1 xcodebuild test ...
+        guard ProcessInfo.processInfo.environment["TOUR"] != nil else { throw XCTSkip("Set TOUR=1 to take the screen tour") }
         let app = XCUIApplication()
         app.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-seedLessons", "-fakeTutor"]
         app.launch()

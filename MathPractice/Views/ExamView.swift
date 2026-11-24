@@ -68,7 +68,7 @@ struct ExamView: View {
                         }
                         ProgressView(value: Double(gradedCount), total: Double(max(attempts.count, 1)))
                             .frame(maxWidth: 400)
-                        Text("Grading your exam… \(gradedCount)/\(attempts.count)")
+                        Text("Grading your exam… \(gradedCount) of \(attempts.count) checked").monospacedDigit()
                     }
                 case .results:
                     ExamResultsView(attempts: attempts, timeLimit: timeLimit,

@@ -270,3 +270,5 @@ Running record of product decisions and open discussion topics. Newest decisions
 - The practice question shows the book place ("Ex. 12 · p. 236"); tapping it opens the chapter at that exercise.
   Clocks stop while she reads; Back returns to the question. Exams have no such link. Looking at the book counts as
   a hint (she is told before it opens, once per question): the answer doesn't move mastery, the check-in says so.
+- Waiting for grading shows progress: "x of y checked" with a bar (end of practice and after an exam).
+- The screen tour UI test is opt-in (TEST_RUNNER_TOUR=1). Bundled KaTeX and marked licences: THIRD_PARTY_NOTICES.md.
