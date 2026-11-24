@@ -68,4 +68,23 @@ final class SkillsPanelUITests: XCTestCase {
         app.buttons["scopeProgress"].firstMatch.tap(); sleep(2); save(app, dir, "p3-plan-progress")
     }
 
+
+    /// The exam start screen with its two sliders (design review only).
+    func testExamShots() throws {
+        guard let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"] else { throw XCTSkip("Set SHOTS_DIR") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-openFirstChapter"]
+        if let v = ProcessInfo.processInfo.environment["FEEDBACK_DUMP"] { app.launchEnvironment["FEEDBACK_DUMP"] = v }
+        app.launch()
+        let exam = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Exam mode'")).firstMatch
+        XCTAssertTrue(exam.waitForExistence(timeout: 15))
+        sleep(2)
+        exam.tap(); sleep(2); save(app, dir, "e1-exam-intro")
+        app.buttons["Hardest"].firstMatch.tap(); app.buttons["Fast"].firstMatch.tap(); sleep(1); save(app, dir, "e2-hardest-fast")
+        app.buttons["Fastest"].firstMatch.tap(); app.buttons["20 min"].firstMatch.tap(); sleep(1); save(app, dir, "e3-hardest-fastest-20")
+        app.buttons["Close"].firstMatch.tap(); sleep(1)
+        let tile = app.buttons["examsTile"].firstMatch
+        if tile.waitForExistence(timeout: 3) { tile.tap(); sleep(2); save(app, dir, "e4-exam-history") }
+    }
+
 }

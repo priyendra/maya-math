@@ -6,7 +6,13 @@ import Foundation
 enum FeedbackSummary {
     struct Answer {
         let date: Date
+        /// Time used for totals (a break counts as her typical time).
         let seconds: Double
+        /// The question's estimated time, and the time actually measured.
+        var estimate: Double = 0
+        var rawSeconds: Double = 0
+        /// Answered in exam mode (under time pressure): left out of her practice pace.
+        var timed = false
         let skill: String
         let level: Int
         let verdict: Verdict
@@ -43,6 +49,47 @@ enum FeedbackSummary {
         return (Array(sorted[..<cut]), Array(sorted[cut...]))
     }
 
+    /// Her practice pace per level, recent vs earlier, right vs wrong, and the slowest / quickest skill levels lately.
+    static func pace(recent: [Answer], earlier: [Answer]) -> String {
+        let all = (earlier + recent).filter { !$0.timed && $0.estimate > 0 && $0.rawSeconds > 0 }
+        let samples = all.map { Pace.Sample(seconds: $0.rawSeconds, estimate: $0.estimate, level: $0.level,
+                                            skill: "\($0.skill)|\($0.level)", correct: $0.verdict == .correct) }
+        let drop = Pace.outliers(samples)
+        let kept = all.indices.filter { !drop.contains($0) }.map { all[$0] }
+        let recentDates = Set(recent.map(\.date))
+        func ratio(_ xs: [Answer]) -> Double { Pace.median(xs.map { $0.rawSeconds / $0.estimate }) }
+        func x(_ r: Double) -> String { String(format: "%.1f×", r) }
+        func secs(_ xs: [Answer]) -> String { "\(Int(Pace.median(xs.map(\.rawSeconds)).rounded())) s" }
+
+        var out = ["\nPACE IN PRACTICE (her time ÷ the question's estimated time: 1.0× = on estimate, 2.0× = twice as long; "
+                   + "exam answers not included; \(drop.count) very long time\(drop.count == 1 ? "" : "s") (over 3 min and far "
+                   + "beyond her usual pace) left out as breaks):"]
+        for level in 1...3 {
+            let lv = kept.filter { $0.level == level }
+            guard !lv.isEmpty else { continue }
+            let r = lv.filter { recentDates.contains($0.date) }, e = lv.filter { !recentDates.contains($0.date) }
+            var line = "- \(levelNames[level - 1]):"
+            if !r.isEmpty { line += " recent \(x(ratio(r))) (typical \(secs(r)), \(r.count) answers);" }
+            if !e.isEmpty { line += " earlier \(x(ratio(e))) (\(e.count) answers);" }
+            let right = lv.filter { $0.verdict == .correct }, wrong = lv.filter { $0.verdict == .incorrect }
+            if right.count >= 3 && wrong.count >= 3 { line += " right answers \(x(ratio(right))), wrong answers \(x(ratio(wrong)))." }
+            out.append(line)
+        }
+        // Skill levels with at least 2 recent answers, slowest and quickest relative to estimate.
+        let recentKept = kept.filter { recentDates.contains($0.date) }
+        let groups = Dictionary(grouping: recentKept, by: { "\($0.skill) — \(levelNames[max(0, min(2, $0.level - 1))])" })
+            .filter { $0.value.count >= 2 }
+            .map { (name: $0.key, r: ratio($0.value), n: $0.value.count, s: secs($0.value)) }
+            .sorted { $0.r > $1.r }
+        if !groups.isEmpty {
+            out.append("Slowest recently: " + groups.prefix(3).map { "\($0.name) \(x($0.r)) (typical \($0.s), \($0.n) answers)" }.joined(separator: "; "))
+            if groups.count > 3 {
+                out.append("Quickest recently: " + groups.suffix(2).map { "\($0.name) \(x($0.r)) (\($0.n) answers)" }.joined(separator: "; "))
+            }
+        }
+        return out.joined(separator: "\n")
+    }
+
     /// `points`: mastery points per skill level ("skill|level" → 0…100; 100 = mastered).
     static func text(_ answers: [Answer], points: [String: Int] = [:]) -> String {
         let graded = answers.filter { $0.verdict != .needsReview }
@@ -72,6 +119,8 @@ enum FeedbackSummary {
             let progress = pts >= 100 ? "mastered (100 points)" : "\(pts) points"
             out.append("- \(s.skill) — \(levelNames[max(0, min(2, s.level - 1))]): recent \(right(r))/\(r.count); earlier \(right(e))/\(e.count); \(progress)")
         }
+
+        out.append(pace(recent: recent, earlier: earlier))
 
         func mistakeCounts(_ xs: [Answer]) -> String {
             let wrong = xs.filter { $0.verdict == .incorrect && !$0.helped }

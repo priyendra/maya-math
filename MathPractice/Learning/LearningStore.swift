@@ -129,12 +129,29 @@ enum LearningStore {
         for a in attempts { apply(a, context: context) }
         try? context.save()
     }
+}
 
-    static func targetSeconds(for q: Question) -> Double {
-        guard let chapter = q.chapter, let concept = q.concept, let s = chapter.skill(concept: concept, difficulty: q.difficulty) else {
-            return Double(q.estimatedSeconds)
+extension StudySet {
+    /// Every answer as a pace sample, in `allAttempts` order.
+    var paceSamples: [Pace.Sample] {
+        allAttempts.map { a in
+            let q = a.question
+            return Pace.Sample(seconds: a.activeSeconds, estimate: Double(q?.estimatedSeconds ?? 0), level: q?.difficulty ?? 0,
+                               skill: q?.concept.map { "\($0.id)|\(q?.difficulty ?? 0)" } ?? "",
+                               correct: a.isGraded && a.effectiveVerdict == .correct)
         }
-        return MasteryModel.targetSeconds(estimate: Double(q.estimatedSeconds), progress: s.progress)
     }
 
+    /// Each answer's time (in `allAttempts` order), with outliers (breaks) counted as her typical time.
+    var cleanSeconds: [Double] { Pace.cleanSeconds(paceSamples) }
+
+    /// Practice time: the sum of every answer's time, breaks left out. One figure for the page, the chart and feedback.
+    var practiceSeconds: Double { cleanSeconds.reduce(0, +) }
+
+    /// Her own time for a question, from practice answers only (exam answers are under time pressure).
+    func baselineSeconds(_ q: Question) -> Double {
+        let samples = zip(allAttempts, paceSamples).filter { $0.0.mode == .practice }.map(\.1)
+        let key = q.concept.map { "\($0.id)|\(q.difficulty)" } ?? ""
+        return Pace.baseline(estimate: Double(max(q.estimatedSeconds, 1)), level: q.difficulty, skill: key, samples: samples)
+    }
 }

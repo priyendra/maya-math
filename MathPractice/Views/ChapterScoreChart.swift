@@ -10,11 +10,11 @@ struct ChapterScoreChart: View {
         let planner = LearningStore.planner(set)
         let cells = planner.allCells
         // Every answer's time counts as practice time (as in the line below the chart); only graded ones move the score.
-        let answers: [ChapterScore.Answer] = set.allAttempts.map { a in
+        let answers: [ChapterScore.Answer] = zip(set.allAttempts, set.cleanSeconds).map { a, seconds in
             var cell: CellKey?
             if let q = a.question, !q.isChallenge, a.isGraded, a.effectiveVerdict != .needsReview,
                a.hintText.isEmpty || a.wasStuck { cell = LearningStore.cellKey(q) }
-            return .init(date: a.startedAt, cell: cell, correct: a.effectiveVerdict == .correct, mistake: a.mistakeType, seconds: a.activeSeconds)
+            return .init(date: a.startedAt, cell: cell, correct: a.effectiveVerdict == .correct, mistake: a.mistakeType, seconds: seconds)
         }
         let points = ChapterScore.history(answers, cells: cells)
         let now = ChapterScore.score(planner.skills, cells: cells)

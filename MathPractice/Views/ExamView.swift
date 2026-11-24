@@ -26,9 +26,20 @@ struct ExamView: View {
     @State private var confirmSubmit = false
     @State private var graphPaper = false
     @StateObject private var canvas = CanvasController()
+    @AppStorage("examDifficulty") private var difficultyRaw = 0
+    @AppStorage("examPace") private var paceRaw = 0
+    @AppStorage("examLength") private var lengthIndex = 1
+    /// The exam the intro shows (re-picked when a setting changes) and the time allowed per question.
+    @State private var planned: [Question] = []
+    @State private var allowed: [UUID: Double] = [:]
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    private var timeLimit: TimeInterval { TimeInterval(set.examMinutes * 60) }
+    private var difficulty: ExamDifficulty { ExamDifficulty(rawValue: difficultyRaw) ?? .mixed }
+    private var pace: ExamPace { ExamPace(rawValue: paceRaw) ?? .own }
+    private var length: ExamLength { ExamLength.allCases[min(max(lengthIndex, 0), ExamLength.allCases.count - 1)] }
+    /// The time limit she chose.
+    private var plannedLimit: TimeInterval { TimeInterval(length.rawValue * 60) }
+    private var timeLimit: TimeInterval { TimeInterval(exam?.timeLimitSeconds ?? Int(plannedLimit)) }
     private var remaining: TimeInterval { timeLimit - clock.elapsed(now: now) }
 
     var body: some View {
@@ -45,7 +56,7 @@ struct ExamView: View {
                     }
                 case .results:
                     ExamResultsView(attempts: attempts, timeLimit: timeLimit,
-                                    timeUsed: clock.elapsed(), targets: targets) { dismiss() }
+                                    timeUsed: clock.elapsed(), targets: allowed, pace: pace) { dismiss() }
                 }
             }
             .toolbar {
@@ -81,16 +92,25 @@ struct ExamView: View {
             Image(systemName: "timer").font(.system(size: 44, weight: .semibold)).foregroundStyle(.white)
                 .frame(width: 96, height: 96).background(Theme.classic.accent2.gradient, in: Circle())
             Text("Exam mode").font(.largeTitle.bold())
-            Text("A mix of questions from \(MathPlain.render(set.title)), like the real test.")
+            Text("Questions from \(MathPlain.render(set.title)), like the real test.")
                 .font(.title3).foregroundStyle(.secondary).multilineTextAlignment(.center)
-            HStack(spacing: 12) {
-                examFact("clock", "\(set.examMinutes) minutes")
-                examFact("list.number", "\(min(set.questions.count, 20)) questions")
-                examFact("chart.bar", "Results at the end")
-            }
+            StepSlider(title: "How hard", icon: "chart.bar.fill", value: $difficultyRaw,
+                       names: ExamDifficulty.allCases.map(\.name), detail: difficulty.detail)
+                .accessibilityIdentifier("examDifficulty")
+            StepSlider(title: "How fast", icon: "hare.fill", value: $paceRaw,
+                       names: ExamPace.allCases.map(\.name), detail: pace.detail)
+                .accessibilityIdentifier("examPace")
+            StepSlider(title: "How long", icon: "clock.fill", value: $lengthIndex,
+                       names: ExamLength.allCases.map(\.name), detail: "\(planned.count) questions in \(length.rawValue) minutes")
+                .accessibilityIdentifier("examLength")
             Button { begin() } label: { Text("Start exam").font(.headline).padding(.horizontal, 24) }
                 .buttonStyle(.borderedProminent).tint(Theme.classic.accent2).controlSize(.large)
+                .disabled(planned.isEmpty)
         }
+        .onAppear { plan() }
+        .onChange(of: difficultyRaw) { _, _ in plan() }
+        .onChange(of: paceRaw) { _, _ in plan() }
+        .onChange(of: lengthIndex) { _, _ in plan() }
         .padding(40)
         .frame(maxWidth: 620)
         .background(Theme.classic.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -147,16 +167,29 @@ struct ExamView: View {
         }
     }
 
-    private var targets: [UUID: Double] {
-        Dictionary(uniqueKeysWithValues: questions.map { ($0.id, LearningStore.targetSeconds(for: $0)) })
+    /// Picks the exam for the current settings. Time allowed per question = her own time ÷ the pace factor (Normal 1,
+    /// Fast 1.25, Fastest 1.5); as many questions as fit in the chosen length at that pace.
+    private func plan() {
+        let byID = Dictionary(uniqueKeysWithValues: set.questions.map { ($0.id, $0) })
+        var own: [UUID: Double] = [:]
+        for q in set.questions { own[q.id] = set.baselineSeconds(q) }
+        let infos = set.questions.compactMap(LearningStore.questionInfo)
+        let factor = pace.factor
+        let ids = ExamBuilder.build(questions: infos, minutes: length.rawValue, difficulty: difficulty,
+                                    baseline: { (own[$0.id] ?? $0.estimatedSeconds) / factor })
+        planned = ids.compactMap { byID[$0] }
+        allowed = own.mapValues { $0 / pace.factor }
     }
 
     private func begin() {
-        let infos = set.questions.compactMap(LearningStore.questionInfo)
-        let ids = ExamBuilder.build(questions: infos, minutes: set.examMinutes)
-        questions = ids.compactMap { id in set.questions.first { $0.id == id } }
+        if planned.isEmpty { plan() }
+        questions = planned
+        let ids = questions.map(\.id)
         guard !questions.isEmpty else { dismiss(); return }
-        let session = ExamSession(questionIDs: ids, timeLimitSeconds: set.examMinutes * 60)
+        let session = ExamSession(questionIDs: ids, timeLimitSeconds: Int(plannedLimit))
+        session.difficultyRaw = difficultyRaw
+        session.paceRaw = paceRaw
+        session.allowedSeconds = ids.map { allowed[$0] ?? 0 }
         session.chapter = set.chapters.first
         context.insert(session)
         exam = session
@@ -204,10 +237,13 @@ struct ExamView: View {
 }
 
 struct ExamResultsView: View {
+
     let attempts: [Attempt]
     let timeLimit: TimeInterval
     let timeUsed: TimeInterval
     let targets: [UUID: Double]
+    var pace: ExamPace = .own
+    var showDone = true
     let onDone: () -> Void
     @State private var selected: Attempt?
 
@@ -231,19 +267,22 @@ struct ExamResultsView: View {
                             VerdictBadge(verdict: a.effectiveVerdict)
                             Text(MathText.plainPreview(a.question?.text ?? "")).lineLimit(1)
                             Spacer()
-                            let target = a.question.flatMap { targets[$0.id] } ?? 0
-                            Text("\(formatClock(a.activeSeconds)) / \(formatClock(target))")
-                                .monospacedDigit()
-                                .foregroundStyle(a.activeSeconds > target * 1.25 ? .orange : .secondary)
+                            if let target = a.question.flatMap({ targets[$0.id] }) {
+                                Text("\(formatClock(a.activeSeconds)) / \(formatClock(target))")
+                                    .monospacedDigit()
+                                    .foregroundStyle(a.activeSeconds > target * 1.25 ? .orange : .secondary)
+                            } else {
+                                Text(formatClock(a.activeSeconds)).monospacedDigit().foregroundStyle(.secondary)
+                            }
                         }
                     }
                     .foregroundStyle(.primary)
                 }
             }
             Section {
-                Button("Done", action: onDone).frame(maxWidth: .infinity)
+                if showDone { Button("Done", action: onDone).frame(maxWidth: .infinity) }
             } footer: {
-                Text("Times show how long you spent vs. your goal time. Orange = much slower than goal.")
+                Text("Your time on each question vs. the time allowed (\(pace.name) pace). Orange = much slower.")
             }
         }
         .sheet(item: $selected) { a in
@@ -260,5 +299,41 @@ struct ExamResultsView: View {
                 }
             }
         }
+    }
+}
+
+/// A slider with a few named stops (exam settings).
+struct StepSlider: View {
+    let title: String
+    let icon: String
+    @Binding var value: Int
+    let names: [String]
+    let detail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Label(title, systemImage: icon).font(.headline)
+                Spacer()
+                Text(names[min(max(value, 0), names.count - 1)]).font(.headline).foregroundStyle(Theme.classic.accent2)
+            }
+            Slider(value: Binding(get: { Double(value) }, set: { value = Int($0.rounded()) }),
+                   in: 0...Double(names.count - 1), step: 1)
+                .tint(Theme.classic.accent2)
+                .accessibilityValue(names[min(max(value, 0), names.count - 1)])
+            HStack {
+                ForEach(names.indices, id: \.self) { i in
+                    Button { value = i } label: {
+                        Text(names[i]).font(.caption.weight(i == value ? .bold : .regular))
+                            .foregroundStyle(i == value ? Color.primary : Color.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    if i < names.count - 1 { Spacer() }
+                }
+            }
+            Text(detail).font(.subheadline).foregroundStyle(.secondary)
+        }
+        .padding(16)
+        .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

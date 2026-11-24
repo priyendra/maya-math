@@ -27,7 +27,7 @@ struct PracticeLine: View {
         let right = counted.filter { $0.effectiveVerdict == .correct }.count
         let rightToday = today.filter { $0.effectiveVerdict == .correct }.count
         let toCheck = attempts.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.count
-        let seconds = attempts.map(\.activeSeconds).reduce(0, +)
+        let seconds = set.practiceSeconds
         HStack(spacing: 18) {
             if !counted.isEmpty {
                 stat("\(counted.count)", today.isEmpty ? "answered" : "answered (\(today.count) today)")

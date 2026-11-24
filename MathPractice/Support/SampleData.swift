@@ -65,6 +65,7 @@ enum SampleData {
             if ProcessInfo.processInfo.arguments.contains("-seedLessons") { seedLessons(first, context) }
             seedGraded(first, context)
             seedToCheck(first, context)
+            seedExam(first, context)
             return
         }
 
@@ -129,8 +130,35 @@ enum SampleData {
         if ProcessInfo.processInfo.arguments.contains("-seedLessons") { seedLessons(chapter, context) }
         seedGraded(chapter, context)
         seedToCheck(chapter, context)
+        seedExam(chapter, context)
         try? context.save()
         ChapterProcessor.shared.ensureSkills(chapter, context: context)
+    }
+
+    /// A finished exam (Hard · Fast · 20 min) with one right and one wrong answer, for My exams.
+    static func seedExam(_ chapter: Chapter, _ context: ModelContext) {
+        guard ProcessInfo.processInfo.arguments.contains("-seedExam"), chapter.exams.isEmpty else { return }
+        let qs = Array(chapter.questions.filter { !$0.isChallenge }.prefix(2))
+        guard qs.count == 2 else { return }
+        let exam = ExamSession(questionIDs: qs.map(\.id), timeLimitSeconds: 20 * 60)
+        exam.difficultyRaw = ExamDifficulty.harder.rawValue
+        exam.paceRaw = ExamPace.fast.rawValue
+        exam.allowedSeconds = [80, 120]
+        exam.startedAt = Date().addingTimeInterval(-3600)
+        exam.finishedAt = Date().addingTimeInterval(-3000)
+        exam.chapter = chapter
+        context.insert(exam)
+        for (q, (right, secs)) in zip(qs, [(true, 70.0), (false, 150.0)]) {
+            let a = Attempt(mode: .exam)
+            a.question = q
+            a.examSessionID = exam.id
+            a.isGraded = true
+            a.verdict = right ? .correct : .incorrect
+            if !right { a.mistakeType = .careless }
+            a.activeSeconds = secs
+            context.insert(a)
+        }
+        try? context.save()
     }
 
     /// An answer Claude wasn't sure about, with math in its fields (for the answer page and "Grade it again").

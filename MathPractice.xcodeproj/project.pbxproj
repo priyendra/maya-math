@@ -15,6 +15,7 @@
 		10C22342EB84B8C13226688F /* Fmt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CB076330F9EE5BDC18871E /* Fmt.swift */; };
 		13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F231E9BAE8BE9B8CC0ED4760 /* PracticeSessionView.swift */; };
 		16D59697D7A3D274E1515F07 /* AttemptReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */; };
+		175EE77FEF5C8A3A5E00E337 /* ExamHistoryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D53BF4703980205D2DD358 /* ExamHistoryUITests.swift */; };
 		1B47F8B62D1FAAA7A1B370E7 /* TapRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0033308F811C8F2DA0AA5AC8 /* TapRow.swift */; };
 		1F28EF65C31C87942E6A464E /* ExamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4AB5FDE2DD41A5217B1614 /* ExamView.swift */; };
 		21207726D1026BEE0D36A8BF /* ScanFixView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8393FD9C190CD55EF1AAE2 /* ScanFixView.swift */; };
@@ -44,6 +45,7 @@
 		575014BC4A385DA58CAD447A /* QuestionPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3036FE3260923B369E442F /* QuestionPanel.swift */; };
 		59217186A5DA715961A83A64 /* RetakeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9458FA16654054C29A418711 /* RetakeSheet.swift */; };
 		5C059E756AF170920DE53132 /* CanvasLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 605F34558094F3610E52AF83 /* CanvasLab.swift */; };
+		5EB5E9F7BE42A53C1F01C168 /* Pace.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2B936E8ECC8D9BDB7F5C85A /* Pace.swift */; };
 		5F6BABF6127EC431F724EB4C /* ScopeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971C199434CE906947C61BA7 /* ScopeViews.swift */; };
 		63176AF6CA27B2306788850A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9285B6407ACA92DBB8BD449 /* Theme.swift */; };
 		6BC3A89C98ECE9D5D90CD3EC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */; };
@@ -94,6 +96,7 @@
 		F240A1EE9C69CD8FC387AD09 /* ScanQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D0DA142FAAF636080E94229 /* ScanQuality.swift */; };
 		F4309CD596A6C40EF24D4273 /* SolutionPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B619E7144F040EF32099A45 /* SolutionPage.swift */; };
 		F9E1B2FFD9A72A1D18B9B1AF /* LessonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69B7A8577D760C736C82FFA /* LessonTests.swift */; };
+		FD1BA516C28D230118C3EBBF /* ExamHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B90779E6C6C21CF964310FD /* ExamHistoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -128,6 +131,7 @@
 		174EA3609106B963A98A310F /* SkillDisplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillDisplayTests.swift; sourceTree = "<group>"; };
 		1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttemptReviewView.swift; sourceTree = "<group>"; };
 		1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanner.swift; sourceTree = "<group>"; };
+		1B90779E6C6C21CF964310FD /* ExamHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamHistoryView.swift; sourceTree = "<group>"; };
 		1D256DEF3FCE3F340EA0475B /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		1E8393FD9C190CD55EF1AAE2 /* ScanFixView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanFixView.swift; sourceTree = "<group>"; };
 		204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVoice.swift; sourceTree = "<group>"; };
@@ -193,9 +197,11 @@
 		CDFEA599FF608A11C79131F6 /* LearningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTests.swift; sourceTree = "<group>"; };
 		CE8FEC8B73BD5C71E909B655 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		D20F101DFF6614D81E98D398 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
+		D2B936E8ECC8D9BDB7F5C85A /* Pace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pace.swift; sourceTree = "<group>"; };
 		D4C9162F6823FD48063CB394 /* LearningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningStore.swift; sourceTree = "<group>"; };
 		D51EA8A20611E606D073350E /* MathPracticeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MathPracticeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D57A2780C8C840176E7A7791 /* FeedbackSummaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSummaryTests.swift; sourceTree = "<group>"; };
+		D7D53BF4703980205D2DD358 /* ExamHistoryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamHistoryUITests.swift; sourceTree = "<group>"; };
 		DC8971D46DCC5A0A5B86F734 /* CheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInView.swift; sourceTree = "<group>"; };
 		DEC5BBD6E47EBFF3DAACA0B1 /* Schemas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schemas.swift; sourceTree = "<group>"; };
 		E2178A03C9531E0752A2E3C4 /* ClaudeClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeClientTests.swift; sourceTree = "<group>"; };
@@ -217,6 +223,7 @@
 				039A3E5074D38B1C5691F340 /* HelpProvider.swift */,
 				D4C9162F6823FD48063CB394 /* LearningStore.swift */,
 				80B2FD60C9EA822A5F8F2E7D /* MasteryModel.swift */,
+				D2B936E8ECC8D9BDB7F5C85A /* Pace.swift */,
 				B886E03B5A5F3BE3219DFF3F /* Planner.swift */,
 				B8F85BD6B0C88F20411BFB3C /* TeacherFeedback.swift */,
 			);
@@ -285,6 +292,7 @@
 				F39A1B0FD6DA9CA55459FBDE /* CanvasLabUITests.swift */,
 				B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */,
 				C3352EA421577C75BDC7F236 /* CheckInUITests.swift */,
+				D7D53BF4703980205D2DD358 /* ExamHistoryUITests.swift */,
 				2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */,
 				75F7D607EC608E24A41A6259 /* LessonUITests.swift */,
 				A44CD57438440D0BE6E0745E /* LibraryUITests.swift */,
@@ -319,6 +327,7 @@
 				47532A0C491289D637FD2620 /* ChapterHomeView.swift */,
 				BA225F2DCADFCF67BE911E34 /* ChapterScoreChart.swift */,
 				DC8971D46DCC5A0A5B86F734 /* CheckInView.swift */,
+				1B90779E6C6C21CF964310FD /* ExamHistoryView.swift */,
 				5B4AB5FDE2DD41A5217B1614 /* ExamView.swift */,
 				29EDDEEFC3356461554AEFFC /* LessonsView.swift */,
 				CE8FEC8B73BD5C71E909B655 /* LibraryView.swift */,
@@ -541,6 +550,7 @@
 				E8CB7C833A1146DF4D3300A5 /* ClickThroughViews.swift in Sources */,
 				81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */,
 				80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */,
+				FD1BA516C28D230118C3EBBF /* ExamHistoryView.swift in Sources */,
 				1F28EF65C31C87942E6A464E /* ExamView.swift in Sources */,
 				39742F9F05764141F35B6AB7 /* FeedbackSummary.swift in Sources */,
 				10C22342EB84B8C13226688F /* Fmt.swift in Sources */,
@@ -563,6 +573,7 @@
 				4BC5CA53488CFDC631DFBB6D /* Models.swift in Sources */,
 				3F0F9F05B6F63DD558DE1329 /* MyAnswersView.swift in Sources */,
 				9B0022A8FD25F3C3AA9042FE /* NewChapterView.swift in Sources */,
+				5EB5E9F7BE42A53C1F01C168 /* Pace.swift in Sources */,
 				260DEB3ED0DD4617B0DD110A /* Planner.swift in Sources */,
 				13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */,
 				A5C1CC211AEB7365B7EF3DA3 /* ProblemReport.swift in Sources */,
@@ -601,6 +612,7 @@
 				EDAD19C0E01133D964C70366 /* CanvasLabUITests.swift in Sources */,
 				743305947D8715F10D8149F4 /* CanvasUITests.swift in Sources */,
 				BAACC91351094CDC58E318C0 /* CheckInUITests.swift in Sources */,
+				175EE77FEF5C8A3A5E00E337 /* ExamHistoryUITests.swift in Sources */,
 				9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */,
 				EEE89F3E1373A579FEB1CD0F /* LessonUITests.swift in Sources */,
 				0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */,

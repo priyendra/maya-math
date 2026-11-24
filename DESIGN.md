@@ -244,3 +244,17 @@ Running record of product decisions and open discussion topics. Newest decisions
 - Mastery is accuracy only: a level is mastered at 100 mastery points (score 0.8, about 5 right in a row). No star,
   no speed condition: time never raises or lowers mastery. Practice still records each answer's time (her baseline
   pace per skill level), but shows no per-question clock or targets. Time pressure belongs to exam mode only.
+- Exam mode has three independent settings, picked by the student on the exam's start screen (remembered):
+  **How hard** Normal (Basic/Medium/Hard in even parts) · Hard (Medium + Hard) · Hardest (mostly Hard);
+  **How fast** Normal · Fast · Fastest = her own practice time per question ÷ 1, 1.25, 1.5;
+  **How long** 20 · 30 · 45 min = the time limit. The exam holds as many questions as fit in that time at that pace.
+  "Her own time" = question estimate × her typical (median) time ÷ estimate on right practice answers for that skill
+  level (≥3), else for that level, else the estimate. The app never suggests a setting; she decides.
+  Exam length is no longer a chapter / study plan setting. "My exams" (chapter and plan pages) lists every exam with
+  its settings, score and time; tapping one shows its question-by-question results.
+- Breaks are not pace: an answer's time is an outlier when log(time ÷ estimate) is more than 2 SD above her mean on
+  that level AND over 3 minutes (a fixed cutoff would drop real 5-minute word problems). Outliers are left out of pace
+  figures and count as her typical time in practice-time totals (chart, practice line, feedback timer); the measured
+  time is still stored.
+- Teacher's feedback includes **Your pace** as a key section: pace vs estimates per level, recent vs earlier, right
+  vs wrong answers (slow-but-right = needs fluency; wrong much faster than right = rushing), slowest skill levels.

@@ -308,6 +308,10 @@ final class ExamSession {
     var timeLimitSeconds: Int = 1800
     var questionIDs: [UUID] = []
     var chapter: Chapter?
+    /// The settings she chose (ExamDifficulty, ExamPace) and the time allowed per question (questionIDs order).
+    var difficultyRaw: Int = 0
+    var paceRaw: Int = 0
+    var allowedSeconds: [Double] = []
 
     init(questionIDs: [UUID], timeLimitSeconds: Int) {
         self.questionIDs = questionIDs

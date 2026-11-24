@@ -54,20 +54,6 @@ enum MasteryModel {
         return p
     }
 
-    static func medianCorrectSeconds(_ p: SkillProgress) -> Double? {
-        guard !p.recentCorrectSeconds.isEmpty else { return nil }
-        let s = p.recentCorrectSeconds.sorted()
-        let mid = s.count / 2
-        return s.count % 2 == 0 ? (s[mid - 1] + s[mid]) / 2 : s[mid]
-    }
-
-    /// Target time for an exam question: start from Claude's estimate, then tighten toward her own pace.
-    /// Time is only an exam concept; it never affects mastery.
-    static func targetSeconds(estimate: Double, progress p: SkillProgress) -> Double {
-        guard p.recentCorrectSeconds.count >= 3, let median = medianCorrectSeconds(p) else { return estimate }
-        return max(0.5 * estimate, min(estimate, 0.9 * median))
-    }
-
     /// Mastered = 100 mastery points (score at the mastery threshold). Accuracy only: time plays no part.
     /// A wrong answer always drops the score below the threshold, and reaching it takes at least 5 right answers.
     static func isMastered(_ p: SkillProgress) -> Bool {

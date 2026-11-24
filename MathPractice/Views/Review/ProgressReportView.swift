@@ -14,11 +14,6 @@ struct ProgressReportView: View {
     var body: some View {
         let graded = self.graded
         let mistakes = graded.compactMap { $0.effectiveVerdict == .incorrect ? $0.mistakeType : nil }
-        let ids = Set(set.questions.map(\.id))
-        // A study plan shows the exams taken on (mostly) its own questions.
-        let exams = set.chapters.flatMap(\.exams).filter { e in
-            e.finishedAt != nil && e.questionIDs.filter(ids.contains).count * 2 >= max(e.questionIDs.count, 1)
-        }.sorted { $0.startedAt < $1.startedAt }
         return List {
             Section {
                 SkillBarsGrid(set: set) { skill = $0 }.padding(.vertical)
@@ -28,11 +23,6 @@ struct ProgressReportView: View {
             }
             if !graded.isEmpty {
                 Section("Daily practice") { DailyChart(attempts: graded) }
-            }
-            if !exams.isEmpty {
-                Section("Exams") {
-                    ForEach(exams) { exam in ExamRow(exam: exam, attempts: set.allAttempts.filter { $0.examSessionID == exam.id }) }
-                }
             }
         }
         .navigationTitle("My progress")
@@ -113,17 +103,5 @@ private struct DailyChart: View {
         .chartLegend(position: .top, alignment: .leading)
         .frame(height: 200)
         .padding(.vertical, 6)
-    }
-}
-
-private struct ExamRow: View {
-    let exam: ExamSession
-    let attempts: [Attempt]
-
-    var body: some View {
-        let s = SessionStats(attempts: attempts)
-        let used = (exam.finishedAt ?? exam.startedAt).timeIntervalSince(exam.startedAt)
-        LabeledContent(exam.startedAt.formatted(date: .abbreviated, time: .shortened),
-                       value: "\(s.correct)/\(s.total) · \(formatClock(used)) of \(formatClock(Double(exam.timeLimitSeconds)))")
     }
 }

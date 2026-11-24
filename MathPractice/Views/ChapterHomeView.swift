@@ -12,7 +12,7 @@ struct StudyActions: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 16) {
                 bigButton("Practice", subtitle: "30-minute session", icon: "pencil.and.scribble", color: theme.accent) { practicing = true }
-                bigButton("Exam mode", subtitle: "\(set.examMinutes)-minute timed test", icon: "timer", color: theme.accent2) { examining = true }
+                bigButton("Exam mode", subtitle: "Timed test: pick how hard, fast and long", icon: "timer", color: theme.accent2) { examining = true }
             }
             .disabled(set.questions.isEmpty)
             if set.questions.isEmpty {
@@ -137,6 +137,12 @@ struct ChapterHomeView: View {
                     NavigationLink { ProgressReportView(set: set) } label: {
                         LinkTile(title: "My progress", subtitle: "Skills, mistake patterns, practice days", icon: "chart.bar.fill", color: theme.done)
                     }
+                    NavigationLink { ExamHistoryView(set: set) } label: {
+                        let n = ExamHistoryView.exams(set).count
+                        LinkTile(title: "My exams", subtitle: n == 0 ? "Every exam you take, with its score" : "\(n) exam\(n == 1 ? "" : "s") taken",
+                                 icon: "timer", color: theme.accent2)
+                    }
+                    .accessibilityIdentifier("examsTile")
                 }
                 .buttonStyle(.plain)
 
@@ -189,7 +195,6 @@ struct ChapterSettingsView: View {
             Form {
                 Section {
                     TextField("Title", text: $chapter.title)
-                    Stepper("Exam length: \(chapter.examMinutes) min", value: $chapter.examMinutes, in: 5...120, step: 5)
                 }
                 Section {
                     LabeledContent("Pages", value: "\(chapter.pages.count)")

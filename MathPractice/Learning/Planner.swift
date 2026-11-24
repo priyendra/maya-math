@@ -212,31 +212,54 @@ struct Planner {
 
 /// Builds a timed mixed exam across all concepts.
 enum ExamBuilder {
-    static func build(questions all: [QuestionInfo], minutes: Int, random: () -> Double = { Double.random(in: 0..<1) }) -> [UUID] {
+    /// Picks an exam: about `minutes` of work at her own pace (`baseline` = her time for a question), with levels in the
+    /// shares `difficulty` asks for (falling back to other levels when one runs out), spread across skills.
+    static func build(questions all: [QuestionInfo], minutes: Int, difficulty: ExamDifficulty = .mixed,
+                      baseline: (QuestionInfo) -> Double = { $0.estimatedSeconds },
+                      random: () -> Double = { Double.random(in: 0..<1) }) -> [UUID] {
         let questions = all.filter { !$0.isChallenge }
         guard !questions.isEmpty else { return [] }
         let budget = Double(minutes * 60)
-        let avg = questions.map(\.estimatedSeconds).reduce(0, +) / Double(questions.count)
+        let avg = questions.map(baseline).reduce(0, +) / Double(questions.count)
         let count = min(questions.count, max(5, min(25, Int(budget / max(avg, 30)))))
 
-        // Round-robin across concepts (book order), preferring questions seen least, mixing difficulties.
-        let byConcept = Dictionary(grouping: questions, by: { $0.cell.conceptOrder })
-        var queues: [[QuestionInfo]] = byConcept.keys.sorted().map { key in
-            byConcept[key]!.sorted { a, b in
-                if a.timesSeen != b.timesSeen { return a.timesSeen < b.timesSeen }
-                return random() < 0.5
+        // Questions per level: the asked-for shares, rounded, adding any remainder to the biggest share.
+        let shares = difficulty.shares
+        var quota = shares.mapValues { Int(($0 * Double(count)).rounded(.down)) }
+        let biggest = shares.max { $0.value < $1.value }!.key
+        quota[biggest, default: 0] += count - quota.values.reduce(0, +)
+
+        // Per level: round-robin across skills (book order), least-seen first.
+        func queues(_ level: Int) -> [[QuestionInfo]] {
+            let qs = questions.filter { $0.cell.difficulty == level }
+            let byConcept = Dictionary(grouping: qs, by: { $0.cell.conceptOrder })
+            return byConcept.keys.sorted().map { key in
+                byConcept[key]!.sorted { a, b in
+                    if a.timesSeen != b.timesSeen { return a.timesSeen < b.timesSeen }
+                    return random() < 0.5
+                }
             }
         }
+        var byLevel: [Int: [[QuestionInfo]]] = [:]
+        for level in Set(questions.map(\.cell.difficulty)) { byLevel[level] = queues(level) }
+
         var picked: [QuestionInfo] = []
         var spent = 0.0
-        while picked.count < count, queues.contains(where: { !$0.isEmpty }) {
-            for i in queues.indices where !queues[i].isEmpty && picked.count < count {
-                let q = queues[i].removeFirst()
-                if spent + q.estimatedSeconds > budget * 1.1 && !picked.isEmpty { continue }
-                picked.append(q)
-                spent += q.estimatedSeconds
+        func take(from level: Int, upTo n: Int) {
+            var taken = 0
+            while taken < n, picked.count < count, byLevel[level]?.contains(where: { !$0.isEmpty }) == true {
+                for i in byLevel[level]!.indices where !byLevel[level]![i].isEmpty && taken < n && picked.count < count {
+                    let q = byLevel[level]![i].removeFirst()
+                    if spent + baseline(q) > budget * 1.1 && !picked.isEmpty { continue }
+                    picked.append(q); spent += baseline(q); taken += 1
+                }
             }
         }
+        // Wanted levels first, then (if a level ran out) the nearest other levels, harder first.
+        let wanted = shares.keys.sorted { shares[$0]! > shares[$1]! }
+        for level in wanted { take(from: level, upTo: quota[level] ?? 0) }
+        let fallback = wanted + [3, 2, 1].filter { !wanted.contains($0) }
+        for level in fallback where picked.count < count { take(from: level, upTo: count - picked.count) }
         // Present easier questions first, as on a real test.
         return picked.sorted { $0.cell.difficulty < $1.cell.difficulty }.map(\.id)
     }

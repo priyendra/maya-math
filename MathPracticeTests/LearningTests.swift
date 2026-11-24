@@ -34,17 +34,6 @@ final class MasteryModelTests: XCTestCase {
         p = MasteryModel.apply(correct: false, mistake: .careless, seconds: nil, to: p, now: now)
         XCTAssertFalse(MasteryModel.isMastered(p))         // any wrong answer drops below 100
     }
-
-    func testExamTarget() {
-        var p = SkillProgress()
-        for s in [200.0, 180, 160, 150] { p = MasteryModel.apply(correct: true, mistake: nil, seconds: s, to: p, now: now) }
-        // Slower than estimate → target is the estimate.
-        XCTAssertEqual(MasteryModel.targetSeconds(estimate: 120, progress: p), 120)
-        // Faster than estimate → target tightens to 90% of her median.
-        XCTAssertEqual(MasteryModel.targetSeconds(estimate: 300, progress: p), 0.9 * 170, accuracy: 1e-9)
-        // Never tighter than half the estimate.
-        XCTAssertEqual(MasteryModel.targetSeconds(estimate: 400, progress: p), 200, accuracy: 1e-9)
-    }
 }
 
 final class PlannerTests: XCTestCase {

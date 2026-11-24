@@ -13,9 +13,10 @@ final class TeacherFeedback: ObservableObject {
     var services: ClaudeServices = .live
 
     static func answers(_ set: StudySet) -> [FeedbackSummary.Answer] {
-        set.allAttempts.compactMap { a in
+        zip(set.allAttempts, set.cleanSeconds).compactMap { a, seconds in
             guard let q = a.question, !q.isChallenge, a.isGraded, let c = q.concept else { return nil }
-            return FeedbackSummary.Answer(date: a.startedAt, seconds: a.activeSeconds, skill: MathPlain.render(c.name),
+            return FeedbackSummary.Answer(date: a.startedAt, seconds: seconds, estimate: Double(q.estimatedSeconds),
+                                          rawSeconds: a.activeSeconds, timed: a.mode == .exam, skill: MathPlain.render(c.name),
                                           level: q.difficulty, verdict: a.effectiveVerdict,
                                           mistake: a.correction == nil ? a.mistakeType : nil,
                                           errorStep: a.correction == nil ? a.errorStep : "",
@@ -23,10 +24,8 @@ final class TeacherFeedback: ObservableObject {
         }
     }
 
-    /// Practice time: every answer's active time (the same total as the page's "practice" figure and the chart).
-    static func practiceSeconds(_ set: StudySet) -> Double {
-        set.allAttempts.map(\.activeSeconds).reduce(0, +)
-    }
+    /// Practice time: every answer's active time, breaks left out (the same total as the page's figure and the chart).
+    static func practiceSeconds(_ set: StudySet) -> Double { set.practiceSeconds }
 
     /// Graded answers that count (enough of them before the card appears).
     static func gradedCount(_ set: StudySet) -> Int {

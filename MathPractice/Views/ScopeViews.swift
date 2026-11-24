@@ -40,8 +40,14 @@ struct ScopeHomeView: View {
                         LinkTile(title: "My progress", subtitle: "Skills, mistake patterns, practice days", icon: "chart.bar.fill", color: theme.done)
                     }
                     .accessibilityIdentifier("scopeProgress")
+                    NavigationLink { ExamHistoryView(set: set) } label: {
+                        let n = ExamHistoryView.exams(set).count
+                        LinkTile(title: "My exams", subtitle: n == 0 ? "Every exam you take, with its score" : "\(n) exam\(n == 1 ? "" : "s") taken",
+                                 icon: "timer", color: theme.accent2)
+                    }
+                    .accessibilityIdentifier("examsTile")
                     Button { editing = true } label: {
-                        LinkTile(title: "Edit study plan", subtitle: "What's on the test, date, exam length", icon: "slider.horizontal.3", color: theme.accent2)
+                        LinkTile(title: "Edit study plan", subtitle: "What's on the test, test date", icon: "slider.horizontal.3", color: theme.accent2)
                     }
                 }
                 .buttonStyle(.plain)
@@ -90,7 +96,6 @@ struct ScopeEditorView: View {
                     TextField("Name (e.g. Unit 5 test)", text: $name)
                     Toggle("Test date", isOn: $hasDate)
                     if hasDate { DatePicker("Date", selection: $date, displayedComponents: .date) }
-                    Stepper("Exam length: \(minutes) min", value: $minutes, in: 5...120, step: 5)
                 }
                 ForEach(chapters.filter { $0.status == .ready && !$0.needsRereading }) { chapter in
                     Section(MathPlain.render(chapter.title)) { chapterPicker(chapter) }
