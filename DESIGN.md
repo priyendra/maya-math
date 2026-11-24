@@ -212,3 +212,17 @@ Running record of product decisions and open discussion topics. Newest decisions
   that don't move the score (waiting, to check, challenge, hinted) still add time to the chart.
 - UI tests launch with `-freshStore` (DEBUG only): the app deletes its store and settings at launch, so no test
   depends on data another test or a real-data screenshot run left behind.
+
+## My progress and the answers browser
+- My progress: a skills × levels grid (Basic / Medium / Hard). Each cell is a bar of that level's mastery points
+  (0–100), coloured by value (red → amber → yellow-green; green with ★ once mastered). A lock shows only on levels
+  she has never answered (a level reached through stretch practice is never shown locked). Below: Mistake types.
+  "Per concept" and the stat tiles were removed (the chapter page has the totals). Stars were tried and dropped:
+  levels often sit around 82, and a star filled to 82% looks full.
+- One answers browser everywhere (My answers, a skill's page, a mistake type's page), with the same filters —
+  skill, level, mistake type, newest/oldest first — and the same card: one card per question with all her answers
+  (grade, date, time, handwriting, the grader's "where it went wrong"). Pages differ only in starting filters and
+  header (skill: points + what each level needs; mistake: one-line meaning; My answers: To check / still being
+  checked pinned on top).
+- Every card has "See in chapter": opens Read chapter at the exercise's section, scrolled to it and highlighted. A
+  generated question links to the book exercise it was made from.

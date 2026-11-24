@@ -118,3 +118,4 @@ extension ChapterScoreTests {
         XCTAssertEqual(points.last!.score, 100 * MasteryModel.scoreAfter(rightInARow: 1) / 0.8, accuracy: 1e-9)
     }
 }
+

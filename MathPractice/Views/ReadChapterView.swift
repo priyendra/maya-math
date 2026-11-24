@@ -6,6 +6,8 @@ import WebKit
 /// Tap an exercise to see its tags, include/exclude it, see your answers, or practice it.
 struct ReadChapterView: View {
     let chapter: Chapter
+    /// An exercise to open at: its section is selected and the exercise is scrolled to and highlighted.
+    var focus: Question? = nil
     @State private var selected: Int?
     @State private var tapped: Question?
 
@@ -21,18 +23,24 @@ struct ReadChapterView: View {
             .listStyle(.sidebar)
             .frame(width: 300)
             Divider()
-            ChapterWebView(html: html(for: selected ?? nodes.first?.id ?? -1)) { id in
+            ChapterWebView(html: html(for: selected ?? nodes.first?.id ?? -1, focus: focus?.id)) { id in
                 tapped = chapter.questions.first { $0.id.uuidString == id }
             }
         }
         .navigationTitle(MathPlain.render(chapter.title))
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { if selected == nil { selected = nodes.first?.id } }
+        .onAppear {
+            if selected == nil, let focus {
+                let section = chapter.blocks.first { $0.questionID == focus.id }?.sectionID ?? focus.sectionID
+                if nodes.indices.contains(section) { selected = section }
+            }
+            if selected == nil { selected = nodes.first?.id }
+        }
         .sheet(item: $tapped) { q in NavigationStack { QuestionDetailView(question: q) } }
     }
 
     /// Blocks of this section and its subsections, in reading order.
-    private func html(for section: Int) -> String {
+    private func html(for section: Int, focus: UUID? = nil) -> String {
         let nodes = chapter.outline
         let blocks = chapter.sortedBlocks.filter { section < 0 || StudySet.isWithin($0.sectionID, section, nodes) }
         let questions = Dictionary(uniqueKeysWithValues: chapter.questions.map { ($0.id, $0) })
@@ -65,7 +73,7 @@ struct ReadChapterView: View {
             items.append(item)
         }
         let title = nodes.indices.contains(section) ? nodes[section].title : chapter.title
-        return ChapterWebView.document(title: title, items: items)
+        return ChapterWebView.document(title: title, items: items, focus: focus?.uuidString)
     }
 }
 
@@ -104,7 +112,7 @@ struct ChapterWebView: UIViewRepresentable {
         }
     }
 
-    static func document(title: String, items: [[String: Any]]) -> String {
+    static func document(title: String, items: [[String: Any]], focus: String? = nil) -> String {
         let json = (try? String(data: JSONSerialization.data(withJSONObject: items), encoding: .utf8)) ?? "[]"
         let titleJSON = (try? String(data: JSONSerialization.data(withJSONObject: [title]), encoding: .utf8)) ?? "[\"\"]"
         return """
@@ -128,6 +136,7 @@ struct ChapterWebView: UIViewRepresentable {
           .exercise:active { background: var(--card); }
           .num { min-width: 34px; font-weight: 700; color: var(--accent); }
           .exercise.excluded { opacity: .45; }
+          .exercise.focus { background: rgba(255,214,10,.28); box-shadow: inset 4px 0 0 #ffd60a; }
           .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 10px;
                  background: var(--card); color: var(--muted); margin-left: 6px; }
           .tag.challenge { color: #ff453a; }
@@ -176,6 +185,11 @@ struct ChapterWebView: UIViewRepresentable {
           document.querySelectorAll('.exercise').forEach(el => el.addEventListener('click', () => {
             if (el.dataset.id) window.webkit.messageHandlers.tap.postMessage(el.dataset.id);
           }));
+          const focusID = \((focus.map { "\"\($0)\"" }) ?? "null");
+          if (focusID) {
+            const f = document.querySelector('.exercise[data-id="' + focusID + '"]');
+            if (f) { f.classList.add('focus'); setTimeout(() => f.scrollIntoView({ block: 'center' }), 150); }
+          }
         </script></body></html>
         """
     }

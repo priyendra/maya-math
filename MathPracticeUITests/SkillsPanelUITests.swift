@@ -6,7 +6,7 @@ final class SkillsPanelUITests: XCTestCase {
         // Design review only: runs when SHOTS_DIR is set (TEST_RUNNER_SHOTS_DIR=... xcodebuild test ...), on real data copied in.
         guard let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"] else { throw XCTSkip("Set SHOTS_DIR to take screenshots") }
         let app = XCUIApplication()
-        app.launchArguments = ["-openFirstChapter"]
+        app.launchArguments = ["-openFirstChapter"] + (ProcessInfo.processInfo.environment["EXTRA_ARGS"].map { $0.split(separator: " ").map(String.init) } ?? [])
         for key in ["FEEDBACK_DUMP", "FEEDBACK_SEED"] {
             if let v = ProcessInfo.processInfo.environment[key] { app.launchEnvironment[key] = v }
         }
@@ -20,6 +20,17 @@ final class SkillsPanelUITests: XCTestCase {
         if seeAll.waitForExistence(timeout: 3) {
             seeAll.tap(); sleep(2); save(app, dir, "3-progress")
             app.swipeUp(); sleep(1); save(app, dir, "3b-progress-more")
+            let words = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'word problems'")).firstMatch
+            if words.waitForExistence(timeout: 3) {
+                words.tap(); sleep(3); save(app, dir, "5-skill")
+                app.swipeUp(); sleep(1); save(app, dir, "5b-skill-more")
+                app.navigationBars.buttons.firstMatch.tap(); sleep(1)
+            }
+            let incomplete = app.descendants(matching: .any)["mistake-incomplete"]
+            if incomplete.waitForExistence(timeout: 3) || { app.swipeUp(); return incomplete.waitForExistence(timeout: 3) }() {
+                incomplete.tap(); sleep(3); save(app, dir, "6-mistake")
+                app.swipeUp(); sleep(1); save(app, dir, "6b-mistake-more")
+            }
             let help = app.buttons["How this works"]
             if help.waitForExistence(timeout: 3) { help.tap(); sleep(2); save(app, dir, "4-help") }
         }

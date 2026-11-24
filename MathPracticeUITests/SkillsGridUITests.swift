@@ -10,10 +10,13 @@ final class SkillsGridUITests: XCTestCase {
         let progress = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My progress'")).firstMatch
         XCTAssertTrue(progress.waitForExistence(timeout: 15))
         progress.tap()
-        let name = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Literal equations like 𝐴 = 𝑙𝑤'")).firstMatch
+        // Each skill row is one button (it opens the skill's page).
+        let name = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Literal equations like 𝐴 = 𝑙𝑤'")).firstMatch
         for _ in 0..<4 where !name.waitForExistence(timeout: 4) { app.swipeUp() }
         XCTAssertTrue(name.exists)
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '$'")).firstMatch.exists)
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "skills-grid"; a.lifetime = .keepAlways; add(a)
+        name.tap()
+        XCTAssertTrue(app.staticTexts["of 100 mastery points for this skill"].waitForExistence(timeout: 5))
     }
 }

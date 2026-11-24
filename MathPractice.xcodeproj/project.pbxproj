@@ -75,6 +75,7 @@
 		B8ACC9E6E04A06D3BF0B3A6E /* VoiceTutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F4EE611821FFB2B0CBD510 /* VoiceTutor.swift */; };
 		BAACC91351094CDC58E318C0 /* CheckInUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3352EA421577C75BDC7F236 /* CheckInUITests.swift */; };
 		BB7EE8A0D18D38B0074163CD /* JSONWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A14FB27BED8FA4B1892153 /* JSONWriter.swift */; };
+		C06243529F8E1E4F84672E48 /* SkillBarsGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 383690AEDDFF682EF655AE92 /* SkillBarsGrid.swift */; };
 		C0F906DCAAD9CB300CFA566D /* ReadChapterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0311F8682A7570D87C58B443 /* ReadChapterView.swift */; };
 		C1CD2607914922CDE5BD1663 /* ScreenTourUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAFD830DD75C79719F8BA99 /* ScreenTourUITests.swift */; };
 		C4FED1BB32E43CAEC5E92DD6 /* ClaudeClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2178A03C9531E0752A2E3C4 /* ClaudeClientTests.swift */; };
@@ -87,6 +88,7 @@
 		D6CB12D480EF27DEBA4DB4E5 /* RegradeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA941616DD5E93DD1699AF11 /* RegradeUITests.swift */; };
 		E1F911CB48CC2A3349235C17 /* ConceptPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522359F6EA0EBEE54210C57F /* ConceptPath.swift */; };
 		E8CA688ECF4C09DF64F66CCB /* LessonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EDDEEFC3356461554AEFFC /* LessonsView.swift */; };
+		E8CB7C833A1146DF4D3300A5 /* ClickThroughViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6F1D48CE6E8EBC758B6BDF /* ClickThroughViews.swift */; };
 		EDAD19C0E01133D964C70366 /* CanvasLabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39A1B0FD6DA9CA55459FBDE /* CanvasLabUITests.swift */; };
 		EDDD8ED95798D09FF232E4E0 /* LearningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C9162F6823FD48063CB394 /* LearningStore.swift */; };
 		EEE89F3E1373A579FEB1CD0F /* LessonUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7D607EC608E24A41A6259 /* LessonUITests.swift */; };
@@ -139,6 +141,7 @@
 		3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeacherFeedbackView.swift; sourceTree = "<group>"; };
 		377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		377F6A4A3700AD0523696B3F /* LessonSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonSession.swift; sourceTree = "<group>"; };
+		383690AEDDFF682EF655AE92 /* SkillBarsGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillBarsGrid.swift; sourceTree = "<group>"; };
 		412564532B12602F38109EFE /* TutorScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorScript.swift; sourceTree = "<group>"; };
 		47532A0C491289D637FD2620 /* ChapterHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterHomeView.swift; sourceTree = "<group>"; };
 		4827F8EF5EF188862466590F /* VariantGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariantGenerator.swift; sourceTree = "<group>"; };
@@ -188,6 +191,7 @@
 		BF4CA4157E303F14CC5F0D81 /* TutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorTests.swift; sourceTree = "<group>"; };
 		C166E836241E4FB197025AEC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C3352EA421577C75BDC7F236 /* CheckInUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInUITests.swift; sourceTree = "<group>"; };
+		CA6F1D48CE6E8EBC758B6BDF /* ClickThroughViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickThroughViews.swift; sourceTree = "<group>"; };
 		CDFEA599FF608A11C79131F6 /* LearningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTests.swift; sourceTree = "<group>"; };
 		CE8FEC8B73BD5C71E909B655 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		D20F101DFF6614D81E98D398 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
@@ -255,6 +259,7 @@
 			isa = PBXGroup;
 			children = (
 				1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */,
+				CA6F1D48CE6E8EBC758B6BDF /* ClickThroughViews.swift */,
 				6DCE0AFF579E0ADA5742DEE3 /* MyAnswersView.swift */,
 				6ED67685E937EC514E30ED7F /* ProgressReportView.swift */,
 			);
@@ -330,6 +335,7 @@
 				1E8393FD9C190CD55EF1AAE2 /* ScanFixView.swift */,
 				971C199434CE906947C61BA7 /* ScopeViews.swift */,
 				377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */,
+				383690AEDDFF682EF655AE92 /* SkillBarsGrid.swift */,
 				304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */,
 				3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */,
 				0E188F46B3AB7A984271D2AB /* WritingCanvas.swift */,
@@ -535,6 +541,7 @@
 				3F522BB2854B6093E1DE84C1 /* CheckInView.swift in Sources */,
 				C5E88D1B3963BA6AB97A9D40 /* ClaudeClient.swift in Sources */,
 				CC9CAAFBBE05499BD6F34B64 /* ClaudeServices.swift in Sources */,
+				E8CB7C833A1146DF4D3300A5 /* ClickThroughViews.swift in Sources */,
 				81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */,
 				E1F911CB48CC2A3349235C17 /* ConceptPath.swift in Sources */,
 				8FFFD4E62188E33567B8EC62 /* ConceptPathViews.swift in Sources */,
@@ -576,6 +583,7 @@
 				AE552D07DFDE0CB0C6527DEB /* Schemas.swift in Sources */,
 				5F6BABF6127EC431F724EB4C /* ScopeViews.swift in Sources */,
 				6BC3A89C98ECE9D5D90CD3EC /* SettingsView.swift in Sources */,
+				C06243529F8E1E4F84672E48 /* SkillBarsGrid.swift in Sources */,
 				792D0564732E64C31AED6712 /* SkillsViews.swift in Sources */,
 				F4309CD596A6C40EF24D4273 /* SolutionPage.swift in Sources */,
 				B3C65C0C5E767EF1DF62F33D /* Speech.swift in Sources */,

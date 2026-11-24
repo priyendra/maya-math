@@ -9,7 +9,9 @@ final class RegradeUITests: XCTestCase {
         let answers = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My answers'")).firstMatch
         XCTAssertTrue(answers.waitForExistence(timeout: 15))
         answers.tap()
-        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS '75s'")).firstMatch
+        // Answers are shown as question cards with filters; "See in chapter" is on every card.
+        XCTAssertTrue(app.buttons["seeInChapter"].firstMatch.waitForExistence(timeout: 5))
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Not sure'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         row.tap()
         let regrade = app.buttons["regrade"]

@@ -34,3 +34,12 @@ final class FeedbackSummaryTests: XCTestCase {
         XCTAssertTrue(FeedbackSummary.isDue(practiceSeconds: 3300, answered: 50, lastFeedbackAt: 1500))
     }
 }
+
+final class AnswerFilterTests: XCTestCase {
+    func testOrderNewestOrOldestFirst() {
+        let a = UUID(), b = UUID(), c = UUID()
+        let dates = [a: Date(timeIntervalSince1970: 300), b: Date(timeIntervalSince1970: 100), c: Date(timeIntervalSince1970: 200)]
+        XCTAssertEqual(AnswerFilter.order(dates, newestFirst: true), [a, c, b])
+        XCTAssertEqual(AnswerFilter.order(dates, newestFirst: false), [b, c, a])
+    }
+}
