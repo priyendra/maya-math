@@ -23,6 +23,8 @@ final class LessonSession: VoiceTutor {
         case item(LessonPartScript.Item)
         case board(PagePart)
         case turn(id: String, question: UUID)
+        /// A fill-in-the-blank board line ("___" marks the blank).
+        case blank(id: String, line: String, answer: String)
         case finished
 
         var id: String {
@@ -31,6 +33,7 @@ final class LessonSession: VoiceTutor {
             case let .item(i): return i.id
             case let .board(b): return b.id
             case let .turn(id, _): return id
+            case let .blank(id, _, _): return id
             case .finished: return "finished"
             }
         }
@@ -47,6 +50,22 @@ final class LessonSession: VoiceTutor {
     @Published private(set) var revealRequest: String?
     /// Called by the page to get her work for a turn: the ink written below the problem.
     var workBelow: (String) -> (ink: Data, image: Data)? = { _ in nil }
+    /// Called by the page to get a picture of what she wrote in a blank.
+    var inkIn: (String) -> Data? = { _ in nil }
+
+    /// The book block the teacher is talking about (highlighted in the book half), and the section shown there.
+    @Published private(set) var bookPointer: UUID?
+    @Published private(set) var bookSection: Int?
+    enum BlankOutcome: Equatable { case right, wrong, shown }
+    /// The blank she is filling in now.
+    @Published private(set) var activeBlank: String?
+    @Published private(set) var blankResults: [String: BlankOutcome] = [:]
+    @Published private(set) var checkingBlank = false
+    /// She has written something in the blank (the ✓ lights up).
+    @Published var blankHasInk = false
+    static let blankHint = "Write it in the blank, then tap \u{2713}. Tap ? if you're not sure."
+    private var spokenBlanks: Set<String> = []
+    private var playTask: Task<Void, Never>?
 
     private var context: ModelContext? { lesson.modelContext }
     private var script: LessonPartScript?
@@ -100,7 +119,9 @@ final class LessonSession: VoiceTutor {
             script = s
             if i + 1 < parts.count { _ = writeScript(i + 1) }   // get the next part ready while she listens
             elements.append(.header(part: i, title: parts[i].title, earlier: false))
-            elements += s.items.map(Element.item)
+            elements += s.items.map(Element.item)   // older scripts only (they are rewritten when reached)
+            bookPointer = nil
+            if let first = parts[i].sectionIDs.first { bookSection = first }
             beats = s.narration.components(separatedBy: "\n").compactMap(TutorScriptParser.beat)
             beatIndex = 0
             phase = .narrating
@@ -141,9 +162,10 @@ final class LessonSession: VoiceTutor {
         run = Task { await begin(part: currentPart) }
     }
 
-    /// Plays the narration from where it stopped.
+    /// Plays the narration from where it stopped (only one narration loop at a time).
     private func play() {
-        run = Task {
+        playTask?.cancel()
+        playTask = Task {
             while beatIndex < beats.count {
                 if Task.isCancelled { return }
                 // Have the next few sentences' voice ready before they're needed.
@@ -158,6 +180,7 @@ final class LessonSession: VoiceTutor {
             }
             narrationEnded()
         }
+        run = playTask
     }
 
     private func narrationEnded() {
@@ -175,6 +198,7 @@ final class LessonSession: VoiceTutor {
         listener.stop()
         speaker.stop()
         run?.cancel()
+        playTask?.cancel()
         heard = ""
         switch phase {
         case .narrating: play()
@@ -192,6 +216,7 @@ final class LessonSession: VoiceTutor {
 
     /// She wants to ask something (Ask button, or Pause while the tutor talks).
     func ask() {
+        if activeBlank != nil { playTask?.cancel() }   // the blank waits; narration resumes after her question
         if state == .speaking || state == .thinking { interrupt(); return }
         speaker.stop()
         listen()
@@ -328,12 +353,100 @@ final class LessonSession: VoiceTutor {
             switch e {
             case let .item(i): return PagePart(id: i.id, title: i.kind, markdown: i.markdown)
             case let .turn(id, q): return PagePart(id: id, title: "Your-turn problem", markdown: questionsByID[q]?.text ?? "")
+            case let .blank(id, line, answer):
+                return PagePart(id: id, title: "Fill-in-the-blank (answer: \(answer))", markdown: line)
             default: return nil
             }
         }
     }
 
+    /// The book blocks of the current part, as Claude can point at them (k1, k2…).
+    var bookParts: [PagePart] {
+        guard let ids = script?.bookBlocks, let blocks = lesson.chapter?.blocks else { return [] }
+        let byID = Dictionary(uniqueKeysWithValues: blocks.map { ($0.id, $0) })
+        return ids.enumerated().compactMap { i, id in
+            byID[id].map { PagePart(id: "k\(i + 1)", title: "Book block (\($0.kind))", markdown: $0.markdown) }
+        }
+    }
+
+    // MARK: Fill-in-the-blank
+
+    override func blankAsked(_ line: String, answer: String, why: String) async {
+        let id = "blank\(currentPart + 1)_\(beatIndex)"
+        if !elements.contains(where: { $0.id == id }) { elements.append(.blank(id: id, line: line, answer: answer)) }
+        pointer = nil   // the dashed blank and its ✓ are signal enough
+        if blankResults[id] == nil {
+            if activeBlank != id { blankHasInk = false }
+            activeBlank = id
+            caption = spoken.last ?? ""
+            state = .waiting(Self.blankHint)
+            while blankResults[id] == nil {
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                if Task.isCancelled { return }
+            }
+        }
+        activeBlank = nil
+        guard !spokenBlanks.contains(id), let outcome = blankResults[id] else { return }
+        spokenBlanks.insert(id)
+        let say: String
+        switch outcome {
+        case .right: say = "Yes! " + why
+        case .wrong: say = "Not quite. " + why
+        case .shown: say = why
+        }
+        guard !say.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        state = .speaking
+        caption = say
+        await speaker.speak(say)
+    }
+
+    /// She tapped ✓ next to the blank.
+    func checkBlank() {
+        guard let id = activeBlank, blankResults[id] == nil, !checkingBlank else { return }
+        guard case let .blank(_, line, answer)? = elements.first(where: { $0.id == id }) else { return }
+        guard let image = inkIn(id) else {
+            state = .waiting("Write your answer in the blank first, then tap \u{2713}.")
+            return
+        }
+        checkingBlank = true
+        Task {
+            let r = try? await BlankChecker.check(line: line, answer: answer, image: image)
+            checkingBlank = false
+            if let r { blankResults[id] = r.correct ? .right : .wrong; resumeAfterBlank() }
+            else { state = .waiting("Couldn't check that. Tap \u{2713} to try again, or ? to see the answer.") }
+        }
+    }
+
+    /// She tapped ? (not sure): show the answer.
+    func showBlank() {
+        guard let id = activeBlank, blankResults[id] == nil else { return }
+        blankResults[id] = .shown
+        resumeAfterBlank()
+    }
+
+    /// If the narration was stopped (she asked something while the blank waited), carry on from the blank.
+    private func resumeAfterBlank() {
+        guard playTask?.isCancelled ?? true else { return }
+        listener.stop()
+        speaker.stop()
+        run?.cancel()
+        heard = ""
+        play()
+    }
+
     override func resolvePointer(_ raw: String) -> String? {
+        // The book half: "book:<id>" from the script, or "k3" from a live reply.
+        var block: UUID?
+        if raw.hasPrefix("book:") { block = UUID(uuidString: String(raw.dropFirst(5))) }
+        else if let blocks = script?.bookBlocks { block = LessonWriter.bookBlock(raw, blocks) }
+        if let block {
+            if let b = lesson.chapter?.blocks.first(where: { $0.id == block }), let nodes = lesson.chapter?.outline,
+               !(bookSection.map { StudySet.isWithin(b.sectionID, $0, nodes) } ?? false) {
+                bookSection = b.sectionID
+            }
+            bookPointer = block
+            return nil
+        }
         var id = raw
         if id == "turn", let t = currentTurn { id = t.id }
         if id.range(of: "^e\\d+$", options: .regularExpression) != nil { id = "p\(currentPart + 1)" + id }
@@ -384,8 +497,9 @@ final class LessonSession: VoiceTutor {
         default: break
         }
         if !spoken.isEmpty { s += "\nWhat you said last:\n" + spoken.suffix(4).joined(separator: "\n") }
-        let items = pageParts.filter { $0.id.hasPrefix("p\(currentPart + 1)") || $0.id.hasPrefix("turn") }
-        s += "\n\nOn the page (ids you can POINT at):\n" + items.map { "[\($0.id)] \($0.markdown)" }.joined(separator: "\n")
+        if activeBlank != nil { s += " She is filling in a blank on the board (she writes the answer, then taps a check mark)." }
+        let items = bookParts + pageParts.filter { $0.id.hasPrefix("p\(currentPart + 1)") || $0.id.hasPrefix("turn") || $0.id.hasPrefix("blank\(currentPart + 1)_") }
+        s += "\n\nOn the screen (ids you can POINT at; k… are blocks of the book in the top half):\n" + items.map { "[\($0.id)] \($0.markdown)" }.joined(separator: "\n")
         s += "\n\n" + boardSummary()
         return s
     }

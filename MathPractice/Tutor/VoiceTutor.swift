@@ -251,7 +251,14 @@ class VoiceTutor: ObservableObject {
             await speaker.speak(text)
         case .resume:
             resumeRequested = true
+        case let .blank(line, answer, why):
+            await blankAsked(line, answer: answer, why: why)
         }
+    }
+
+    /// A fill-in-the-blank on the board. Default (outside lessons): write the line with the answer in it.
+    func blankAsked(_ line: String, answer: String, why: String) async {
+        await perform(.write(line.replacingOccurrences(of: "___", with: answer)))
     }
 
     /// A pointer id as written by Claude → a part on the page (nil if unknown).

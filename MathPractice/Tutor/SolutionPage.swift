@@ -279,7 +279,9 @@ final class PageInk: NSObject, ObservableObject, PKCanvasViewDelegate {
     var onTap: () -> Void = {}
 
     private var host: UIHostingController<AnyView>?
-    private var frames: [String: CGRect] = [:]
+    /// Where each part is on the page (page coordinates), and how far the page is scrolled.
+    @Published private(set) var frames: [String: CGRect] = [:]
+    @Published private(set) var offset: CGPoint = .zero
     private var contentHeight: CGFloat = 3000
     private var pendingReveal: String?
     private var strokesAtLastTurn = 0
@@ -349,7 +351,7 @@ final class PageInk: NSObject, ObservableObject, PKCanvasViewDelegate {
     }
 
     func setFrames(_ f: [String: CGRect]) {
-        frames = f
+        if frames != f { frames = f }
         revealPending()
     }
 
@@ -379,6 +381,18 @@ final class PageInk: NSObject, ObservableObject, PKCanvasViewDelegate {
     }
 
     @objc private func tapped() { onTap() }
+
+    nonisolated func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        MainActor.assumeIsolated { if offset != canvas.contentOffset { offset = canvas.contentOffset } }
+    }
+
+    /// A picture of her handwriting inside a part of the page (e.g. a blank), or nil if she wrote nothing there.
+    func image(in id: String) -> Data? {
+        guard let r = frames[id]?.insetBy(dx: -16, dy: -16) else { return nil }
+        let strokes = canvas.drawing.strokes.filter { $0.renderBounds.intersects(r) }
+        guard !strokes.isEmpty else { return nil }
+        return ImageUtils.renderDrawing(PKDrawing(strokes: strokes))
+    }
 
     /// Her handwriting below a part of the page (e.g. under a problem): the strokes and a picture of them.
     func work(below id: String) -> (ink: Data, image: Data)? {

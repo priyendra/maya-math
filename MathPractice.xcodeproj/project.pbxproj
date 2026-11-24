@@ -14,6 +14,7 @@
 		0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44CD57438440D0BE6E0745E /* LibraryUITests.swift */; };
 		10C22342EB84B8C13226688F /* Fmt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CB076330F9EE5BDC18871E /* Fmt.swift */; };
 		13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F231E9BAE8BE9B8CC0ED4760 /* PracticeSessionView.swift */; };
+		14131BCE4394DD86BEB1889D /* BookPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9F15806EC0F838B4DC6353 /* BookPane.swift */; };
 		16D59697D7A3D274E1515F07 /* AttemptReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */; };
 		175EE77FEF5C8A3A5E00E337 /* ExamHistoryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D53BF4703980205D2DD358 /* ExamHistoryUITests.swift */; };
 		1B47F8B62D1FAAA7A1B370E7 /* TapRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0033308F811C8F2DA0AA5AC8 /* TapRow.swift */; };
@@ -39,6 +40,7 @@
 		46C498886EE4542552E09E0F /* ScanFixUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CB75D511DE7DCCBD2D5478 /* ScanFixUITests.swift */; };
 		4A2818BFF345BF2C31262559 /* ProgressReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED67685E937EC514E30ED7F /* ProgressReportView.swift */; };
 		4BC5CA53488CFDC631DFBB6D /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1188FC44FDA09FB9AF140A7E /* Models.swift */; };
+		4FF398BEADB7E542985B47C7 /* BlankChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DEE1DCBC1CE0D86F9632344 /* BlankChecker.swift */; };
 		509E54E48BB2DCA3055F1C98 /* ChapterScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53ED8CD299C1B6CE50F185C /* ChapterScore.swift */; };
 		511A7DDA9EB461F2F6FE0F87 /* MasteryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B2FD60C9EA822A5F8F2E7D /* MasteryModel.swift */; };
 		52E8BDC2D309C56480B4442D /* LessonPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9372EBC3923439A35CEAE84 /* LessonPage.swift */; };
@@ -162,6 +164,7 @@
 		69AD3512B5009E2D88B32F68 /* CallLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallLog.swift; sourceTree = "<group>"; };
 		6DCE0AFF579E0ADA5742DEE3 /* MyAnswersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAnswersView.swift; sourceTree = "<group>"; };
 		6ED67685E937EC514E30ED7F /* ProgressReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressReportView.swift; sourceTree = "<group>"; };
+		6F9F15806EC0F838B4DC6353 /* BookPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPane.swift; sourceTree = "<group>"; };
 		715129D145F487DFA2575D5F /* MathPlain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathPlain.swift; sourceTree = "<group>"; };
 		743FCCE53E1AC4308EAFE1AD /* ScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanTests.swift; sourceTree = "<group>"; };
 		75F7D607EC608E24A41A6259 /* LessonUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonUITests.swift; sourceTree = "<group>"; };
@@ -171,6 +174,7 @@
 		81D5EC6D81F11332A69D4823 /* TutorSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorSession.swift; sourceTree = "<group>"; };
 		87EC5E1C862487D2AE63C2D7 /* ChapterProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterProcessor.swift; sourceTree = "<group>"; };
 		8D0DA142FAAF636080E94229 /* ScanQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanQuality.swift; sourceTree = "<group>"; };
+		8DEE1DCBC1CE0D86F9632344 /* BlankChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlankChecker.swift; sourceTree = "<group>"; };
 		9458FA16654054C29A418711 /* RetakeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetakeSheet.swift; sourceTree = "<group>"; };
 		971C199434CE906947C61BA7 /* ScopeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeViews.swift; sourceTree = "<group>"; };
 		9A1CDC9394B9629E2AEAF5FB /* MathText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathText.swift; sourceTree = "<group>"; };
@@ -317,6 +321,7 @@
 		9B643674FF01A5308BAD1ED4 /* Tutor */ = {
 			isa = PBXGroup;
 			children = (
+				6F9F15806EC0F838B4DC6353 /* BookPane.swift */,
 				204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */,
 				A9372EBC3923439A35CEAE84 /* LessonPage.swift */,
 				377F6A4A3700AD0523696B3F /* LessonSession.swift */,
@@ -368,6 +373,7 @@
 		EFB75AA4E52F4B34248424B8 /* Claude */ = {
 			isa = PBXGroup;
 			children = (
+				8DEE1DCBC1CE0D86F9632344 /* BlankChecker.swift */,
 				69AD3512B5009E2D88B32F68 /* CallLog.swift */,
 				87EC5E1C862487D2AE63C2D7 /* ChapterProcessor.swift */,
 				665991869AC6129844A96D03 /* ClaudeClient.swift */,
@@ -547,6 +553,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				16D59697D7A3D274E1515F07 /* AttemptReviewView.swift in Sources */,
+				4FF398BEADB7E542985B47C7 /* BlankChecker.swift in Sources */,
+				14131BCE4394DD86BEB1889D /* BookPane.swift in Sources */,
 				32F220A0DA1B40E5CB14E7D3 /* CallLog.swift in Sources */,
 				5C059E756AF170920DE53132 /* CanvasLab.swift in Sources */,
 				060A7651148F1BFA44DA308F /* ChapterHomeView.swift in Sources */,

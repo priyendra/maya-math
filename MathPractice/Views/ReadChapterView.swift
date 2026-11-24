@@ -2,31 +2,59 @@ import SwiftUI
 import SwiftData
 import WebKit
 
-/// The digital chapter: section list on the left, the selected section typeset on the right.
-/// Tap an exercise to see its tags, include/exclude it, see your answers, or practice it.
+/// The chapter: the book's sections on the left (with what she has been taught), the selected section typeset on
+/// the right, and for any section or group of sections: "Teach me" (the lessons for it, the book above the teacher's
+/// board) and "Practise" (practice limited to it). Tap an exercise to see its tags, your answers, or practice it.
 struct ReadChapterView: View {
     let chapter: Chapter
     /// An exercise to open at: its section is selected and the exercise is scrolled to and highlighted.
     var focus: Question? = nil
     @State private var selected: Int?
     @State private var tapped: Question?
+    @State private var teaching: Lesson?
+    @State private var teachQueue: [Lesson] = []
+    @State private var practising = false
+    @State private var planning = false
+    @State private var planError: String?
+    @Environment(\.modelContext) private var context
+    @Environment(\.theme) private var theme
 
     var body: some View {
         let nodes = chapter.outline
         HStack(spacing: 0) {
             List(nodes, selection: $selected) { node in
-                Text(MathPlain.render(node.title))
-                    .font(node.level == 1 ? .body.weight(.semibold) : .callout)
-                    .padding(.leading, CGFloat(node.level - 1) * 14)
-                    .tag(Optional(node.id))
+                HStack(spacing: 8) {
+                    Text(MathPlain.render(node.title))
+                        .font(node.level == 1 ? .body.weight(.semibold) : .callout)
+                    Spacer(minLength: 4)
+                    taughtMark(node.id)
+                }
+                .padding(.leading, CGFloat(node.level - 1) * 14)
+                .tag(Optional(node.id))
             }
             .listStyle(.sidebar)
             .frame(width: 300)
             Divider()
-            ChapterWebView(html: html(for: selected ?? nodes.first?.id ?? -1, focus: focus?.id)) { id in
-                tapped = chapter.questions.first { $0.id.uuidString == id }
+            VStack(spacing: 0) {
+                sectionBar(selected ?? nodes.first?.id ?? -1)
+                Divider()
+                ChapterWebView(html: Self.html(chapter, section: selected ?? nodes.first?.id ?? -1, focus: focus?.id)) { id in
+                    tapped = chapter.questions.first { $0.id.uuidString == id }
+                }
             }
         }
+        .fullScreenCover(item: $teaching) { l in
+            LessonPage(lesson: l, queue: teachQueue, onNext: { next in
+                teaching = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { teaching = next }
+            })
+        }
+        .fullScreenCover(isPresented: $practising) {
+            if let sel = selected ?? nodes.first?.id { PracticeSessionView(set: StudySet.sections(chapter, sel)) }
+        }
+        .alert("Couldn't prepare the lessons", isPresented: Binding(get: { planError != nil }, set: { if !$0 { planError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(planError ?? "") }
         .navigationTitle(MathPlain.render(chapter.title))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -39,8 +67,84 @@ struct ReadChapterView: View {
         .sheet(item: $tapped) { q in NavigationStack { QuestionDetailView(question: q) } }
     }
 
+    // MARK: Teach and practise
+
+    /// The lessons that teach a section (or a group of sections), in order.
+    static func lessons(_ chapter: Chapter, for section: Int) -> [Lesson] {
+        let nodes = chapter.outline
+        return chapter.sortedLessons.filter { l in
+            l.parts.contains { p in
+                (p.sectionIDs + p.practiceSectionIDs).contains { StudySet.isWithin($0, section, nodes) || StudySet.isWithin(section, $0, nodes) }
+            }
+        }
+    }
+
+    /// ✓ when every lesson for the section is done, a half circle when one is started.
+    @ViewBuilder private func taughtMark(_ section: Int) -> some View {
+        let ls = Self.lessons(chapter, for: section)
+        if !ls.isEmpty {
+            if ls.allSatisfy({ $0.status == .done }) {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(theme.done).accessibilityLabel("Taught")
+            } else if ls.contains(where: { $0.status != .notStarted }) {
+                Image(systemName: "circle.lefthalf.filled").foregroundStyle(theme.learn).accessibilityLabel("Started")
+            }
+        }
+    }
+
+    private func sectionBar(_ section: Int) -> some View {
+        let nodes = chapter.outline
+        let hasQuestions = chapter.activeQuestions.contains { StudySet.isWithin($0.sectionID, section, nodes) }
+        let planned = !chapter.lessons.isEmpty
+        let lessons = Self.lessons(chapter, for: section)
+        return HStack(spacing: 12) {
+            if let l = lessons.first, lessons.count > 1 || l.status != .notStarted {
+                let done = lessons.filter { $0.status == .done }.count
+                Text(lessons.count == 1 ? (l.status == .done ? "Taught" : "Started") : "\(done) of \(lessons.count) lessons taught")
+                    .font(theme.font(.label)).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if planning {
+                ProgressView()
+                Text("Getting the lessons ready…").font(theme.font(.label)).foregroundStyle(.secondary)
+            } else if !planned || !lessons.isEmpty {
+                Button { teach(section) } label: { Label("Teach me", systemImage: "graduationcap.fill") }
+                    .buttonStyle(.borderedProminent).tint(theme.learn)
+                    .accessibilityIdentifier("teachSection")
+            }
+            if hasQuestions {
+                Button { practising = true } label: { Label("Practise", systemImage: "pencil.and.outline") }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("practiseSection")
+            }
+        }
+        .controlSize(.large)
+        .padding(.horizontal, 20).padding(.vertical, 10)
+    }
+
+    /// Opens the first lesson not yet done for the section (planning the chapter's lessons first if needed).
+    private func teach(_ section: Int) {
+        func open() {
+            let ls = Self.lessons(chapter, for: section)
+            guard let first = ls.first(where: { $0.status != .done }) ?? ls.first else { return }
+            teachQueue = ls
+            teaching = first
+        }
+        guard chapter.lessons.isEmpty else { open(); return }
+        planning = true
+        Task {
+            do { try await LessonPlanner.plan(chapter, context: context); open() } catch {
+                if case ClaudeClient.ClientError.missingAPIKey? = error as? ClaudeClient.ClientError {
+                    planError = "Lessons need a Claude API key. Add one in Settings."
+                } else {
+                    planError = "Couldn't plan the lessons (\(error.localizedDescription)). Try again."
+                }
+            }
+            planning = false
+        }
+    }
+
     /// Blocks of this section and its subsections, in reading order.
-    private func html(for section: Int, focus: UUID? = nil) -> String {
+    static func html(_ chapter: Chapter, section: Int, focus: UUID? = nil, said: UUID? = nil) -> String {
         let nodes = chapter.outline
         let blocks = chapter.sortedBlocks.filter { section < 0 || StudySet.isWithin($0.sectionID, section, nodes) }
         let questions = Dictionary(uniqueKeysWithValues: chapter.questions.map { ($0.id, $0) })
@@ -58,7 +162,7 @@ struct ReadChapterView: View {
                 lastSection = b.sectionID
                 items.append(["kind": "section", "text": nodes[b.sectionID].title, "level": nodes[b.sectionID].level])
             }
-            var item: [String: Any] = ["kind": b.kind, "md": b.markdown, "num": b.printedNumber]
+            var item: [String: Any] = ["kind": b.kind, "md": b.markdown, "num": b.printedNumber, "block": b.id.uuidString]
             if let img = b.imageData { item["img"] = "data:image/jpeg;base64," + img.base64EncodedString() }
             if let qid = b.questionID, let q = questions[qid] {
                 item["id"] = qid.uuidString
@@ -73,7 +177,7 @@ struct ReadChapterView: View {
             items.append(item)
         }
         let title = nodes.indices.contains(section) ? nodes[section].title : chapter.title
-        return ChapterWebView.document(title: title, items: items, focus: focus?.uuidString)
+        return ChapterWebView.document(title: title, items: items, focus: focus?.uuidString, said: said?.uuidString)
     }
 }
 
@@ -112,7 +216,7 @@ struct ChapterWebView: UIViewRepresentable {
         }
     }
 
-    static func document(title: String, items: [[String: Any]], focus: String? = nil) -> String {
+    static func document(title: String, items: [[String: Any]], focus: String? = nil, said: String? = nil) -> String {
         let json = (try? String(data: JSONSerialization.data(withJSONObject: items), encoding: .utf8)) ?? "[]"
         let titleJSON = (try? String(data: JSONSerialization.data(withJSONObject: [title]), encoding: .utf8)) ?? "[\"\"]"
         return """
@@ -147,6 +251,8 @@ struct ChapterWebView: UIViewRepresentable {
           p { margin: 0 0 .5em; } p:last-child { margin-bottom: 0; }
           table { border-collapse: collapse; } td, th { border: 1px solid var(--line); padding: 4px 10px; }
           .katex-display { margin: .4em 0; overflow-x: auto; overflow-y: hidden; }
+          .said { background: rgba(94,92,230,.13) !important; box-shadow: -10px 0 0 rgba(94,92,230,.13), 10px 0 0 rgba(94,92,230,.13), inset 4px 0 0 #5e5ce6;
+                  border-radius: 8px; transition: background .3s; }
         </style></head><body><h1 id="t"></h1><div id="c"></div>
         <script>
           function render(src) {
@@ -164,6 +270,7 @@ struct ChapterWebView: UIViewRepresentable {
           const items = \(json);
           const out = [];
           for (const it of items) {
+            const before = out.length;
             const img = it.img ? '<img src="' + it.img + '">' : '';
             switch (it.kind) {
               case 'page': out.push('<div class="page">' + esc(it.text) + '</div>'); break;
@@ -180,8 +287,17 @@ struct ChapterWebView: UIViewRepresentable {
               }
               default: out.push('<div>' + render(it.md) + img + '</div>');
             }
+            if (it.block && out.length > before) out[out.length - 1] = '<div data-block="' + it.block + '">' + out[out.length - 1] + '</div>';
           }
           document.getElementById('c').innerHTML = out.join('');
+          // The block the teacher is talking about: highlighted and scrolled into view.
+          window.pointAt = function (id) {
+            document.querySelectorAll('.said').forEach(e => e.classList.remove('said'));
+            const el = id && document.querySelector('[data-block="' + id + '"]');
+            if (el) { el.classList.add('said'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+          };
+          const saidID = \((said.map { "\"\($0)\"" }) ?? "null");
+          if (saidID) setTimeout(() => window.pointAt(saidID), 150);
           document.querySelectorAll('.exercise').forEach(el => el.addEventListener('click', () => {
             if (el.dataset.id) window.webkit.messageHandlers.tap.postMessage(el.dataset.id);
           }));

@@ -1,25 +1,13 @@
 import Foundation
 import SwiftData
 
-/// Claude's script for one part of a lesson.
+/// Claude's script for one part of a lesson. The book itself is shown above the board, so the script only talks,
+/// points at the book's blocks (k1, k2…), writes on the board and asks fill-in-the-blank questions.
 struct LessonScriptDTO: Codable {
-    struct Item: Codable {
-        let id: String
-        let kind: String
-        let markdown: String
-        let figure: String
-    }
-    let items: [Item]
     let narration: String
     let your_turn: [String]
 
     static let schema = Schema.object([
-        "items": Schema.array(Schema.object([
-            "id": Schema.string,
-            "kind": Schema.enumeration(["heading", "text", "example", "figure"]),
-            "markdown": Schema.string,
-            "figure": Schema.string,
-        ])),
         "narration": Schema.string,
         "your_turn": Schema.array(Schema.string),
     ])
@@ -32,7 +20,8 @@ enum LessonWriter {
     struct Input {
         var text: [String] = []
         var content: [ClaudeClient.Block] = []
-        var figures: [String: UUID] = [:]
+        /// Book blocks shown to her, in order: k1 = blocks[0]…
+        var blocks: [UUID] = []
         var questions: [String: UUID] = [:]
     }
 
@@ -52,21 +41,18 @@ enum LessonWriter {
         input.content.append(.text(head))
 
         let teach = Set(part.sectionIDs)
-        var book = "Book content for this part:\n"
-        var nf = 0
+        var book = "Book content for this part (as she sees it in the book, block ids k1, k2…):\n"
         let blocks = slice(chapter.sortedBlocks.filter { teach.contains($0.sectionID) }, part: part)
         for b in blocks where ["heading", "text", "example", "figure"].contains(b.kind) {
+            input.blocks.append(b.id)
+            let label = "k\(input.blocks.count)"
             if let img = b.imageData {
-                nf += 1
-                let label = "f\(nf)"
-                input.figures[label] = b.id
-                book += "\n[\(b.kind)]\n\(b.markdown)\n(picture \(label) below)\n"
+                book += "\n[\(label)] (\(b.kind))\n\(b.markdown)\n(picture below)\n"
                 input.content.append(.text(book))
-                input.content.append(.text("Picture \(label):"))
                 input.content.append(.jpeg(img))
                 book = ""
             } else {
-                book += "\n[\(b.kind)]\n\(b.markdown)\n"
+                book += "\n[\(label)] (\(b.kind))\n\(b.markdown)\n"
             }
         }
         if !book.isEmpty { input.content.append(.text(book)) }
@@ -111,13 +97,14 @@ enum LessonWriter {
 
     /// The saved script for a part, writing it if needed.
     static func script(_ lesson: Lesson, part index: Int, context: ModelContext) async throws -> LessonPartScript {
-        // A saved script with nothing to say (an earlier bad reply) is written again.
-        if let s = lesson.scripts[index], isUsable(s) { return s }
+        // A saved script with nothing to say (an earlier bad reply), or an older one that drew its own copy of the
+        // book, is written again.
+        if let s = lesson.scripts[index], s.bookBlocks != nil, isUsable(s) { return s }
         let input = input(lesson, part: index)
         var script: LessonPartScript?
         if ProcessInfo.processInfo.arguments.contains("-fakeTutor") {
             try await Task.sleep(nanoseconds: 300_000_000)
-            script = convert(fake(index, questions: input.questions.keys.sorted()), part: index, input: input)
+            script = convert(fake(index, blocks: input.blocks.count, questions: input.questions.keys.sorted()), part: index, input: input)
         } else {
             // Claude occasionally returns the page but an empty narration: ask again (twice at most).
             for attempt in 0..<2 where script == nil {
@@ -136,12 +123,12 @@ enum LessonWriter {
         return script
     }
 
-    /// A part needs something on the page and something said about it.
+    /// A part needs something said about it.
     static func isUsable(_ s: LessonPartScript) -> Bool {
         let says = s.narration.components(separatedBy: "\n").filter { line in
             if case .say? = TutorScriptParser.beat(line) { return true } else { return false }
         }
-        return !s.items.isEmpty && says.count >= 3
+        return says.count >= 3
     }
 
     enum ScriptError: LocalizedError {
@@ -149,37 +136,33 @@ enum LessonWriter {
         var errorDescription: String? { "The tutor couldn't prepare this part. Try again." }
     }
 
-    /// Item ids become unique in the lesson ("e3" in part 2 → "p2e3"), labels become ids.
+    /// Book labels (k3) become "book:<block id>"; exercise labels become question ids.
     static func convert(_ dto: LessonScriptDTO, part index: Int, input: Input) -> LessonPartScript {
-        let prefix = "p\(index + 1)"
-        var known = Set<String>()
-        var items: [LessonPartScript.Item] = []
-        for it in dto.items {
-            let local = it.id.lowercased().trimmingCharacters(in: .whitespaces)
-            known.insert(local)
-            let figure = input.figures[it.figure.lowercased().trimmingCharacters(in: .whitespaces)]
-            if it.kind == "figure" && figure == nil { continue }   // a picture we don't have
-            items.append(.init(id: prefix + local, kind: it.kind, markdown: it.markdown, blockID: figure))
-        }
         let narration = dto.narration.components(separatedBy: "\n").map { line -> String in
-            guard let b = TutorScriptParser.beat(line), case let .point(id?) = b, known.contains(id) else { return line }
-            return "POINT: \(prefix)\(id)"
+            guard let b = TutorScriptParser.beat(line), case let .point(id?) = b else { return line }
+            guard let block = bookBlock(id, input.blocks) else { return "POINT: none" }
+            return "POINT: book:\(block.uuidString)"
         }.joined(separator: "\n")
         let ids = dto.your_turn.compactMap { input.questions[$0.lowercased().trimmingCharacters(in: .whitespaces)] }
-        return LessonPartScript(items: items, narration: narration, questionIDs: ids)
+        return LessonPartScript(items: [], narration: narration, questionIDs: ids, bookBlocks: input.blocks)
     }
 
-    private static func fake(_ index: Int, questions: [String]) -> LessonScriptDTO {
-        LessonScriptDTO(items: [
-            .init(id: "e1", kind: "text", markdown: "To factor a difference of two squares, use $a^2 - b^2 = (a + b)(a - b)$.", figure: ""),
-            .init(id: "e2", kind: "example", markdown: "Factor $x^2 - 25$.", figure: ""),
-            .init(id: "e3", kind: "example", markdown: "$x^2 - 25 = x^2 - 5^2 = (x + 5)(x - 5)$", figure: ""),
-        ], narration: """
+    /// "k3" → the third book block.
+    static func bookBlock(_ label: String, _ blocks: [UUID]) -> UUID? {
+        guard label.hasPrefix("k"), let n = Int(label.dropFirst()), blocks.indices.contains(n - 1) else { return nil }
+        return blocks[n - 1]
+    }
+
+    private static func fake(_ index: Int, blocks: Int, questions: [String]) -> LessonScriptDTO {
+        LessonScriptDTO(narration: """
         SAY: Here is the idea for part \(index + 1).
-        POINT: e1
-        SAY: A difference of two squares always factors the same way.
-        POINT: e3
-        SAY: Twenty five is five squared, so we get [x] plus five times [x] minus five.
+        POINT: k1
+        SAY: Read along with me in the book.
+        POINT: k\(min(2, max(blocks, 1)))
+        WRITE: $3x + 2 = 11$
+        SAY: First we take away two from both sides. What is eleven minus two?
+        BLANK: $3x =$ ___ || 9 || Eleven minus two is nine.
+        SAY: Then we divide by three, so [x] is three.
         SAY: Any questions before you try one?
         """, your_turn: Array(questions.prefix(2)))
     }

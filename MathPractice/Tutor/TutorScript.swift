@@ -11,6 +11,9 @@ enum TutorBeat: Equatable {
     case point(String?)
     /// Lessons: her question is answered, carry on with the lesson.
     case resume
+    /// Lessons: a board line with a blank ("___") she fills in by writing; the answer, and a short spoken why that
+    /// says the answer.
+    case blank(String, answer: String, why: String)
 }
 
 /// Turns streamed reply text into beats, one finished line at a time.
@@ -43,6 +46,13 @@ struct TutorScriptParser {
         if line.uppercased().trimmingCharacters(in: CharacterSet(charactersIn: ":. ")) == "CONTINUE" { return .resume }
         if let v = value("SAY") { return v.isEmpty ? nil : .say(spoken(v)) }
         if let v = value("WRITE") { return v.isEmpty ? nil : .write(v) }
+        if let v = value("BLANK") {
+            let parts = v.components(separatedBy: "||").map { $0.trimmingCharacters(in: .whitespaces) }
+            guard parts.count >= 2, !parts[1].isEmpty else { return nil }
+            var line = parts[0]
+            if !line.contains("___") { line += " ___" }
+            return .blank(line, answer: parts[1], why: spoken(parts.count > 2 ? parts[2] : ""))
+        }
         if let v = value("POINT") {
             let id = v.trimmingCharacters(in: CharacterSet(charactersIn: "[]`* ")).lowercased()
             return .point(id.isEmpty || id == "none" ? nil : id)

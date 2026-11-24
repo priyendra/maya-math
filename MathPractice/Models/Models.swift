@@ -443,6 +443,9 @@ struct LessonPartScript: Codable, Hashable {
     var narration: String
     /// Candidate "your turn" questions, best first (the second is for a retry).
     var questionIDs: [UUID]
+    /// Book-linked scripts: the book's own blocks this part teaches, in order (k1, k2… in the script; POINT lines
+    /// say "book:<id>"). nil for older scripts that drew their own copy of the book (they are written again).
+    var bookBlocks: [UUID]? = nil
 }
 
 enum LessonStatus: String, Codable { case notStarted, inProgress, done }

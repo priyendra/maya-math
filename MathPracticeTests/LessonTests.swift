@@ -158,26 +158,40 @@ final class LessonTests: XCTestCase {
 
     @MainActor
     func testScriptWithoutNarrationIsNotUsable() {
-        let page = [LessonPartScript.Item(id: "p1e1", kind: "text", markdown: "Speed is distance per unit of time.", blockID: nil)]
-        XCTAssertFalse(LessonWriter.isUsable(LessonPartScript(items: page, narration: "", questionIDs: [])))
-        XCTAssertFalse(LessonWriter.isUsable(LessonPartScript(items: page, narration: "POINT: p1e1\nSAY: Hi.", questionIDs: [])))
-        XCTAssertTrue(LessonWriter.isUsable(LessonPartScript(items: page, narration: "SAY: One.\nPOINT: p1e1\nSAY: Two.\nSAY: Three.", questionIDs: [])))
+        XCTAssertFalse(LessonWriter.isUsable(LessonPartScript(items: [], narration: "", questionIDs: [])))
+        XCTAssertFalse(LessonWriter.isUsable(LessonPartScript(items: [], narration: "POINT: k1\nSAY: Hi.", questionIDs: [])))
+        XCTAssertTrue(LessonWriter.isUsable(LessonPartScript(items: [], narration: "SAY: One.\nPOINT: k1\nSAY: Two.\nSAY: Three.", questionIDs: [])))
     }
 
+    /// Book labels (k2) point at the book's own blocks; unknown labels point nowhere; exercise labels become ids.
     @MainActor
-    func testScriptIdsArePerPartAndLabelsBecomeIDs() {
-        let fig = UUID(), q1 = UUID(), q2 = UUID()
-        let input = LessonWriter.Input(figures: ["f1": fig], questions: ["q1": q1, "q2": q2])
-        let dto = LessonScriptDTO(items: [
-            .init(id: "e1", kind: "text", markdown: "Speed is distance per unit of time.", figure: ""),
-            .init(id: "e2", kind: "figure", markdown: "Bar model", figure: "f1"),
-            .init(id: "e3", kind: "figure", markdown: "A picture we don't have", figure: "f9"),
-        ], narration: "POINT: e2\nSAY: Look at the bar model.\nPOINT: b1\nCONTINUE", your_turn: ["q2", "q7", "Q1"])
+    func testScriptPointsAtTheBook() {
+        let b1 = UUID(), b2 = UUID(), q1 = UUID(), q2 = UUID()
+        let input = LessonWriter.Input(blocks: [b1, b2], questions: ["q1": q1, "q2": q2])
+        let dto = LessonScriptDTO(narration: "POINT: k2\nSAY: Look at the example.\nPOINT: k9\nWRITE: $x$\nCONTINUE",
+                                  your_turn: ["q2", "q7", "Q1"])
         let s = LessonWriter.convert(dto, part: 2, input: input)
-        XCTAssertEqual(s.items.map(\.id), ["p3e1", "p3e2"])
-        XCTAssertEqual(s.items[1].blockID, fig)
-        XCTAssertEqual(s.narration.components(separatedBy: "\n")[0], "POINT: p3e2")
-        XCTAssertEqual(s.narration.components(separatedBy: "\n")[2], "POINT: b1")
+        let lines = s.narration.components(separatedBy: "\n")
+        XCTAssertEqual(lines[0], "POINT: book:\(b2.uuidString)")
+        XCTAssertEqual(lines[2], "POINT: none")
+        XCTAssertEqual(s.bookBlocks, [b1, b2])
+        XCTAssertTrue(s.items.isEmpty)
         XCTAssertEqual(s.questionIDs, [q2, q1])
+        XCTAssertEqual(LessonWriter.bookBlock("k1", [b1, b2]), b1)
+        XCTAssertNil(LessonWriter.bookBlock("b1", [b1, b2]))
+    }
+
+    /// A blank: the board line (with ___), the answer, and the spoken why.
+    func testBlankLine() {
+        XCTAssertEqual(TutorScriptParser.beat("BLANK: $= x^2 -$ ___ || 9 || Three squared is nine."),
+                       .blank("$= x^2 -$ ___", answer: "9", why: "Three squared is nine."))
+        XCTAssertEqual(TutorScriptParser.beat("BLANK: $(x$ ___ $5)$ || + || The signs are opposite."),
+                       .blank("$(x$ ___ $5)$", answer: "+", why: "The signs are opposite."))
+        // No marked blank: it goes at the end. No answer: not a blank.
+        XCTAssertEqual(TutorScriptParser.beat("BLANK: $3x =$ || 9"), .blank("$3x =$ ___", answer: "9", why: ""))
+        XCTAssertNil(TutorScriptParser.beat("BLANK: $3x =$ ___"))
+        // Old saved scripts (a copy of the book, no book blocks) are written again.
+        let old = try! JSONDecoder().decode(LessonPartScript.self, from: Data(#"{"items":[],"narration":"SAY: Hi.","questionIDs":[]}"#.utf8))
+        XCTAssertNil(old.bookBlocks)
     }
 }

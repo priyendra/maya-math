@@ -1,70 +1,89 @@
 import XCTest
 
 final class LessonUITests: XCTestCase {
-    /// Chapter → Lessons → start a lesson (canned scripts): the part is narrated, she asks a question and it carries on,
-    /// her first answer is wrong (the tutor goes over it, then a second problem), then right, then part 2 … lesson done.
+    /// Chapter → Read & learn → Teach me (canned scripts): the book is on top, the teacher's board below. Part 1:
+    /// a fill-in-the-blank (✓ with nothing written asks her to write; written → checked → carries on), a question at
+    /// the questions pause, a wrong then right your-turn. Part 2: "?" on the blank shows the answer … lesson done.
     func testTakeALesson() {
         let app = XCUIApplication()
         app.launchArguments = ["-freshStore", "-seedSample", "-seedLessons", "-openFirstChapter", "-fakeTutor", "-fingerInk", "-fakeWrongOnce"]
         app.launch()
-        let tile = app.buttons["lessonsTile"]
+        let tile = app.buttons["learnTile"]
         XCTAssertTrue(tile.waitForExistence(timeout: 15))
         tile.tap()
-        let row = app.buttons.matching(identifier: "lessonRow").firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Not in lessons (1)"].exists)
-        row.tap()
-        shot(self, app, "lesson-0-list")
-        app.buttons["Start lesson"].tap()
+        let teach = app.buttons["teachSection"]
+        XCTAssertTrue(teach.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["practiseSection"].exists)
+        shot(self, app, "lesson-0-reader")
+        teach.tap()
 
-        // Part 1 narrated, then "any questions?" (listening). Ask one; the reply ends with CONTINUE → your turn.
+        // Part 1: the book is shown; a blank on the board.
+        XCTAssertTrue(app.webViews["lessonBook"].waitForExistence(timeout: 15) || app.descendants(matching: .any)["lessonBook"].exists)
+        let check = app.buttons["blankCheck"]
+        XCTAssertTrue(check.waitForExistence(timeout: 20), "no fill-in-the-blank")
+        sleep(1)
+        shot(self, app, "lesson-1-blank")
+        check.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Write your answer in the blank first'")).firstMatch.waitForExistence(timeout: 3))
+        writeInBlank(app, beside: check)
+        sleep(1)
+        shot(self, app, "lesson-2-blank-written")
+        check.tap()
+
+        // Then "any questions?" (listening). Ask one; the reply ends with CONTINUE → your turn.
         let say = app.buttons["debugSay"]
-        XCTAssertTrue(say.waitForExistence(timeout: 15), "never reached the questions pause")
-        shot(self, app, "lesson-1-questions")
+        XCTAssertTrue(say.waitForExistence(timeout: 20), "never reached the questions pause")
+        shot(self, app, "lesson-3-checked")
         say.tap()
-        let check = app.buttons["lessonCheck"]
-        XCTAssertTrue(check.waitForExistence(timeout: 15), "no your-turn problem after the question")
+        let lessonCheck = app.buttons["lessonCheck"]
+        XCTAssertTrue(lessonCheck.waitForExistence(timeout: 15), "no your-turn problem after the question")
         sleep(2)
         write(app)
-        shot(self, app, "lesson-2-your-turn")
-        check.tap()
-        // Wrong first time: the tutor goes over it (canned reply ends with CONTINUE) → second problem.
-        let second = app.buttons["lessonCheck"]
+        lessonCheck.tap()
+        // Wrong first time: the tutor goes over it → second problem.
         sleep(4)
-        XCTAssertTrue(second.waitForExistence(timeout: 15), "no second try")
-        shot(self, app, "lesson-3-review")
+        XCTAssertTrue(app.buttons["lessonCheck"].waitForExistence(timeout: 15), "no second try")
         write(app)
-        second.tap()
+        app.buttons["lessonCheck"].tap()
 
-        // Part 2: questions pause again → Go on → your turn → right → lesson done.
+        // Part 2: not sure on the blank → the answer is shown, carries on → Go on → your turn → right → done.
+        let notSure = app.buttons["blankNotSure"]
+        XCTAssertTrue(notSure.waitForExistence(timeout: 25), "part 2 has no blank")
+        notSure.tap()
         let goOn = app.buttons["lessonGoOn"]
         XCTAssertTrue(goOn.waitForExistence(timeout: 20), "part 2 never got to the questions pause")
+        shot(self, app, "lesson-4-shown")
         goOn.tap()
         XCTAssertTrue(app.buttons["lessonCheck"].waitForExistence(timeout: 15))
         sleep(2)
         write(app)
         app.buttons["lessonCheck"].tap()
         XCTAssertTrue(app.buttons["Practice this lesson"].waitForExistence(timeout: 20), "lesson never finished")
-        XCTAssertTrue(app.buttons["Next lesson"].exists)
-        sleep(1)
-        shot(self, app, "lesson-4-done")
+        // She asked to be taught this one section: no next lesson beyond it.
+        XCTAssertFalse(app.buttons["Next lesson"].exists)
         app.buttons["Done"].tap()
-        // Progress shows on the list.
-        XCTAssertTrue(app.staticTexts["1 of 2 lessons done"].waitForExistence(timeout: 5))
-        shot(self, app, "lesson-5-list-after")
+        // Back in the chapter: the section shows as taught.
+        XCTAssertTrue(app.staticTexts["Taught"].waitForExistence(timeout: 5))
+        shot(self, app, "lesson-5-reader-after")
         // Clearing practice history also clears lesson progress.
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons["Chapter settings"].tap()
         app.buttons["Clear practice history"].tap()
         app.alerts.buttons["Clear"].tap()
-        XCTAssertTrue(tile.waitForExistence(timeout: 5))
-        XCTAssertTrue(tile.label.contains("0 of 2"), tile.label)
-        tile.tap()
-        XCTAssertTrue(app.staticTexts["0 of 2 lessons done"].waitForExistence(timeout: 5))
-        shot(self, app, "lesson-6-cleared")
+        // The tile updates just after the alert closes.
+        let cleared = app.buttons.matching(NSPredicate(format: "identifier == 'learnTile' AND label CONTAINS '0 of 2 lessons taught'")).firstMatch
+        XCTAssertTrue(cleared.waitForExistence(timeout: 5), tile.label)
     }
 
-    /// Scribble an answer low on the page (below the problem the page just scrolled to).
+    /// Writes a short stroke in the blank, just left of its ✓ button.
+    private func writeInBlank(_ app: XCUIApplication, beside check: XCUIElement) {
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let f = check.frame
+        origin.withOffset(CGVector(dx: f.minX - 110, dy: f.midY - 10))
+            .press(forDuration: 0.1, thenDragTo: origin.withOffset(CGVector(dx: f.minX - 70, dy: f.midY + 12)),
+                   withVelocity: 200, thenHoldForDuration: 0.1)
+    }
+
     private func write(_ app: XCUIApplication) {
         let page = app.descendants(matching: .any)["solutionPage"]
         page.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.8))
@@ -74,6 +93,9 @@ final class LessonUITests: XCTestCase {
 }
 
 private func shot(_ test: XCTestCase, _ app: XCUIApplication, _ name: String) {
+    if let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"] {
+        try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir + "/" + name + ".png"))
+    }
     let a = XCTAttachment(screenshot: app.screenshot())
     a.name = name
     a.lifetime = .keepAlways

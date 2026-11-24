@@ -281,3 +281,17 @@ Running record of product decisions and open discussion topics. Newest decisions
   answers per level and mastered none. Levels with mistakes still get most of the time (each miss costs ~3 more
   questions); check that levels with mistakes keep at least half the practice time.
 - Lesson "your turn" answers record time from the problem appearing to Check.
+- **Lessons are taught on the book.** "Read & learn" (one tile) opens the chapter: the book's sections on the left
+  (✓ taught, half circle started), the section on the right, and for any section or group of sections "Teach me"
+  (its lessons in order; "Next lesson" stays within what she asked for; lessons are planned on first use) and
+  "Practise" (practice limited to that section or group). The separate Lessons list is gone.
+- **Lesson screen: book on top, teacher below** (fixed halves). Top: the section exactly as the reader shows it,
+  the block being taught highlighted and scrolled to (scripts POINT at the book's blocks, k1, k2…). Bottom: the
+  board, where the teacher works examples line by line, plus "your turn" problems. She can write on both halves
+  (Pencil; fingers scroll); her questions send a picture of both.
+- **Quick questions are fill-in-the-blanks on the board**, never a separate card or voice answer: a board line with
+  a dashed blank, ✓ (check; lit once she has written) and ? (not sure → the answer is shown) beside it. Claude reads
+  the handwriting against the expected answer; the teacher says "Yes!" / "Not quite" plus a one-line why, then
+  carries on. No effect on mastery. Scripts ask at least one per worked example, about one every four to six
+  sentences, mostly easy, one short unambiguous answer. Older scripts (a re-drawn copy of the book, no blanks) are
+  written again when reached.

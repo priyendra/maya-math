@@ -46,6 +46,19 @@ struct StudySet {
     }
 
     /// True if `section` is `ancestor` or below it.
+    /// Practice limited to a section of the book (or a group of sections), including its exercises.
+    @MainActor
+    static func sections(_ chapter: Chapter, _ section: Int) -> StudySet {
+        let nodes = chapter.outline
+        let byID = Dictionary(uniqueKeysWithValues: chapter.questions.map { ($0.id, $0) })
+        let qs = chapter.activeQuestions.filter { q in
+            let base = q.parentQuestionID.flatMap { byID[$0] } ?? q
+            return isWithin(base.sectionID, section, nodes)
+        }
+        let title = nodes.indices.contains(section) ? nodes[section].title : chapter.title
+        return StudySet(title: title, chapters: [chapter], questions: qs, examMinutes: chapter.examMinutes, key: "section-\(chapter.id)-\(section)")
+    }
+
     static func isWithin(_ section: Int, _ ancestor: Int, _ nodes: [SectionNode]) -> Bool {
         var cur = section
         while nodes.indices.contains(cur) {

@@ -128,6 +128,7 @@ struct TutorTurnRow: View {
                     switch b {
                     case let .say(s): return s
                     case let .write(w): return "> " + w
+                    case let .blank(l, a, _): return "> " + l.replacingOccurrences(of: "___", with: a)
                     case .point, .resume: return nil
                     }
                 }.joined(separator: "\n\n")

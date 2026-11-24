@@ -115,19 +115,15 @@ struct ChapterHomeView: View {
                 }
 
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                    if chapter.status == .ready && !chapter.needsRereading && !chapter.blocks.isEmpty {
-                        NavigationLink { LessonsView(chapter: chapter) } label: {
-                            let done = chapter.lessons.filter { $0.status == .done }.count
-                            LinkTile(title: "Lessons",
-                                     subtitle: chapter.lessons.isEmpty ? "Learn it step by step with a tutor" : "\(done) of \(chapter.lessons.count) done",
-                                     icon: "graduationcap.fill", color: theme.learn)
-                        }
-                        .accessibilityIdentifier("lessonsTile")
-                    }
                     if !chapter.needsRereading && !chapter.blocks.isEmpty {
                         NavigationLink { ReadChapterView(chapter: chapter) } label: {
-                            LinkTile(title: "Read chapter", subtitle: "The book, section by section", icon: "book.fill", color: theme.accent2)
+                            let done = chapter.lessons.filter { $0.status == .done }.count
+                            LinkTile(title: "Read & learn",
+                                     subtitle: chapter.lessons.isEmpty ? "The book, with a teacher for any section"
+                                                                       : "The book, with a teacher · \(done) of \(chapter.lessons.count) lessons taught",
+                                     icon: "book.fill", color: theme.learn)
                         }
+                        .accessibilityIdentifier("learnTile")
                     }
                     NavigationLink { MyAnswersView(set: set) } label: {
                         let toCheck = set.allAttempts.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.count

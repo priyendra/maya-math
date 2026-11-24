@@ -1,28 +1,48 @@
 import SwiftUI
 import PencilKit
 
-/// A lesson on one canvas page: each part's book content appears as the tutor explains it, with a cursor and a
-/// board; she can write anywhere, ask at any time, and answers "your turn" problems under them.
+/// A lesson in two halves: the book on top (untouched, the block being taught highlighted) and the teacher's board
+/// below, where the teacher works the examples, asks quick fill-in-the-blank questions, and gives "your turn"
+/// problems. She can write on both halves and ask at any time.
 struct LessonPage: View {
     let lesson: Lesson
     var onNext: ((Lesson) -> Void)? = nil
+    /// The lessons "Next lesson" walks through (e.g. the lessons of the section she asked to be taught).
+    var queue: [Lesson]? = nil
     @StateObject private var tutor: LessonSession
     @StateObject private var ink = PageInk()
+    @StateObject private var book = BookInk()
     @State private var practicing = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.theme) private var theme
 
-    init(lesson: Lesson, onNext: ((Lesson) -> Void)? = nil) {
+    init(lesson: Lesson, queue: [Lesson]? = nil, onNext: ((Lesson) -> Void)? = nil) {
         self.lesson = lesson
+        self.queue = queue
         self.onNext = onNext
         _tutor = StateObject(wrappedValue: LessonSession(lesson: lesson))
     }
 
     var body: some View {
         NavigationStack {
-            InkPageView(ink: ink)
-                .background(Color(uiColor: .systemBackground))
+            GeometryReader { g in
+                VStack(spacing: 0) {
+                    Group {
+                        if let chapter = lesson.chapter, let section = tutor.bookSection {
+                            BookPane(chapter: chapter, section: section, pointAt: tutor.bookPointer, ink: book)
+                        } else {
+                            Color(uiColor: .systemBackground)
+                        }
+                    }
+                    .frame(height: g.size.height / 2)
+                    Divider()
+                    InkPageView(ink: ink)
+                        .background(Color(uiColor: .systemBackground))
+                        .overlay(alignment: .topLeading) { blankButtons }
+                        .clipped()
+                }
+            }
                 .safeAreaInset(edge: .bottom) { bottomBar }
                 .navigationTitle(MathPlain.render(lesson.title))
                 .navigationBarTitleDisplayMode(.inline)
@@ -35,10 +55,15 @@ struct LessonPage: View {
         }
         .onAppear {
             ink.install(LessonContent(tutor: tutor, ink: ink).environment(\.theme, theme).fontDesign(theme.design))
-            ink.onInk = { [weak tutor] in tutor?.inkChanged() }
+            ink.onInk = { [weak tutor, weak ink] in
+                tutor?.inkChanged()
+                if let id = tutor?.activeBlank { tutor?.blankHasInk = ink?.image(in: id) != nil }
+            }
             ink.onTap = { [weak tutor] in tutor?.interrupt() }
-            tutor.snapshot = { [weak ink] in ink?.snapshot() }
+            book.onTap = { [weak tutor] in tutor?.interrupt() }
+            tutor.snapshot = { [weak ink, weak book] in LessonPage.snapshot(book: book?.snapshot(), board: ink?.snapshot()) }
             tutor.workBelow = { [weak ink] id in ink?.work(below: id) }
+            tutor.inkIn = { [weak ink] id in ink?.image(in: id) }
             tutor.start()
         }
         .onChange(of: tutor.pointer) { _, id in ink.reveal(id) }
@@ -50,6 +75,7 @@ struct LessonPage: View {
             // New content: bring the newest thing into view (the cursor usually follows).
             if tutor.pointer == nil, let last = tutor.elements.last { ink.reveal(last.id) }
         }
+        .onChange(of: ink.tool) { _, t in book.setTool(t) }
         .onChange(of: scenePhase) { _, p in if p == .background { tutor.end() } }
         .onDisappear { tutor.end() }
         .fullScreenCover(isPresented: $practicing) { PracticeSessionView(set: LessonsView.practiceSet(lesson)) }
@@ -84,7 +110,7 @@ struct LessonPage: View {
                 Divider().frame(height: 26).padding(.horizontal, 4)
                 Button { ink.undo() } label: { Image(systemName: "arrow.uturn.backward").frame(width: 36, height: 36) }
                     .accessibilityLabel("Undo")
-                Button { ink.clear() } label: { Image(systemName: "trash").frame(width: 36, height: 36) }
+                Button { ink.clear(); book.clear() } label: { Image(systemName: "trash").frame(width: 36, height: 36) }
                     .accessibilityLabel("Clear my writing").disabled(!ink.hasInk)
             }
             .padding(6)
@@ -172,7 +198,7 @@ struct LessonPage: View {
             } else if tutor.state != .listening {
                 Button { tutor.ask() } label: { Label("Ask", systemImage: "mic.fill") }.buttonStyle(.bordered)
             }
-            if tutor.state == .listening || tutor.state.isWaiting || tutor.phase == .questions {
+            if tutor.state == .listening || (tutor.state.isWaiting && tutor.activeBlank == nil) || tutor.phase == .questions {
                 Button { tutor.goOn() } label: { Label("Go on", systemImage: "play.fill") }
                     .buttonStyle(.borderedProminent).accessibilityIdentifier("lessonGoOn")
             }
@@ -181,7 +207,57 @@ struct LessonPage: View {
         }
     }
 
+    // MARK: Blank buttons
+
+    /// ✓ (check) and ? (not sure) beside the blank she is filling in. Real buttons over the page, so neither the
+    /// Pencil nor a finger leaves a mark on them.
+    @ViewBuilder private var blankButtons: some View {
+        if let id = tutor.activeBlank, let f = ink.frames[id + "_end"] {
+            HStack(spacing: 10) {
+                Button { tutor.checkBlank() } label: {
+                    Group {
+                        if tutor.checkingBlank { ProgressView().tint(.white) }
+                        else { Image(systemName: "checkmark").font(.system(size: 18, weight: .bold)) }
+                    }
+                    .frame(width: 44, height: 44).foregroundStyle(.white)
+                    .background(theme.learn.opacity(tutor.blankHasInk ? 1 : 0.35), in: Circle())
+                }
+                .accessibilityLabel("Check")
+                .accessibilityIdentifier("blankCheck")
+                Button { tutor.showBlank() } label: {
+                    Image(systemName: "questionmark").font(.system(size: 16, weight: .semibold))
+                        .frame(width: 44, height: 44).foregroundStyle(theme.learn)
+                        .background(theme.learn.opacity(0.12), in: Circle())
+                }
+                .accessibilityLabel("Not sure")
+                .accessibilityIdentifier("blankNotSure")
+            }
+            .position(x: f.minX + 54, y: f.midY - ink.offset.y)
+        }
+    }
+
+    /// What she's looking at, for her questions: the book half above the board half.
+    static func snapshot(book: UIImage?, board: PageSnapshot?) -> PageSnapshot? {
+        guard let book else { return board }
+        let boardImage = board.flatMap { UIImage(data: $0.jpeg) }
+        let width = max(book.size.width, boardImage?.size.width ?? 0)
+        let size = CGSize(width: width, height: book.size.height + (boardImage?.size.height ?? 0))
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            book.draw(at: .zero)
+            boardImage?.draw(at: CGPoint(x: 0, y: book.size.height))
+        }
+        guard let jpeg = image.jpegData(compressionQuality: 0.75) else { return board }
+        return PageSnapshot(jpeg: jpeg, visibleParts: ["the book (top half)"] + (board?.visibleParts ?? []),
+                            newMarks: board?.newMarks ?? false)
+    }
+
     private var nextLesson: Lesson? {
+        if let queue, let i = queue.firstIndex(where: { $0.id == lesson.id }) { return queue.dropFirst(i + 1).first }
         guard let all = lesson.chapter?.sortedLessons, let i = all.firstIndex(where: { $0.id == lesson.id }) else { return nil }
         return all.dropFirst(i + 1).first
     }
@@ -273,6 +349,8 @@ private struct LessonContent: View {
                 .part(id)
                 Color.clear.frame(height: 260).part(id + "_room")   // room for her answer
             }
+        case let .blank(id, line, answer):
+            blankLine(id: id, line: line, answer: answer)
         case .finished:
             HStack(alignment: .center, spacing: 18) {
                 Image(systemName: "star.fill").font(.system(size: 30)).foregroundStyle(.white)
@@ -301,6 +379,51 @@ private struct LessonContent: View {
             .background(theme.done.opacity(0.07), in: RoundedRectangle(cornerRadius: theme.radius, style: .continuous))
             .part(e.id)
         }
+    }
+
+    /// A board line with a blank: the math before it, the blank (she writes in it), the math after it.
+    @ViewBuilder private func blankLine(id: String, line: String, answer: String) -> some View {
+        let pieces = line.components(separatedBy: "___")
+        let before = pieces[0].trimmingCharacters(in: .whitespaces)
+        let after = pieces.dropFirst().joined(separator: " ").trimmingCharacters(in: .whitespaces)
+        let outcome = tutor.blankResults[id]
+        let answerMD = answer.contains("$") || answer.contains(" ") || answer.count > 12 ? answer : "$\(answer)$"
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "pencil.line").foregroundStyle(theme.board)
+            if !before.isEmpty { MathText(markdown: before, fontSize: 21).frame(width: Self.mathWidth(before)) }
+            ZStack {
+                if outcome == .shown { MathText(markdown: answerMD, fontSize: 21).frame(width: 110).foregroundStyle(theme.board) }
+            }
+            .frame(width: 130, height: 60)
+            .background(outcome == nil ? theme.learn.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10)
+                .stroke(outcome == nil ? theme.learn : theme.board.opacity(0.25), style: StrokeStyle(lineWidth: outcome == nil ? 2 : 1, dash: [6, 5])))
+            .part(id)
+            if !after.isEmpty { MathText(markdown: after, fontSize: 21).frame(width: Self.mathWidth(after)) }
+            switch outcome {
+            case .right?:
+                Image(systemName: "checkmark.circle.fill").font(.title2).foregroundStyle(theme.done)
+            case .wrong?:
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.right").foregroundStyle(theme.notQuite)
+                    MathText(markdown: answerMD, fontSize: 21).frame(width: Self.mathWidth(answerMD))
+                }
+            default:
+                Color.clear.frame(width: 110, height: 44).part(id + "_end")   // room for ✓ and ?
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(theme.board.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(alignment: .leading) { Capsule().fill(theme.board.opacity(0.6)).frame(width: 3).padding(.vertical, 8) }
+        .part(id + "_line")
+    }
+
+    /// About how wide a short piece of math is when typeset (MathText takes the width it is given).
+    static func mathWidth(_ md: String) -> CGFloat {
+        let plain = MathPlain.render(md) as NSString
+        let w = plain.size(withAttributes: [.font: UIFont.systemFont(ofSize: 21)]).width
+        return min(520, w * 1.25 + 14)
     }
 
     @ViewBuilder private func itemView(_ item: LessonPartScript.Item) -> some View {
