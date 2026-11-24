@@ -251,14 +251,16 @@ struct ChapterWebView: UIViewRepresentable {
           p { margin: 0 0 .5em; } p:last-child { margin-bottom: 0; }
           table { border-collapse: collapse; } td, th { border: 1px solid var(--line); padding: 4px 10px; }
           .katex-display { margin: .4em 0; overflow-x: auto; overflow-y: hidden; }
-          .said { background: rgba(94,92,230,.13) !important; box-shadow: -10px 0 0 rgba(94,92,230,.13), 10px 0 0 rgba(94,92,230,.13), inset 4px 0 0 #5e5ce6;
-                  border-radius: 8px; transition: background .3s; }
+          /* The block the teacher is on: one even halo around it, following its rounded corners. */
+          .said { border-radius: 10px; background: rgba(94,92,230,.10);
+                  box-shadow: 0 0 0 6px rgba(94,92,230,.10), 0 0 0 7.5px rgba(94,92,230,.30);
+                  transition: box-shadow .3s, background .3s; }
         </style></head><body><h1 id="t"></h1><div id="c"></div>
         <script>
           function render(src) {
             const math = [];
-            let s = (src || '').replace(/\\\\\\$/g, '@@D@@').replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, (_, m) => { math.push([m, true]); return '@@M' + (math.length - 1) + '@@'; })
-                       .replace(/\\$([^$\\n]+?)\\$/g, (_, m) => { math.push([m, false]); return '@@M' + (math.length - 1) + '@@'; });
+            let s = (src || '').replace(/\\\\\\$/g, '@@D@@').replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, (_, m) => { math.push([m.replace(/@@D@@/g, '\\\\$'), true]); return '@@M' + (math.length - 1) + '@@'; })
+                       .replace(/\\$([^$\\n]+?)\\$/g, (_, m) => { math.push([m.replace(/@@D@@/g, '\\\\$'), false]); return '@@M' + (math.length - 1) + '@@'; });
             let html = marked.parse(s, { breaks: true });
             return html.replace(/@@M(\\d+)@@/g, (_, i) => {
               const [m, d] = math[+i];

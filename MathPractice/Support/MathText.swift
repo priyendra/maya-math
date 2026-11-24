@@ -108,8 +108,8 @@ private struct MathWebView: UIViewRepresentable {
           const src = \(json)[0];
           const math = [];
           // Pull math out first so Markdown doesn't mangle underscores/asterisks inside LaTeX.
-          let s = src.replace(/\\\\\\$/g, '@@D@@').replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, (_, m) => { math.push([m, true]); return '@@M' + (math.length - 1) + '@@'; })
-                     .replace(/\\$([^$\\n]+?)\\$/g, (_, m) => { math.push([m, false]); return '@@M' + (math.length - 1) + '@@'; });
+          let s = src.replace(/\\\\\\$/g, '@@D@@').replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, (_, m) => { math.push([m.replace(/@@D@@/g, '\\\\$'), true]); return '@@M' + (math.length - 1) + '@@'; })
+                     .replace(/\\$([^$\\n]+?)\\$/g, (_, m) => { math.push([m.replace(/@@D@@/g, '\\\\$'), false]); return '@@M' + (math.length - 1) + '@@'; });
           let html = marked.parse(s, { breaks: true });
           html = html.replace(/@@M(\\d+)@@/g, (_, i) => {
             const [m, display] = math[+i];

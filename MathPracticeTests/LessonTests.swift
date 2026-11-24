@@ -211,6 +211,21 @@ final class LessonTests: XCTestCase {
         XCTAssertTrue(lines[4].hasPrefix("BLANK:"))
     }
 
+    /// Each side of a blank renders on its own: a blank inside a formula closes and reopens it; math answers are typeset.
+    func testBlankLinePieces() {
+        XCTAssertEqual(BlankLine.pieces("$= x^2 -$ ___").before, "$= x^2 -$")
+        let inside = BlankLine.pieces("$= x^2 - ___$")
+        XCTAssertEqual(inside.before, "$= x^2 -$"); XCTAssertEqual(inside.after, "")
+        let middle = BlankLine.pieces("$(x ___ 5)(x - 5)$")
+        XCTAssertEqual(middle.before, "$(x$"); XCTAssertEqual(middle.after, "$5)(x - 5)$")
+        let money = BlankLine.pieces("\\$23/h means \\$23 ___ hour")
+        XCTAssertEqual(money.before, "\\$23/h means \\$23"); XCTAssertEqual(money.after, "hour")
+        XCTAssertEqual(BlankLine.answerMarkdown("9"), "$9$")
+        XCTAssertEqual(BlankLine.answerMarkdown("\\frac{1}{2}"), "$\\frac{1}{2}$")
+        XCTAssertEqual(BlankLine.answerMarkdown("per"), "per")
+        XCTAssertEqual(BlankLine.answerMarkdown("x"), "$x$")
+    }
+
     /// A blank: the board line (with ___), the answer, and the spoken why.
     func testBlankLine() {
         XCTAssertEqual(TutorScriptParser.beat("BLANK: $= x^2 -$ ___ || 9 || Three squared is nine."),

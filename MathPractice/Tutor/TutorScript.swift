@@ -119,3 +119,36 @@ struct TutorScriptParser {
         return steps.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
     }
 }
+
+/// A fill-in-the-blank board line split around its blank, each side valid Markdown + $LaTeX$ on its own.
+enum BlankLine {
+    /// The math before and after the blank. A blank inside a formula ("$= x^2 - ___$") closes the formula before it
+    /// and reopens it after, so neither side shows raw LaTeX.
+    static func pieces(_ line: String) -> (before: String, after: String) {
+        let parts = line.components(separatedBy: "___")
+        var before = parts[0]
+        var after = parts.dropFirst().joined(separator: " ")
+        if dollars(before) % 2 == 1 {
+            before = before.trimmingCharacters(in: .whitespaces) + "$"
+            after = "$" + after.trimmingCharacters(in: .whitespaces)
+            if after.trimmingCharacters(in: CharacterSet(charactersIn: "$ ")).isEmpty { after = "" }
+        }
+        let clean = { (s: String) in s.replacingOccurrences(of: "$$", with: "").trimmingCharacters(in: .whitespaces) }
+        return (clean(before), clean(after))
+    }
+
+    /// The answer as it is shown: math typeset as math ("9", "x^2", "\frac{1}{2}"), words as words ("per").
+    static func answerMarkdown(_ answer: String) -> String {
+        let a = answer.trimmingCharacters(in: .whitespaces)
+        if a.contains("$") { return a }
+        let words = a.split(separator: " ").count > 1 || (a.count > 1 && a.allSatisfy(\.isLetter))
+        return words ? a : "$\(a)$"
+    }
+
+    /// Unescaped dollar signs.
+    private static func dollars(_ s: String) -> Int {
+        var n = 0, prev: Character = " "
+        for c in s { if c == "$" && prev != "\\" { n += 1 }; prev = c }
+        return n
+    }
+}

@@ -383,11 +383,9 @@ private struct LessonContent: View {
 
     /// A board line with a blank: the math before it, the blank (she writes in it), the math after it.
     @ViewBuilder private func blankLine(id: String, line: String, answer: String) -> some View {
-        let pieces = line.components(separatedBy: "___")
-        let before = pieces[0].trimmingCharacters(in: .whitespaces)
-        let after = pieces.dropFirst().joined(separator: " ").trimmingCharacters(in: .whitespaces)
+        let (before, after) = BlankLine.pieces(line)
         let outcome = tutor.blankResults[id]
-        let answerMD = answer.contains("$") || answer.contains(" ") || answer.count > 12 ? answer : "$\(answer)$"
+        let answerMD = BlankLine.answerMarkdown(answer)
         HStack(alignment: .center, spacing: 10) {
             Image(systemName: "pencil.line").foregroundStyle(theme.board)
             if !before.isEmpty { MathText(markdown: before, fontSize: 21).frame(width: Self.mathWidth(before)) }
