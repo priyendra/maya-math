@@ -293,10 +293,27 @@ struct ChapterWebView: UIViewRepresentable {
           }
           document.getElementById('c').innerHTML = out.join('');
           // The block the teacher is talking about: highlighted and scrolled into view.
+          // Where the highlighted block is on screen, for the teacher's cursor (only lessons listen).
+          function reportSaid() {
+            const h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.said;
+            if (!h) return;
+            const el = document.querySelector('.said');
+            if (!el) { h.postMessage({ none: 1 }); return; }
+            const r = el.getBoundingClientRect();
+            h.postMessage({ x: r.left, y: r.top, w: r.width, h: r.height });
+          }
+          let saidFrame = false;
+          window.addEventListener('scroll', () => {
+            if (saidFrame) return;
+            saidFrame = true;
+            requestAnimationFrame(() => { saidFrame = false; reportSaid(); });
+          });
           window.pointAt = function (id) {
             document.querySelectorAll('.said').forEach(e => e.classList.remove('said'));
             const el = id && document.querySelector('[data-block="' + id + '"]');
             if (el) { el.classList.add('said'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+            reportSaid();
+            setTimeout(reportSaid, 700);
           };
           const saidID = \((said.map { "\"\($0)\"" }) ?? "null");
           if (saidID) setTimeout(() => window.pointAt(saidID), 150);

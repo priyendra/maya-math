@@ -22,6 +22,10 @@ final class LessonUITests: XCTestCase {
         let check = app.buttons["blankCheck"]
         XCTAssertTrue(check.waitForExistence(timeout: 20), "no fill-in-the-blank")
         sleep(1)
+        // The teacher's cursor is on the blank.
+        let cursor = app.descendants(matching: .any).matching(identifier: "tutorCursor").firstMatch
+        XCTAssertTrue(cursor.exists, "no cursor at the blank")
+        XCTAssertLessThan(abs(cursor.frame.midY - check.frame.midY), 80, "cursor isn't by the blank")
         shot(self, app, "lesson-1-blank")
         check.tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Write your answer in the blank first'")).firstMatch.waitForExistence(timeout: 3))

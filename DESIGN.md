@@ -300,3 +300,7 @@ Running record of product decisions and open discussion topics. Newest decisions
 - "Your turn" problems come from the part's practice sections first (taken from the whole chapter: books keep
   exercises in their own sections), then exercises inside what it teaches. Every part ends with a pause for
   questions; with no problem to try the script says "Any questions?" (not "before you try one") and Go on moves on.
+- **One teacher's cursor across both halves** of a lesson: it glides (0.6 s) between the book (the block being
+  taught, whose on-screen position the book page reports, also while scrolling) and the board (the line being
+  written, or the blank she is filling in). Tip at the target's lower-left corner; hidden when the target is
+  scrolled out of view or the teacher isn't pointing. The halo stays on the book block.

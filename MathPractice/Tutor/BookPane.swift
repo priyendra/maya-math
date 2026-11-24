@@ -9,6 +9,8 @@ final class BookInk: NSObject, ObservableObject {
     let canvas = PKCanvasView()
     weak var web: WKWebView?
     var onTap: () -> Void = {}
+    /// Where the highlighted block is in the book's view (nil: none, or not reported yet).
+    @Published var saidRect: CGRect?
 
     override init() {
         super.init()
@@ -56,16 +58,31 @@ struct BookPane: UIViewRepresentable {
     let pointAt: UUID?
     let ink: BookInk
 
-    final class Coordinator {
+    final class Coordinator: NSObject, WKScriptMessageHandler {
         var section: Int?
         var pointed: UUID?
         var sizeObservation: NSKeyValueObservation?
+        weak var ink: BookInk?
+
+        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard let d = message.body as? [String: Any] else { return }
+            if d["none"] != nil { ink?.saidRect = nil; return }
+            let n = { (k: String) in CGFloat((d[k] as? NSNumber)?.doubleValue ?? 0) }
+            ink?.saidRect = CGRect(x: n("x"), y: n("y"), width: n("w"), height: n("h"))
+        }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
+    static func dismantleUIView(_ view: WKWebView, coordinator: Coordinator) {
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "said")
+    }
+
     func makeUIView(context: Context) -> WKWebView {
-        let view = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let config = WKWebViewConfiguration()
+        context.coordinator.ink = ink
+        config.userContentController.add(context.coordinator, name: "said")
+        let view = WKWebView(frame: .zero, configuration: config)
         view.isOpaque = false
         view.backgroundColor = .systemBackground
         view.accessibilityIdentifier = "lessonBook"
@@ -84,6 +101,7 @@ struct BookPane: UIViewRepresentable {
             c.section = section
             c.pointed = pointAt
             ink.clear()
+            ink.saidRect = nil
             view.loadHTMLString(ReadChapterView.html(chapter, section: section, said: pointAt),
                                 baseURL: Bundle.main.url(forResource: "katex", withExtension: nil))
         } else if c.pointed != pointAt {

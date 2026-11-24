@@ -42,6 +42,7 @@ struct LessonPage: View {
                         .overlay(alignment: .topLeading) { blankButtons }
                         .clipped()
                 }
+                .overlay { cursor(bookHeight: g.size.height / 2, height: g.size.height) }
             }
                 .safeAreaInset(edge: .bottom) { bottomBar }
                 .navigationTitle(MathPlain.render(lesson.title))
@@ -207,6 +208,45 @@ struct LessonPage: View {
         }
     }
 
+    // MARK: The teacher's cursor
+
+    /// One cursor for the whole screen: it glides between the book (the block being taught) and the board (the line
+    /// being written, or the blank she's filling in). Its tip touches the target's lower-left corner.
+    private func cursor(bookHeight: CGFloat, height: CGFloat) -> some View {
+        let target = cursorTarget(bookHeight: bookHeight, height: height)
+        return ZStack(alignment: .topLeading) {
+            if let t = target {
+                Image(systemName: "cursorarrow")
+                    .font(.system(size: 34, weight: .regular))
+                    .foregroundStyle(.black)
+                    .background(Image(systemName: "cursorarrow").font(.system(size: 34, weight: .heavy)).foregroundStyle(.white))
+                    .shadow(color: .black.opacity(0.25), radius: 3, x: 1, y: 2)
+                    .position(x: t.point.x + 12, y: t.point.y + 16)
+                    .transition(.opacity)
+                    .accessibilityIdentifier("tutorCursor")
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .animation(.easeInOut(duration: 0.6), value: target?.key)
+        .allowsHitTesting(false)
+    }
+
+    /// Where the cursor's tip goes, and what it's on (the animation runs when that changes, not while scrolling).
+    private func cursorTarget(bookHeight: CGFloat, height: CGFloat) -> (point: CGPoint, key: String)? {
+        guard tutor.state != .off, tutor.phase != .done else { return nil }
+        let boardTop = bookHeight + 1
+        if let id = tutor.activeBlank ?? tutor.pointer, let f = ink.frames[id] {
+            let y = f.maxY - ink.offset.y
+            guard y > 0, boardTop + y < height - 10 else { return nil }
+            return (CGPoint(x: f.minX - 6, y: boardTop + y + 4), id)
+        }
+        if let block = tutor.bookPointer, let r = book.saidRect {
+            guard r.maxY > 0, r.maxY < bookHeight - 10 else { return nil }
+            return (CGPoint(x: r.minX - 6, y: r.maxY + 4), block.uuidString)
+        }
+        return nil
+    }
+
     // MARK: Blank buttons
 
     /// ✓ (check) and ? (not sure) beside the blank she is filling in. Real buttons over the page, so neither the
@@ -291,9 +331,6 @@ private struct LessonContent: View {
         .frame(maxWidth: 820, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
         .coordinateSpace(name: "page")
-        .overlayPreferenceValue(PartFrames.self) { frames in
-            PointerOverlay(target: tutor.pointer.flatMap { frames[$0] })
-        }
         .background(GeometryReader { g in Color.clear.preference(key: ContentHeight.self, value: g.size.height) })
         .onPreferenceChange(PartFrames.self) { ink.setFrames($0) }
         .onPreferenceChange(ContentHeight.self) { ink.setContentHeight($0) }
