@@ -268,4 +268,5 @@ Running record of product decisions and open discussion topics. Newest decisions
   answer when she moves between questions, every few seconds and on background. Reopening Exam mode returns to a
   running exam (its clock kept running); if its time ran out meanwhile, it hands in what she wrote.
 - The practice question shows the book place ("Ex. 12 · p. 236"); tapping it opens the chapter at that exercise.
-  Clocks stop while she reads; Back returns to the question. Exams have no such link.
+  Clocks stop while she reads; Back returns to the question. Exams have no such link. Looking at the book counts as
+  a hint (she is told before it opens, once per question): the answer doesn't move mastery, the check-in says so.

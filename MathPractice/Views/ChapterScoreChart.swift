@@ -13,7 +13,7 @@ struct ChapterScoreChart: View {
         let answers: [ChapterScore.Answer] = zip(set.allAttempts, set.cleanSeconds).map { a, seconds in
             var cell: CellKey?
             if let q = a.question, !q.isChallenge, a.isGraded, a.effectiveVerdict != .needsReview,
-               a.hintText.isEmpty || a.wasStuck { cell = LearningStore.cellKey(q) }
+               !a.usedHint || a.wasStuck { cell = LearningStore.cellKey(q) }
             return .init(date: a.startedAt, cell: cell, correct: a.effectiveVerdict == .correct, mistake: a.mistakeType, seconds: seconds)
         }
         let points = ChapterScore.history(answers, cells: cells)

@@ -11,6 +11,8 @@ struct Draft: Codable, Equatable {
     /// The question she was on.
     var index = 0
     var savedAt = Date()
+    /// Practice: she looked at the book on this question (counts as a hint).
+    var lookedAtBook: Bool?
 }
 
 enum DraftStore {

@@ -133,3 +133,13 @@ final class DraftStoreTests: XCTestCase {
         XCTAssertNil(DraftStore.load(key))
     }
 }
+
+@MainActor
+final class BookLookTests: XCTestCase {
+    func testLookingAtTheBookCountsAsAHint() {
+        let a = Attempt(mode: .practice)
+        XCTAssertFalse(a.usedHint)
+        a.lookedAtBook = true
+        XCTAssertTrue(a.usedHint)
+    }
+}

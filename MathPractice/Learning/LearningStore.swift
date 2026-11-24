@@ -118,7 +118,7 @@ enum LearningStore {
         // (she gets a similar question later instead).
         guard let q = attempt.question, !q.isChallenge, let chapter = q.chapter,
               attempt.isGraded, attempt.effectiveVerdict != .needsReview,
-              attempt.hintText.isEmpty || attempt.wasStuck,
+              !attempt.usedHint || attempt.wasStuck,
               let skill = skill(for: q, in: chapter, context: context) else { return }
         skill.progress = MasteryModel.apply(correct: attempt.effectiveVerdict == .correct, mistake: attempt.mistakeType,
                                             seconds: attempt.activeSeconds, to: skill.progress, now: attempt.startedAt)

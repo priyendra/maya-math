@@ -50,6 +50,9 @@ struct PracticeSessionView: View {
     @State private var browsing = false
     /// Reading the question's place in the book: clocks stopped.
     @State private var reading = false
+    /// She looked at the book on the current question (counts as a hint), and the "counts as a hint" question.
+    @State private var lookedAtBook = false
+    @State private var confirmBook = false
     private var onHold: Bool { paused || browsing || reading }
     private let ticker = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
@@ -104,6 +107,12 @@ struct PracticeSessionView: View {
                     }
                 }
             }
+            .alert("Look at the book?", isPresented: $confirmBook) {
+                Button("Not now", role: .cancel) {}
+                Button("Open the book") { lookedAtBook = true; reading = true }
+            } message: {
+                Text("Looking at the book counts as a hint: this answer won't change your mastery points, and a similar question comes back later.")
+            }
             // A centered alert (not a popover): hard to miss, and "Keep practicing" is the safe default.
             .alert("End this session?", isPresented: $confirmQuit) {
                 Button("Keep practicing", role: .cancel) {}
@@ -154,7 +163,7 @@ struct PracticeSessionView: View {
                     chip(["Basic", "Medium", "Hard"][max(0, min(2, q.difficulty - 1))], .secondary)
                     if q.isChallenge { chip("Challenge", Theme.classic.attention, icon: "flame.fill") }
                     if q.chapter != nil {
-                        Button { reading = true } label: {
+                        Button { if lookedAtBook { reading = true } else { confirmBook = true } } label: {
                             chip(ChapterLink.label(question: q, base: ChapterLink.base(q)), Theme.classic.accent, icon: "book.pages")
                         }
                         .buttonStyle(.plain)
@@ -299,9 +308,10 @@ struct PracticeSessionView: View {
     /// Saves the ink on the current question (every few seconds and when the app goes to the background).
     private func saveDraft() {
         guard phase == .answering, help != .solution, let q = current else { return }
-        guard canvas.hasInk else { DraftStore.clear(draftKey); return }
-        DraftStore.save(Draft(questionIDs: [q.id], ink: [q.id: canvas.drawing.dataRepresentation()],
-                              seconds: [q.id: questionClock.elapsed()]), key: draftKey)
+        guard canvas.hasInk || lookedAtBook else { DraftStore.clear(draftKey); return }
+        var d = Draft(questionIDs: [q.id], ink: [q.id: canvas.drawing.dataRepresentation()], seconds: [q.id: questionClock.elapsed()])
+        d.lookedAtBook = lookedAtBook
+        DraftStore.save(d, key: draftKey)
     }
 
     /// The question she was writing on when the app closed, if it's recent and still unanswered.
@@ -321,6 +331,7 @@ struct PracticeSessionView: View {
             show(q, pick: Pick(questionID: q.id, cell: cell, category: .weak))
             if let data = d.ink[q.id], let drawing = try? PKDrawing(data: data) { canvas.load(drawing) }
             questionClock.reset(elapsed: d.seconds[q.id] ?? 0)
+            lookedAtBook = d.lookedAtBook ?? false
         } else if let id = startQuestionID, let q = set.questions.first(where: { $0.id == id }) ?? set.chapters.lazy.flatMap(\.questions).first(where: { $0.id == id }),
            let cell = LearningStore.cellKey(q) {
             show(q, pick: Pick(questionID: q.id, cell: cell, category: .weak))
@@ -331,6 +342,7 @@ struct PracticeSessionView: View {
 
     private func show(_ q: Question, pick: Pick) {
         DraftStore.clear(draftKey)
+        lookedAtBook = false
         canvas.clear()
         help = .none
         hintText = ""
@@ -424,6 +436,7 @@ struct PracticeSessionView: View {
         attempt.inkData = drawing.dataRepresentation()
         attempt.renderedImage = ImageUtils.renderDrawing(drawing)
         attempt.hintText = hintText
+        attempt.lookedAtBook = lookedAtBook
         attempt.question = q
         context.insert(attempt)
         try? context.save()
@@ -494,7 +507,7 @@ struct PracticeSessionView: View {
             processed.insert(a.id)
             if let cell = cellOfAttempt[a.id], a.question?.isChallenge == false {
                 // A hinted answer still gets a similar question later.
-                Planner.graded(cell: cell, correct: a.effectiveVerdict != .incorrect && a.hintText.isEmpty, in: &session)
+                Planner.graded(cell: cell, correct: a.effectiveVerdict != .incorrect && !a.usedHint, in: &session)
             }
         }
         if phase == .finishing, sessionAttempts.allSatisfy(\.isGraded) { showFinal() }
@@ -526,6 +539,10 @@ struct FeedbackCard: View {
                 Text(formatClock(attempt.activeSeconds)).monospacedDigit().foregroundStyle(.secondary)
             }
             QuestionPanel(question: question, label: "Question")
+            if attempt.lookedAtBook {
+                Label("You looked at the book for this one, so it counts like a hint.", systemImage: "book.pages")
+                    .font(.subheadline).foregroundStyle(Theme.classic.attention)
+            }
             if !attempt.hintText.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Label("Hint you used", systemImage: "lightbulb.fill").font(.subheadline.bold()).foregroundStyle(Theme.classic.attention)
@@ -631,6 +648,9 @@ struct PreviousQuestionsView: View {
                                 }
                                 if !a.hintText.isEmpty {
                                     Label("You used a hint", systemImage: "lightbulb.fill").font(.subheadline).foregroundStyle(.orange)
+                                }
+                                if a.lookedAtBook {
+                                    Label("You looked at the book", systemImage: "book.pages").font(.subheadline).foregroundStyle(.orange)
                                 }
                                 Label(a.isGraded ? "Checked. You'll see how you did at the next check-in."
                                                  : "Being checked. You'll see how you did at the next check-in.",

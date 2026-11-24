@@ -69,9 +69,18 @@ final class DraftUITests: XCTestCase {
         let link = app.buttons["practiceSeeInChapter"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: 10))
         link.tap()
+        // Looking at the book counts as a hint, and she is told so first.
+        let open = app.buttons["Open the book"].firstMatch
+        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'counts as a hint'")).firstMatch.exists)
+        open.tap()
         XCTAssertTrue(app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 5))
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "practice-chapter"; a.lifetime = .keepAlways; add(a)
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(app.descendants(matching: .any)["writingCanvas"].waitForExistence(timeout: 5))
+        // Second look on the same question: no question asked again.
+        link.tap()
+        XCTAssertFalse(app.buttons["Open the book"].waitForExistence(timeout: 2))
+        app.navigationBars.buttons.firstMatch.tap()
     }
 }

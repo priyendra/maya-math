@@ -247,6 +247,8 @@ final class Attempt {
     var wasStuck: Bool = false
     /// The hint she asked for before answering ("" if none). Hinted answers don't move mastery.
     var hintText: String = ""
+    /// She opened the book at this question while answering. Counts as a hint.
+    var lookedAtBook: Bool = false
     /// Voice conversations with the tutor about this answer, in order.
     @Relationship(deleteRule: .cascade, inverse: \TutorTurn.attempt) var tutorTurns: [TutorTurn] = []
     var question: Question?
@@ -257,6 +259,8 @@ final class Attempt {
     }
 
     var mode: AttemptMode { AttemptMode(rawValue: modeRaw) ?? .practice }
+    /// A hint or a look at the book: the answer doesn't move mastery (she gets a similar question later).
+    var usedHint: Bool { !hintText.isEmpty || lookedAtBook }
 
     var verdict: Verdict {
         get { Verdict(rawValue: verdictRaw) ?? .needsReview }

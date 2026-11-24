@@ -20,7 +20,7 @@ final class TeacherFeedback: ObservableObject {
                                           level: q.difficulty, verdict: a.effectiveVerdict,
                                           mistake: a.correction == nil ? a.mistakeType : nil,
                                           errorStep: a.correction == nil ? a.errorStep : "",
-                                          helped: a.wasStuck || !a.hintText.isEmpty)
+                                          helped: a.wasStuck || a.usedHint)
         }
     }
 
