@@ -13,7 +13,7 @@ final class ScreenTourUITests: XCTestCase {
         app.buttons["Settings"].tap(); sleep(1); snap(app, "tour-settings")
         app.buttons["Done"].firstMatch.tap(); sleep(1)
         chapter.tap(); sleep(1)
-        for (label, name) in [("My answers", "tour-answers"), ("My progress", "tour-progress"), ("Read & learn", "tour-read")] {
+        for (label, name) in [("My answers", "tour-answers"), ("My progress", "tour-progress"), ("Learn", "tour-read")] {
             let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
             guard tile.waitForExistence(timeout: 5) else { continue }
             tile.tap(); sleep(2); snap(app, name)

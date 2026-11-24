@@ -1,7 +1,7 @@
 import XCTest
 
 final class LessonUITests: XCTestCase {
-    /// Chapter → Read & learn → Teach me (canned scripts): the book is on top, the teacher's board below. Part 1:
+    /// Chapter → Learn → Teach me (canned scripts): the book is on top, the teacher's board below. Part 1:
     /// a fill-in-the-blank (✓ with nothing written asks her to write; written → checked → carries on), a question at
     /// the questions pause, a wrong then right your-turn. Part 2: "?" on the blank shows the answer … lesson done.
     func testTakeALesson() {

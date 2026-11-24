@@ -281,7 +281,7 @@ Running record of product decisions and open discussion topics. Newest decisions
   answers per level and mastered none. Levels with mistakes still get most of the time (each miss costs ~3 more
   questions); check that levels with mistakes keep at least half the practice time.
 - Lesson "your turn" answers record time from the problem appearing to Check.
-- **Lessons are taught on the book.** "Read & learn" (one tile) opens the chapter: the book's sections on the left
+- **Lessons are taught on the book.** "Learn" (one tile) opens the chapter: the book's sections on the left
   (✓ taught, half circle started), the section on the right, and for any section or group of sections "Teach me"
   (its lessons in order; "Next lesson" stays within what she asked for; lessons are planned on first use) and
   "Practise" (practice limited to that section or group). The separate Lessons list is gone.

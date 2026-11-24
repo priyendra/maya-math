@@ -118,7 +118,7 @@ struct ChapterHomeView: View {
                     if !chapter.needsRereading && !chapter.blocks.isEmpty {
                         NavigationLink { ReadChapterView(chapter: chapter) } label: {
                             let done = chapter.lessons.filter { $0.status == .done }.count
-                            LinkTile(title: "Read & learn",
+                            LinkTile(title: "Learn",
                                      subtitle: chapter.lessons.isEmpty ? "The book, with a teacher for any section"
                                                                        : "The book, with a teacher · \(done) of \(chapter.lessons.count) lessons taught",
                                      icon: "book.fill", color: theme.learn)
