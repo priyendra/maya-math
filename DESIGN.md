@@ -250,8 +250,12 @@ Running record of product decisions and open discussion topics. Newest decisions
   **How long** 20 · 30 · 45 min = the time limit. The exam holds as many questions as fit in that time at that pace.
   "Her own time" = question estimate × her typical (median) time ÷ estimate on right practice answers for that skill
   level (≥3), else for that level, else the estimate. The app never suggests a setting; she decides.
-  Exam length is no longer a chapter / study plan setting. "My exams" (chapter and plan pages) lists every exam with
-  its settings, score and time; tapping one shows its question-by-question results.
+  Exam length is no longer a chapter / study plan setting. "My exams" (a link on the exam start screen) lists every
+  exam with its settings, score and time; tapping one shows its question-by-question results.
+- The exam clock is strict wall-clock time from Start: it keeps running if she leaves the app, is always at the top
+  of every question, turns red for the last 5 minutes, and the exam hands itself in at 0 with no grace ("Time's up").
+  She can move between questions and change answers until then. Answers are graded with the same grader as practice
+  (any valid method), only after hand-in; nothing is shown until the results.
 - Breaks are not pace: an answer's time is an outlier when log(time ÷ estimate) is more than 2 SD above her mean on
   that level AND over 3 minutes (a fixed cutoff would drop real 5-minute word problems). Outliers are left out of pace
   figures and count as her typical time in practice-time totals (chart, practice line, feedback timer); the measured

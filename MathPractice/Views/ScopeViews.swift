@@ -40,12 +40,6 @@ struct ScopeHomeView: View {
                         LinkTile(title: "My progress", subtitle: "Skills, mistake patterns, practice days", icon: "chart.bar.fill", color: theme.done)
                     }
                     .accessibilityIdentifier("scopeProgress")
-                    NavigationLink { ExamHistoryView(set: set) } label: {
-                        let n = ExamHistoryView.exams(set).count
-                        LinkTile(title: "My exams", subtitle: n == 0 ? "Every exam you take, with its score" : "\(n) exam\(n == 1 ? "" : "s") taken",
-                                 icon: "timer", color: theme.accent2)
-                    }
-                    .accessibilityIdentifier("examsTile")
                     Button { editing = true } label: {
                         LinkTile(title: "Edit study plan", subtitle: "What's on the test, test date", icon: "slider.horizontal.3", color: theme.accent2)
                     }

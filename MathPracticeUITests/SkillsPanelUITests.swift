@@ -82,9 +82,7 @@ final class SkillsPanelUITests: XCTestCase {
         exam.tap(); sleep(2); save(app, dir, "e1-exam-intro")
         app.buttons["Hardest"].firstMatch.tap(); app.buttons["Fast"].firstMatch.tap(); sleep(1); save(app, dir, "e2-hardest-fast")
         app.buttons["Fastest"].firstMatch.tap(); app.buttons["20 min"].firstMatch.tap(); sleep(1); save(app, dir, "e3-hardest-fastest-20")
-        app.buttons["Close"].firstMatch.tap(); sleep(1)
-        let tile = app.buttons["examsTile"].firstMatch
-        if tile.waitForExistence(timeout: 3) { tile.tap(); sleep(2); save(app, dir, "e4-exam-history") }
+
     }
 
 }

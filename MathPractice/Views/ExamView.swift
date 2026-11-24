@@ -24,6 +24,7 @@ struct ExamView: View {
     @State private var gradedCount = 0
     @State private var now = Date()
     @State private var confirmSubmit = false
+    @State private var timedOut = false
     @State private var graphPaper = false
     @StateObject private var canvas = CanvasController()
     @AppStorage("examDifficulty") private var difficultyRaw = 0
@@ -37,10 +38,20 @@ struct ExamView: View {
     private var difficulty: ExamDifficulty { ExamDifficulty(rawValue: difficultyRaw) ?? .mixed }
     private var pace: ExamPace { ExamPace(rawValue: paceRaw) ?? .own }
     private var length: ExamLength { ExamLength.allCases[min(max(lengthIndex, 0), ExamLength.allCases.count - 1)] }
-    /// The time limit she chose.
-    private var plannedLimit: TimeInterval { TimeInterval(length.rawValue * 60) }
+    /// The time limit she chose (DEBUG: -examSeconds N for UI tests).
+    private var plannedLimit: TimeInterval {
+        #if DEBUG
+        if let i = ProcessInfo.processInfo.arguments.firstIndex(of: "-examSeconds"),
+           i + 1 < ProcessInfo.processInfo.arguments.count, let s = Double(ProcessInfo.processInfo.arguments[i + 1]) { return s }
+        #endif
+        return TimeInterval(length.rawValue * 60)
+    }
     private var timeLimit: TimeInterval { TimeInterval(exam?.timeLimitSeconds ?? Int(plannedLimit)) }
-    private var remaining: TimeInterval { timeLimit - clock.elapsed(now: now) }
+    /// Strict wall-clock time: it keeps running if she leaves the app, as on a real test.
+    private var elapsed: TimeInterval { exam.map { now.timeIntervalSince($0.startedAt) } ?? 0 }
+    private var remaining: TimeInterval { timeLimit - elapsed }
+    /// The last 5 minutes: the clock turns red.
+    private var finalMinutes: Bool { remaining <= 5 * 60 }
 
     var body: some View {
         NavigationStack {
@@ -50,13 +61,18 @@ struct ExamView: View {
                 case .running: running
                 case .grading:
                     VStack(spacing: 16) {
+                        if timedOut {
+                            Label("Time's up — your exam was handed in.", systemImage: "timer")
+                                .font(.title2.bold()).foregroundStyle(Theme.classic.notQuite)
+                                .accessibilityIdentifier("timesUp")
+                        }
                         ProgressView(value: Double(gradedCount), total: Double(max(attempts.count, 1)))
                             .frame(maxWidth: 400)
                         Text("Grading your exam… \(gradedCount)/\(attempts.count)")
                     }
                 case .results:
                     ExamResultsView(attempts: attempts, timeLimit: timeLimit,
-                                    timeUsed: clock.elapsed(), targets: allowed, pace: pace) { dismiss() }
+                                    timeUsed: min(clock.elapsed(), timeLimit), targets: allowed, pace: pace, timedOut: timedOut) { dismiss() }
                 }
             }
             .toolbar {
@@ -67,7 +83,7 @@ struct ExamView: View {
         }
         .onReceive(ticker) { t in
             now = t
-            if phase == .running && remaining <= 0 { submitAll() }
+            if phase == .running && remaining <= 0 { timedOut = true; submitAll() }
         }
         .onChange(of: grading.version) { _, _ in
             guard phase == .grading else { return }
@@ -75,7 +91,12 @@ struct ExamView: View {
             if gradedCount == attempts.count { phase = .results }
         }
         .onChange(of: scenePhase) { _, p in
-            if p == .active { clock.resume(); questionClock.resume() } else { clock.pause(); questionClock.pause() }
+            // The exam clock never pauses (strict); time on the current question does.
+            if p == .active {
+                now = Date()
+                questionClock.resume()
+                if phase == .running && remaining <= 0 { timedOut = true; submitAll() }
+            } else { questionClock.pause() }
         }
         .alert("Hand in your exam?", isPresented: $confirmSubmit) {
             Button("Keep working", role: .cancel) {}
@@ -106,6 +127,11 @@ struct ExamView: View {
             Button { begin() } label: { Text("Start exam").font(.headline).padding(.horizontal, 24) }
                 .buttonStyle(.borderedProminent).tint(Theme.classic.accent2).controlSize(.large)
                 .disabled(planned.isEmpty)
+            NavigationLink { ExamHistoryView(set: set) } label: {
+                let n = ExamHistoryView.exams(set).count
+                Label(n == 0 ? "My exams" : "My exams (\(n))", systemImage: "clock.arrow.circlepath")
+            }
+            .accessibilityIdentifier("myExams")
         }
         .onAppear { plan() }
         .onChange(of: difficultyRaw) { _, _ in plan() }
@@ -141,8 +167,12 @@ struct ExamView: View {
                 }
                 Spacer()
                 Label(formatClock(remaining), systemImage: "timer")
-                    .font(.title3.bold().monospacedDigit())
-                    .foregroundStyle(remaining < 120 ? Theme.classic.notQuite : .primary)
+                    .font(.title2.bold().monospacedDigit())
+                    .foregroundStyle(finalMinutes ? Color.white : Color.primary)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .background(finalMinutes ? Color.red : Color.secondary.opacity(0.12), in: Capsule())
+                    .animation(.easeInOut, value: finalMinutes)
+                    .accessibilityIdentifier("examClock")
                 Button("Hand in") { if questions.indices.contains(index) { drawings[questions[index].id] = canvas.drawing }; confirmSubmit = true }.buttonStyle(.borderedProminent).tint(Theme.classic.accent2)
             }
             .padding()
@@ -191,8 +221,11 @@ struct ExamView: View {
         session.paceRaw = paceRaw
         session.allowedSeconds = ids.map { allowed[$0] ?? 0 }
         session.chapter = set.chapters.first
+        session.startedAt = Date()
         context.insert(session)
         exam = session
+        now = Date()
+        timedOut = false
         clock.reset()
         questionClock.reset()
         canvas.clear()
@@ -212,9 +245,10 @@ struct ExamView: View {
 
     private func submitAll() {
         guard phase == .running, let exam else { return }
+        confirmSubmit = false
         go(to: index) // bank time on the current question
         clock.pause()
-        exam.finishedAt = Date()
+        exam.finishedAt = min(Date(), exam.startedAt.addingTimeInterval(timeLimit))
         let start = exam.startedAt
         attempts = questions.map { q in
             let a = Attempt(mode: .exam, startedAt: start)
@@ -244,6 +278,7 @@ struct ExamResultsView: View {
     let targets: [UUID: Double]
     var pace: ExamPace = .own
     var showDone = true
+    var timedOut = false
     let onDone: () -> Void
     @State private var selected: Attempt?
 
@@ -251,6 +286,12 @@ struct ExamResultsView: View {
         let stats = SessionStats(attempts: attempts)
         List {
             Section {
+                if timedOut {
+                    Label("Time's up — your exam was handed in.", systemImage: "timer")
+                        .font(.headline).foregroundStyle(Theme.classic.notQuite)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("timesUp")
+                }
                 HStack(spacing: 40) {
                     VStack { Text("\(stats.correct)/\(stats.total)").font(.largeTitle.bold()); Text("correct") }
                     VStack { Text("\(Int(stats.accuracy * 100))%").font(.largeTitle.bold()); Text("score") }
