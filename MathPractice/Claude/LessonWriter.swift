@@ -150,8 +150,27 @@ enum LessonWriter {
             guard let block = bookBlock(id, input.blocks) else { return "POINT: none" }
             return "POINT: book:\(block.uuidString)"
         }.joined(separator: "\n")
+        let narrationAsked = askBeforeBlanks(narration)
         let ids = dto.your_turn.compactMap { input.questions[$0.lowercased().trimmingCharacters(in: .whitespaces)] }
-        return LessonPartScript(items: [], narration: narration, questionIDs: ids, bookBlocks: input.blocks)
+        return LessonPartScript(items: [], narration: narrationAsked, questionIDs: ids, bookBlocks: input.blocks)
+    }
+
+    /// Every blank comes right after a spoken question, so she knows it's her turn: a blank after anything else gets
+    /// a generic question in front of it.
+    static func askBeforeBlanks(_ narration: String) -> String {
+        var out: [String] = []
+        for line in narration.components(separatedBy: "\n") {
+            if case .blank? = TutorScriptParser.beat(line) {
+                let asked: Bool
+                if let prev = out.last(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }),
+                   case let .say(t)? = TutorScriptParser.beat(prev) {
+                    asked = t.trimmingCharacters(in: .whitespaces).hasSuffix("?")
+                } else { asked = false }
+                if !asked { out.append("SAY: Can you fill in the blank?") }
+            }
+            out.append(line)
+        }
+        return out.joined(separator: "\n")
     }
 
     /// "k3" → the third book block.

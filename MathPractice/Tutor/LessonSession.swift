@@ -122,7 +122,8 @@ final class LessonSession: VoiceTutor {
             elements += s.items.map(Element.item)   // older scripts only (they are rewritten when reached)
             bookPointer = nil
             if let first = parts[i].sectionIDs.first { bookSection = first }
-            beats = s.narration.components(separatedBy: "\n").compactMap(TutorScriptParser.beat)
+            // Scripts saved before blanks always followed a question get one now.
+            beats = LessonWriter.askBeforeBlanks(s.narration).components(separatedBy: "\n").compactMap(TutorScriptParser.beat)
             beatIndex = 0
             phase = .narrating
             play()

@@ -291,7 +291,9 @@ Running record of product decisions and open discussion topics. Newest decisions
   (Pencil; fingers scroll); her questions send a picture of both.
 - **Quick questions are fill-in-the-blanks on the board**, never a separate card or voice answer: a board line with
   a dashed blank, ✓ (check; lit once she has written) and ? (not sure → the answer is shown) beside it. Claude reads
-  the handwriting against the expected answer; the teacher says "Yes!" / "Not quite" plus a one-line why, then
+  the handwriting against the expected answer. Every blank comes right after a spoken question that asks for exactly
+  what goes in it (the prompt requires it; the app adds "Can you fill in the blank?" when a script misses one, also
+  for saved scripts); the teacher says "Yes!" / "Not quite" plus a one-line why, then
   carries on. No effect on mastery. Scripts ask at least one per worked example, about one every four to six
   sentences, mostly easy, one short unambiguous answer. Older scripts (a re-drawn copy of the book, no blanks) are
   written again when reached.

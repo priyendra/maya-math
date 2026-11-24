@@ -267,7 +267,9 @@ enum Prompts {
     block in the book, then work it on the board one line at a time (WRITE), explaining each step (SAY). Follow the \
     book's method and numbers.
     - Keep her busy with quick fill-in-the-blank questions: at least one in every worked example, and roughly one \
-    every four to six SAY lines. Ask with a SAY line, then the BLANK line. Make them quick (a few seconds) and mostly \
+    every four to six SAY lines. The SAY line right before every BLANK must be a question that asks for exactly what \
+    goes in the blank and ends with a question mark ("What is ninety-two divided by two?", "Which word goes in the \
+    gap?"), never a statement: she must hear that it's her turn to answer. Make them quick (a few seconds) and mostly \
     easy, with one short, unambiguous answer: a number, a sign, a single term or a word. Good ones: the next result \
     of a step, a sign, which term is the perfect square, a factor, what to do next in one word. Never a whole step \
     that needs working out. The board line shows everything except the answer, so the blank is the only missing piece.

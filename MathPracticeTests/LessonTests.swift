@@ -195,6 +195,22 @@ final class LessonTests: XCTestCase {
         XCTAssertNil(LessonWriter.bookBlock("b1", [b1, b2]))
     }
 
+    /// A blank always follows a spoken question; one after a statement gets a question in front.
+    @MainActor
+    func testBlankAlwaysFollowsAQuestion() {
+        let script = """
+        SAY: Let's divide by two one more time.
+        BLANK: $40 : 46 = 20 :$ ___ || 23 || Forty-six divided by two is twenty-three.
+        SAY: What is ninety-two divided by two?
+        BLANK: $92 \\div 2 =$ ___ || 46
+        """
+        let lines = LessonWriter.askBeforeBlanks(script).components(separatedBy: "\n")
+        XCTAssertEqual(lines.count, 5)
+        XCTAssertEqual(lines[1], "SAY: Can you fill in the blank?")
+        XCTAssertEqual(lines[3], "SAY: What is ninety-two divided by two?")
+        XCTAssertTrue(lines[4].hasPrefix("BLANK:"))
+    }
+
     /// A blank: the board line (with ___), the answer, and the spoken why.
     func testBlankLine() {
         XCTAssertEqual(TutorScriptParser.beat("BLANK: $= x^2 -$ ___ || 9 || Three squared is nine."),
