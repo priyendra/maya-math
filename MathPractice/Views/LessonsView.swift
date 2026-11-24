@@ -164,7 +164,7 @@ struct LessonsView: View {
                         Text(MathPlain.render(l.title)).font(theme.font(.cardTitle)).foregroundStyle(.primary)
                             .multilineTextAlignment(.leading)
                         if !l.summary.isEmpty {
-                            Text(l.summary).font(theme.font(.label)).fontWeight(.regular).foregroundStyle(.secondary)
+                            Text(MathPlain.render(l.summary)).font(theme.font(.label)).fontWeight(.regular).foregroundStyle(.secondary)
                                 .lineLimit(isOpen ? nil : 2).multilineTextAlignment(.leading)
                         }
                         Label(l.status == .inProgress ? "Part \(min(l.partsDone + 1, l.parts.count)) of \(l.parts.count)"
@@ -234,7 +234,7 @@ struct LessonsView: View {
                     ForEach(skipped, id: \.self) { s in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(MathPlain.render(titles[s.section_id] ?? "Section")).font(theme.font(.body).weight(.medium))
-                            Text(s.reason).font(theme.font(.label)).fontWeight(.regular).foregroundStyle(.secondary)
+                            Text(MathPlain.render(s.reason)).font(theme.font(.label)).fontWeight(.regular).foregroundStyle(.secondary)
                         }
                     }
                 }

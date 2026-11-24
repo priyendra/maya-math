@@ -151,7 +151,7 @@ struct ChapterHomeView: View {
             .frame(maxWidth: .infinity)
         }
         .themedBackground(theme)
-        .navigationTitle(chapter.title)
+        .navigationTitle(MathPlain.render(chapter.title))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { showSettings = true } label: { Label("Chapter settings", systemImage: "slider.horizontal.3") }

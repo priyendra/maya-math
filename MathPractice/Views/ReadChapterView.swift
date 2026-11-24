@@ -25,7 +25,7 @@ struct ReadChapterView: View {
                 tapped = chapter.questions.first { $0.id.uuidString == id }
             }
         }
-        .navigationTitle(chapter.title)
+        .navigationTitle(MathPlain.render(chapter.title))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if selected == nil { selected = nodes.first?.id } }
         .sheet(item: $tapped) { q in NavigationStack { QuestionDetailView(question: q) } }
@@ -209,14 +209,14 @@ struct QuestionDetailView: View {
             }
             Section("About this question") {
                 if let chapter = question.chapter, chapter.outline.indices.contains(question.sectionID) {
-                    LabeledContent("Section", value: ChapterProcessor.sectionTitle(question.sectionID, chapter.outline))
+                    LabeledContent("Section", value: MathPlain.render(ChapterProcessor.sectionTitle(question.sectionID, chapter.outline)))
                 }
                 if !question.printedNumber.isEmpty { LabeledContent("Exercise", value: question.printedNumber) }
                 if let p = question.printedPage { LabeledContent("Page", value: "\(p)") }
-                LabeledContent("Concept", value: question.concept?.name ?? "—")
+                LabeledContent("Concept", value: MathPlain.render(question.concept?.name ?? "—"))
                 LabeledContent("Difficulty", value: ["Basic", "Medium", "Hard"][max(0, min(2, question.difficulty - 1))])
                 if question.isChallenge { LabeledContent("Challenge", value: "Yes — practiced as a stretch, never on exams") }
-                if let key = question.answerKeyAnswer, !key.isEmpty { LabeledContent("Book answer", value: key) }
+                if let key = question.answerKeyAnswer, !key.isEmpty { MathRow(label: "Book answer", value: key) }
             }
             Section {
                 Picker("Use in practice", selection: use) {
@@ -225,11 +225,11 @@ struct QuestionDetailView: View {
                     Text("Never").tag(Use.never)
                 }
                 if !question.pencilOK {
-                    Text("Left out because it needs more than a pencil" + (question.pencilReason.isEmpty ? "." : ": \(question.pencilReason)."))
+                    Text("Left out because it needs more than a pencil" + (question.pencilReason.isEmpty ? "." : ": \(MathPlain.render(question.pencilReason))."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if question.status == .retired, let note = question.reviewNote {
-                    Text(note).font(.caption).foregroundStyle(.orange)
+                    Text(MathPlain.render(note)).font(.caption).foregroundStyle(.orange)
                 }
                 Button("Practice this question") { practicing = true }.disabled(!question.isAvailable)
             }

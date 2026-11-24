@@ -131,7 +131,7 @@ struct LessonPage: View {
                 case .speaking:
                     Image(systemName: "speaker.wave.2.fill").foregroundStyle(.blue).symbolEffect(.variableColor.iterative)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(tutor.caption).lineLimit(2)
+                        Text(MathPlain.render(tutor.caption)).lineLimit(2)
                         Text("Tap the page to ask a question").font(.caption).foregroundStyle(.secondary)
                     }
                 case .listening:

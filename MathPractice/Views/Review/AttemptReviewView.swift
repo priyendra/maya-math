@@ -7,6 +7,7 @@ struct AttemptReviewView: View {
     @Environment(\.modelContext) private var context
     @State private var mistake: MistakeType = .procedural
     @State private var showSolution = false
+    @ObservedObject private var grading = GradingQueue.shared
 
     var body: some View {
         Form {
@@ -27,10 +28,23 @@ struct AttemptReviewView: View {
                 LabeledContent("Time", value: "\(Int(attempt.activeSeconds)) s")
                 LabeledContent("Mode", value: attempt.mode == .exam ? "Exam" : attempt.mode == .lesson ? "Lesson" : "Practice")
             }
+            let _ = grading.version
+            if !attempt.isGraded {
+                Section("Claude's grading") {
+                    HStack(spacing: 12) {
+                        ProgressView()
+                        Text("Checking your answer again…")
+                    }
+                    if let e = attempt.gradingError {
+                        Text(e.contains("API key") ? "Couldn't check it: \(e)" : "Couldn't check it yet (\(e)). It will try again by itself.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            } else {
             Section("Claude's grading") {
-                HStack { VerdictBadge(verdict: attempt.verdict); Text(attempt.verdict.rawValue.capitalized) }
-                if !attempt.transcribedAnswer.isEmpty { LabeledContent("Claude read your answer as", value: attempt.transcribedAnswer) }
-                if !attempt.ownAnswer.isEmpty { LabeledContent("Claude's own answer", value: attempt.ownAnswer) }
+                HStack { VerdictBadge(verdict: attempt.verdict); Text(attempt.verdict.label) }
+                if !attempt.transcribedAnswer.isEmpty { MathRow(label: "Claude read your answer as", value: attempt.transcribedAnswer) }
+                if !attempt.ownAnswer.isEmpty { MathRow(label: "Claude's own answer", value: attempt.ownAnswer) }
                 if let m = attempt.mistakeType { LabeledContent("Mistake type", value: m.displayName) }
                 if !attempt.errorStep.isEmpty { MathText(markdown: "**Where it went wrong:** \(attempt.errorStep)", fontSize: 16) }
                 if !attempt.feedback.isEmpty { MathText(markdown: attempt.feedback, fontSize: 16) }
@@ -38,6 +52,11 @@ struct AttemptReviewView: View {
                 if !attempt.workedSolution.isEmpty {
                     Button { showSolution = true } label: { Label("Show solution", systemImage: "doc.text.magnifyingglass") }
                 }
+                if attempt.verdict == .needsReview && attempt.correction == nil {
+                    Button { grading.regrade(attempt, context: context) } label: { Label("Grade it again", systemImage: "arrow.clockwise") }
+                        .accessibilityIdentifier("regrade")
+                }
+            }
             }
             if !attempt.tutorTurns.isEmpty {
                 Section("Your talks with the tutor") {
@@ -46,7 +65,7 @@ struct AttemptReviewView: View {
             }
             Section {
                 if let override = attempt.correction {
-                    HStack { Text("You changed the grade to:"); VerdictBadge(verdict: override); Text(override.rawValue.capitalized) }
+                    HStack { Text("You changed the grade to:"); VerdictBadge(verdict: override); Text(override.label) }
                     Button("Undo my change") { setCorrection(nil) }
                 }
                 Button("My answer was actually correct") { setCorrection(.correct) }
@@ -107,6 +126,29 @@ struct TutorTurnRow: View {
                 }.joined(separator: "\n\n")
                 MathText(markdown: md, fontSize: 16)
             }
+        }
+    }
+}
+
+/// A label above a value written as Markdown with $...$ LaTeX (Claude's answers, the book's answer key).
+struct MathRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label).foregroundStyle(.secondary).font(.subheadline)
+            MathText(markdown: value, fontSize: 18)
+        }
+    }
+}
+
+extension Verdict {
+    var label: String {
+        switch self {
+        case .correct: return "Correct"
+        case .incorrect: return "Not quite"
+        case .needsReview: return "Not sure — to check"
         }
     }
 }

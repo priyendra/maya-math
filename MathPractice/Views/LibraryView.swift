@@ -202,7 +202,7 @@ struct FolderView: View {
     @ViewBuilder
     private func chapterRow(_ chapter: Chapter) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(chapter.title).font(theme.font(.cardTitle))
+            Text(MathPlain.render(chapter.title)).font(theme.font(.cardTitle))
             switch chapter.status {
             case .processing:
                 ProgressView(value: chapter.progressFraction) { Text(chapter.progressMessage).font(.caption) }

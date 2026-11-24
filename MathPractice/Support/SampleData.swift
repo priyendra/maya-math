@@ -64,6 +64,7 @@ enum SampleData {
             if ProcessInfo.processInfo.arguments.contains("-seedInFolder"), first.folder == nil { putInFolders(first, context) }
             if ProcessInfo.processInfo.arguments.contains("-seedLessons") { seedLessons(first, context) }
             seedGraded(first, context)
+            seedToCheck(first, context)
             return
         }
 
@@ -127,8 +128,31 @@ enum SampleData {
         if ProcessInfo.processInfo.arguments.contains("-seedInFolder") { putInFolders(chapter, context) }
         if ProcessInfo.processInfo.arguments.contains("-seedLessons") { seedLessons(chapter, context) }
         seedGraded(chapter, context)
+        seedToCheck(chapter, context)
         try? context.save()
         ChapterProcessor.shared.ensureSkills(chapter, context: context)
+    }
+
+    /// An answer Claude wasn't sure about, with math in its fields (for the answer page and "Grade it again").
+    static func seedToCheck(_ chapter: Chapter, _ context: ModelContext) {
+        guard ProcessInfo.processInfo.arguments.contains("-seedToCheck"),
+              !chapter.allAttempts.contains(where: { $0.isGraded && $0.verdict == .needsReview }),
+              let q = chapter.questions.first(where: { $0.difficulty == 1 }) else { return }
+        let a = Attempt(mode: .practice)
+        a.question = q
+        a.isGraded = true
+        a.verdict = .needsReview
+        a.activeSeconds = 75
+        a.renderedImage = UIGraphicsImageRenderer(size: CGSize(width: 400, height: 120)).image { _ in
+            UIColor.white.setFill(); UIRectFill(CGRect(x: 0, y: 0, width: 400, height: 120))
+            ("x = 3/2 or x = -4" as NSString).draw(at: CGPoint(x: 20, y: 40), withAttributes: [.font: UIFont.systemFont(ofSize: 32)])
+        }.pngData()
+        a.transcribedAnswer = "$x = \\frac{3}{2}$ or $x = -4$"
+        a.ownAnswer = "$x=\\pm\\tfrac{3}{2}$"
+        a.graderConfidence = 0.4
+        a.feedback = "I couldn't check this one for sure."
+        context.insert(a)
+        try? context.save()
     }
 
     /// A graded wrong practice answer (for the check-in and tutor tests); re-added if an earlier test cleared history.

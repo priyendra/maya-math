@@ -190,3 +190,8 @@ Running record of product decisions and open discussion topics. Newest decisions
   mastered = top level mastered) with the summary tiles. Known issues: passed levels show full though only ~3 steps
   were earned; a level that re-locked isn't shown; "Per concept" still below.
 - Known: the chart's time axis counts only answers that moved a score, so it ends slightly short of total practice time.
+- Math is rendered everywhere Claude's text can contain it: answers on the answer page and the book
+  answer use KaTeX (`MathRow`); short labels (chapter/section/skill names, lesson summaries, tutor captions) use
+  Unicode via `MathPlain`. **"Grade it again"** on an answer Claude wasn't sure about re-runs grading; the earlier
+  grading log is kept below the new one, and a question the first grading retired as flawed comes back if the new
+  grading finds it fine. Verdicts read "Correct / Not quite / Not sure — to check".

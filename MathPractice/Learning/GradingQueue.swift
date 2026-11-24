@@ -22,6 +22,21 @@ final class GradingQueue: ObservableObject {
         pump(context: context)
     }
 
+    /// Grades an answer again from scratch (e.g. one Claude wasn't sure about). The earlier grading log is kept
+    /// at the end of the new one, so we can compare the two later.
+    func regrade(_ attempt: Attempt, context: ModelContext) {
+        guard attempt.isGraded, !inFlight.contains(attempt.id) else { return }
+        previousLogs[attempt.id] = attempt.graderLog
+        attempt.isGraded = false
+        attempt.gradingError = nil
+        try? context.save()
+        version += 1
+        enqueue(attempt, context: context)
+    }
+
+    private var previousLogs: [UUID: String] = [:]
+    static let flawedNote = "Claude found a problem with this question while grading"
+
     /// Re-queues anything left ungraded (app relaunch, network failures).
     func resumePending(context: ModelContext) {
         let pending = (try? context.fetch(FetchDescriptor<Attempt>(predicate: #Predicate { !$0.isGraded }))) ?? []
@@ -85,12 +100,21 @@ final class GradingQueue: ObservableObject {
         attempt.workedSolution = r.workedSolution
         attempt.graderConfidence = r.confidence
         attempt.graderLog = r.graderLog
+        if let previous = previousLogs.removeValue(forKey: attempt.id) {
+            attempt.graderLog += "\n\n--- earlier grading (before \"Grade it again\") ---\n" + previous
+            // The earlier grading took the question out as flawed; this one found it fine, so bring it back.
+            if !r.questionFlawed, let q = attempt.question, q.status == .retired,
+               q.reviewNote?.hasPrefix(Self.flawedNote) == true {
+                q.status = .ok
+                q.reviewNote = nil
+            }
+        }
         attempt.gradingError = nil
         attempt.isGraded = true
         if r.questionFlawed, let q = attempt.question {
             // A flawed question doesn't count against her; take it out of practice.
             q.status = .retired
-            q.reviewNote = "Claude found a problem with this question while grading: \(r.feedback)"
+            q.reviewNote = "\(Self.flawedNote): \(r.feedback)"
             attempt.verdict = .needsReview
             attempt.feedback = "This question seems to have a problem (it may be missing information), so it won't count. " + r.feedback
         }

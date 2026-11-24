@@ -80,6 +80,7 @@
 		C9121E4B2CBE646909447359 /* TutorLiveProbeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */; };
 		CC9CAAFBBE05499BD6F34B64 /* ClaudeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC42C56EAF9BE0D0E30CA94 /* ClaudeServices.swift */; };
 		D003A678215210C677EECF6E /* LearningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFEA599FF608A11C79131F6 /* LearningTests.swift */; };
+		D6CB12D480EF27DEBA4DB4E5 /* RegradeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA941616DD5E93DD1699AF11 /* RegradeUITests.swift */; };
 		E1F911CB48CC2A3349235C17 /* ConceptPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522359F6EA0EBEE54210C57F /* ConceptPath.swift */; };
 		E8CA688ECF4C09DF64F66CCB /* LessonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EDDEEFC3356461554AEFFC /* LessonsView.swift */; };
 		EDAD19C0E01133D964C70366 /* CanvasLabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39A1B0FD6DA9CA55459FBDE /* CanvasLabUITests.swift */; };
@@ -174,6 +175,7 @@
 		B9285B6407ACA92DBB8BD449 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasUITests.swift; sourceTree = "<group>"; };
 		BA225F2DCADFCF67BE911E34 /* ChapterScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterScoreChart.swift; sourceTree = "<group>"; };
+		BA941616DD5E93DD1699AF11 /* RegradeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegradeUITests.swift; sourceTree = "<group>"; };
 		BBC42C56EAF9BE0D0E30CA94 /* ClaudeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeServices.swift; sourceTree = "<group>"; };
 		BC349D0C021DE632668D9028 /* katex */ = {isa = PBXFileReference; lastKnownFileType = folder; name = katex; path = MathPractice/Resources/katex; sourceTree = SOURCE_ROOT; };
 		BF4CA4157E303F14CC5F0D81 /* TutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorTests.swift; sourceTree = "<group>"; };
@@ -274,6 +276,7 @@
 				2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */,
 				75F7D607EC608E24A41A6259 /* LessonUITests.swift */,
 				A44CD57438440D0BE6E0745E /* LibraryUITests.swift */,
+				BA941616DD5E93DD1699AF11 /* RegradeUITests.swift */,
 				65CB75D511DE7DCCBD2D5478 /* ScanFixUITests.swift */,
 				ADAFD830DD75C79719F8BA99 /* ScreenTourUITests.swift */,
 				0DF72E3D176E1F1B94545C65 /* SkillsGridUITests.swift */,
@@ -582,6 +585,7 @@
 				9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */,
 				EEE89F3E1373A579FEB1CD0F /* LessonUITests.swift in Sources */,
 				0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */,
+				D6CB12D480EF27DEBA4DB4E5 /* RegradeUITests.swift in Sources */,
 				46C498886EE4542552E09E0F /* ScanFixUITests.swift in Sources */,
 				C1CD2607914922CDE5BD1663 /* ScreenTourUITests.swift in Sources */,
 				34E56D1F000ACCACCF53420B /* SkillsGridUITests.swift in Sources */,

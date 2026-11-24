@@ -47,7 +47,7 @@ struct ScopeHomeView: View {
 
     private func summary(_ set: StudySet) -> String {
         let book = set.questions.filter { $0.source == .book }.count
-        let names = set.chapters.map(\.title).joined(separator: ", ")
+        let names = set.chapters.map { MathPlain.render($0.title) }.joined(separator: ", ")
         return "\(book) questions from \(names.isEmpty ? "no chapters yet" : names)"
     }
 }
@@ -79,7 +79,7 @@ struct ScopeEditorView: View {
                     Stepper("Exam length: \(minutes) min", value: $minutes, in: 5...120, step: 5)
                 }
                 ForEach(chapters.filter { $0.status == .ready && !$0.needsRereading }) { chapter in
-                    Section(chapter.title) { chapterPicker(chapter) }
+                    Section(MathPlain.render(chapter.title)) { chapterPicker(chapter) }
                 }
                 if chapters.contains(where: \.needsRereading) {
                     Section { Text("Chapters that haven't been re-read with the new reader can't be split by section yet.").font(.caption) }
