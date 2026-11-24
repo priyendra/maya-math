@@ -111,7 +111,6 @@ struct ChapterHomeView: View {
                 }
 
                 if chapter.status == .ready && !chapter.needsRereading {
-                    nextStep
                     StudyActions(set: set)
                 }
 
@@ -172,34 +171,6 @@ struct ChapterHomeView: View {
             Button("Re-read", role: .destructive) { processor.reread(chapter, context: context) }
         } message: {
             Text("Questions are rebuilt from your scanned pages, so any practice history in this chapter is cleared.")
-        }
-    }
-
-    /// One clear suggestion for what to do next.
-    @ViewBuilder private var nextStep: some View {
-        let lessons = chapter.sortedLessons
-        let current = lessons.filter { $0.status == .inProgress }.max { ($0.lastOpened ?? .distantPast) < ($1.lastOpened ?? .distantPast) }
-            ?? lessons.first { $0.status == .notStarted && !$0.optional }
-        if let l = current {
-            NavigationLink { LessonsView(chapter: chapter) } label: {
-                HStack(spacing: 16) {
-                    Image(systemName: "play.fill").font(.title2).foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
-                        .background(theme.fill(theme.learn), in: Circle())
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(l.status == .inProgress ? "Up next: keep going with your lesson" : "Up next: start learning")
-                            .font(theme.font(.caption)).foregroundStyle(.secondary)
-                        Text(MathPlain.render(l.title)).font(theme.font(.cardTitle)).foregroundStyle(.primary)
-                        Text(l.status == .inProgress ? "Part \(l.partsDone + 1) of \(l.parts.count)" : "\(l.parts.count) parts · about \(max(5, l.parts.count * 5)) min")
-                            .font(theme.font(.caption)).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-                }
-                .padding(18)
-                .card(theme, tint: theme.learn)
-            }
-            .buttonStyle(.plain)
         }
     }
 }

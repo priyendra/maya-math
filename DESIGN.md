@@ -173,3 +173,5 @@ Running record of product decisions and open discussion topics. Newest decisions
   the test (when a date is set), and "N answers to check".
 - Next: tap a cell for details (step 2), then an "analyze my work" feedback feature (step 3; recent vs all history
   still to discuss).
+- The "Up next" lesson card was removed from the chapter page; the next lesson is reached from Lessons
+  (which marks it "Up next" / "In progress").
