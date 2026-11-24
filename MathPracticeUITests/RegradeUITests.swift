@@ -4,7 +4,7 @@ final class RegradeUITests: XCTestCase {
     /// An answer to check shows Claude's answers as math, and "Grade it again" sends it back for grading.
     func testAnswerToCheckRendersMathAndRegrades() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedToCheck", "-openFirstChapter"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedToCheck", "-openFirstChapter"]
         app.launch()
         let answers = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My answers'")).firstMatch
         XCTAssertTrue(answers.waitForExistence(timeout: 15))

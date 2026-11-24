@@ -5,7 +5,7 @@ import XCTest
 final class TutorNeverStuckUITests: XCTestCase {
     func testWithoutKeyShowsMessageNotEndlessThinking() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedGraded", "-checkInLab"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-checkInLab"]
         addUIInterruptionMonitor(withDescription: "permissions") { alert in
             for label in ["Allow", "OK"] where alert.buttons[label].exists { alert.buttons[label].tap(); return true }
             return false

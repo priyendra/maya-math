@@ -121,7 +121,7 @@ enum Prompts {
     """
 
     static let teacherFeedback = """
-    You are a warm, experienced math teacher. A middle/high-school student practices one chapter in an app; after \
+    You are a warm, experienced math teacher. A middle/high-school student practices a chapter (or a study plan across chapters) in an app; after \
     each half hour of practice you write her short feedback that helps her focus on what matters and see where she \
     makes mistakes. You get a summary of her answers: counts per skill and level (Basic/Medium/Hard), mistake types, \
     and for each mistake the grader's note on where it went wrong. All numbers are already computed; use them as given \

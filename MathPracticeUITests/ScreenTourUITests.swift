@@ -4,7 +4,7 @@ import XCTest
 final class ScreenTourUITests: XCTestCase {
     func testTour() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedGraded", "-seedLessons", "-fakeTutor"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-seedLessons", "-fakeTutor"]
         app.launch()
         let chapter = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Ch. 2'")).firstMatch
         XCTAssertTrue(chapter.waitForExistence(timeout: 15))
@@ -26,14 +26,14 @@ final class ScreenTourUITests: XCTestCase {
         app.terminate()
 
         let lab = XCUIApplication()
-        lab.launchArguments = ["-seedSample", "-seedGraded", "-checkInLab", "-fakeTutor"]
+        lab.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-checkInLab", "-fakeTutor"]
         lab.launch(); sleep(3); snap(lab, "tour-checkin")
         let show = lab.buttons["Show solution"]
         if show.waitForExistence(timeout: 10) { show.tap(); sleep(3); snap(lab, "tour-solution") }
         lab.terminate()
 
         let exam = XCUIApplication()
-        exam.launchArguments = ["-seedSample", "-openFirstChapter"]
+        exam.launchArguments = ["-freshStore", "-seedSample", "-openFirstChapter"]
         exam.launch()
         let e = exam.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Exam mode'")).firstMatch
         if e.waitForExistence(timeout: 10) { e.tap(); sleep(2); snap(exam, "tour-exam") }

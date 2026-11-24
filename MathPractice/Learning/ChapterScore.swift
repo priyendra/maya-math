@@ -7,7 +7,9 @@ import Foundation
 enum ChapterScore {
     struct Answer {
         let date: Date
-        let cell: CellKey
+        /// nil for answers that don't change a score (still waiting for a grade, to check, challenge, hint...):
+        /// their time still counts as practice time.
+        let cell: CellKey?
         let correct: Bool
         let mistake: MistakeType?
         let seconds: Double
@@ -33,8 +35,9 @@ enum ChapterScore {
     static func score(_ answers: [Answer], cells: [CellKey], before date: Date) -> Double {
         var skills: [CellKey: SkillProgress] = [:]
         for a in answers.sorted(by: { $0.date < $1.date }) where a.date < date {
-            skills[a.cell] = MasteryModel.apply(correct: a.correct, mistake: a.mistake, seconds: a.seconds,
-                                                to: skills[a.cell] ?? SkillProgress(), now: a.date)
+            guard let cell = a.cell else { continue }
+            skills[cell] = MasteryModel.apply(correct: a.correct, mistake: a.mistake, seconds: a.seconds,
+                                              to: skills[cell] ?? SkillProgress(), now: a.date)
         }
         return score(skills, cells: cells)
     }
@@ -50,8 +53,10 @@ enum ChapterScore {
         var nextMark = step
         for a in sorted {
             seconds += a.seconds
-            skills[a.cell] = MasteryModel.apply(correct: a.correct, mistake: a.mistake, seconds: a.seconds,
-                                                to: skills[a.cell] ?? SkillProgress(), now: a.date)
+            if let cell = a.cell {
+                skills[cell] = MasteryModel.apply(correct: a.correct, mistake: a.mistake, seconds: a.seconds,
+                                                  to: skills[cell] ?? SkillProgress(), now: a.date)
+            }
             while seconds >= nextMark {
                 points.append(Point(date: a.date, hours: nextMark / 3600, score: score(skills, cells: cells)))
                 nextMark += step

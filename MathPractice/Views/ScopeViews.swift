@@ -38,6 +38,7 @@ struct ScopeHomeView: View {
                 }
                 .buttonStyle(.plain)
                 SkillsPanel(set: set)
+                TeacherFeedbackCard(set: set, holder: scope)
             }
             .padding(24)
         }

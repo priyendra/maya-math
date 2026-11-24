@@ -3,6 +3,19 @@ import SwiftData
 
 @main
 struct MathPracticeApp: App {
+    init() {
+        #if DEBUG
+        // UI tests start from an empty app: no data or settings left over from an earlier test.
+        if ProcessInfo.processInfo.arguments.contains("-freshStore") {
+            let dir = URL.applicationSupportDirectory
+            for name in ["default.store", "default.store-shm", "default.store-wal"] {
+                try? FileManager.default.removeItem(at: dir.appendingPathComponent(name))
+            }
+            if let domain = Bundle.main.bundleIdentifier { UserDefaults.standard.removePersistentDomain(forName: domain) }
+        }
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             #if DEBUG

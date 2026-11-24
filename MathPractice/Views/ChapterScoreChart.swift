@@ -9,16 +9,18 @@ struct ChapterScoreChart: View {
     var body: some View {
         let planner = LearningStore.planner(set)
         let cells = planner.allCells
-        let answers: [ChapterScore.Answer] = set.allAttempts.compactMap { a in
-            guard let q = a.question, !q.isChallenge, a.isGraded, a.effectiveVerdict != .needsReview,
-                  a.hintText.isEmpty || a.wasStuck, let cell = LearningStore.cellKey(q) else { return nil }
+        // Every answer's time counts as practice time (as in the line below the chart); only graded ones move the score.
+        let answers: [ChapterScore.Answer] = set.allAttempts.map { a in
+            var cell: CellKey?
+            if let q = a.question, !q.isChallenge, a.isGraded, a.effectiveVerdict != .needsReview,
+               a.hintText.isEmpty || a.wasStuck { cell = LearningStore.cellKey(q) }
             return .init(date: a.startedAt, cell: cell, correct: a.effectiveVerdict == .correct, mistake: a.mistakeType, seconds: a.activeSeconds)
         }
         let points = ChapterScore.history(answers, cells: cells)
         let now = ChapterScore.score(planner.skills, cells: cells)
         let startOfToday = Calendar.current.startOfDay(for: Date())
-        let practisedToday = answers.contains { $0.date >= startOfToday }
-        let before: Double? = answers.contains { $0.date < startOfToday } || practisedToday
+        let practisedToday = answers.contains { $0.date >= startOfToday && $0.cell != nil }
+        let before: Double? = practisedToday
             ? ChapterScore.score(answers, cells: cells, before: startOfToday) : nil
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {

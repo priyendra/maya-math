@@ -5,7 +5,7 @@ final class LessonUITests: XCTestCase {
     /// her first answer is wrong (the tutor goes over it, then a second problem), then right, then part 2 … lesson done.
     func testTakeALesson() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedLessons", "-openFirstChapter", "-fakeTutor", "-fingerInk", "-fakeWrongOnce"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedLessons", "-openFirstChapter", "-fakeTutor", "-fingerInk", "-fakeWrongOnce"]
         app.launch()
         let tile = app.buttons["lessonsTile"]
         XCTAssertTrue(tile.waitForExistence(timeout: 15))

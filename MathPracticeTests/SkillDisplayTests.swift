@@ -104,3 +104,17 @@ extension ChapterScoreTests {
                        100 * MasteryModel.scoreAfter(rightInARow: 2) / 0.8, accuracy: 1e-9)
     }
 }
+
+extension ChapterScoreTests {
+    func testTimeOfUngradedAnswersCountsAsPracticeTime() {
+        let cell = CellKey(conceptID: UUID(), conceptOrder: 0, difficulty: 1)
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let answers = [
+            ChapterScore.Answer(date: start, cell: cell, correct: true, mistake: nil, seconds: 1200),
+            ChapterScore.Answer(date: start.addingTimeInterval(1300), cell: nil, correct: false, mistake: nil, seconds: 1200),
+        ]
+        let points = ChapterScore.history(answers, cells: [cell])
+        XCTAssertEqual(points.last!.hours, 2400.0 / 3600, accuracy: 1e-9)
+        XCTAssertEqual(points.last!.score, 100 * MasteryModel.scoreAfter(rightInARow: 1) / 0.8, accuracy: 1e-9)
+    }
+}

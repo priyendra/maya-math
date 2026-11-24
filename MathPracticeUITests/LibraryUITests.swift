@@ -4,7 +4,7 @@ final class LibraryUITests: XCTestCase {
     /// A chapter two folders deep must open (it used to bounce back to the folder).
     func testChapterInNestedFolderOpens() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedInFolder"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedInFolder"]
         app.launch()
         func button(_ name: String) -> XCUIElement { app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch }
         XCTAssertTrue(button("Student").waitForExistence(timeout: 15))

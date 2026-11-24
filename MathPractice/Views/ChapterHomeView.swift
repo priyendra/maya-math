@@ -144,9 +144,7 @@ struct ChapterHomeView: View {
                     PathGlance(chapter: chapter)
                         .padding(20)
                         .card(theme)
-                    TeacherFeedbackCard(chapter: chapter)
-                        .padding(20)
-                        .card(theme)
+                    TeacherFeedbackCard(set: .chapter(chapter), holder: chapter)
                 }
             }
             .padding(24)

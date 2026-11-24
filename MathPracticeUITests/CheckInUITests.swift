@@ -20,7 +20,7 @@ private func assertSolutionReadableToTheEnd(_ test: XCTestCase, _ app: XCUIAppli
 final class CheckInUITests: XCTestCase {
     func testLongSolutionScrolls() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedGraded", "-checkInLab"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-checkInLab"]
         app.launch()
         let show = app.buttons["Show solution"]
         XCTAssertTrue(show.waitForExistence(timeout: 15))
@@ -34,7 +34,7 @@ final class AnswerDetailUITests: XCTestCase {
     /// "Disagree with the grade?" → answer detail → Show solution → readable to the end.
     func testLongSolutionInAnswerDetail() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedGraded", "-checkInLab"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-checkInLab"]
         app.launch()
         let disagree = app.buttons["Disagree with the grade?"]
         XCTAssertTrue(disagree.waitForExistence(timeout: 15))
@@ -53,7 +53,7 @@ final class TutorUITests: XCTestCase {
     /// a spoken turn gets a second reply → the conversation is saved with the answer.
     func testTalkToTutorOnSolutionPage() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedGraded", "-checkInLab", "-fakeTutor", "-fingerInk"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-checkInLab", "-fakeTutor", "-fingerInk"]
         app.launch()
         let show = app.buttons["Show solution"]
         XCTAssertTrue(show.waitForExistence(timeout: 15))

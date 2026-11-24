@@ -4,7 +4,7 @@ final class CanvasUITests: XCTestCase {
     /// Opens a practice session on the sample chapter and draws on the canvas; Next must become enabled.
     func testDrawingOnCanvasRegisters() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-openFirstChapter"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-openFirstChapter"]
         app.launch()
         let practice = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Practice'")).firstMatch
         if !practice.waitForExistence(timeout: 15) { print(app.debugDescription); XCTFail("no Practice button"); return }

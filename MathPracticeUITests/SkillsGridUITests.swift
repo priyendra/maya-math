@@ -4,7 +4,7 @@ final class SkillsGridUITests: XCTestCase {
     /// Skill names with math show as math characters, not raw LaTeX.
     func testSkillNamesRenderMath() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-openFirstChapter"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-openFirstChapter"]
         app.launch()
         // Skill names are listed on My progress (the chapter page shows the mastery points chart).
         let progress = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My progress'")).firstMatch

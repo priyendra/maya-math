@@ -4,7 +4,7 @@ final class ScanFixUITests: XCTestCase {
     /// A chapter whose scan needs fixing shows a clear list; removing the duplicate updates it.
     func testRescanListShowsWhatToFix() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-seedRescan"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedRescan"]
         app.launch()
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Rescan test'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 15))

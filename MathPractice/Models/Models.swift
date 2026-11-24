@@ -377,6 +377,11 @@ final class StudyScope {
     /// Selections: "c|<chapterID>", "s|<chapterID>|<sectionID>", "p|<chapterID>|<from>|<to>".
     var items: [String] = []
     var folder: Folder?
+    /// "Teacher's feedback" for this study plan (see Chapter).
+    var feedbackHeadline: String = ""
+    var feedbackText: String = ""
+    var feedbackAtSeconds: Double = -1
+    var feedbackDate: Date?
 
     init(name: String) { self.name = name }
 }
@@ -478,3 +483,15 @@ final class Lesson {
     /// Every section the lesson touches (teaching and practice).
     var allSectionIDs: [Int] { parts.flatMap { $0.sectionIDs + $0.practiceSectionIDs } }
 }
+
+/// Something that keeps "Teacher's feedback": a chapter or a study plan.
+@MainActor
+protocol FeedbackHolder: AnyObject {
+    var id: UUID { get }
+    var feedbackHeadline: String { get set }
+    var feedbackText: String { get set }
+    var feedbackAtSeconds: Double { get set }
+    var feedbackDate: Date? { get set }
+}
+extension Chapter: FeedbackHolder {}
+extension StudyScope: FeedbackHolder {}

@@ -206,3 +206,9 @@ Running record of product decisions and open discussion topics. Newest decisions
   grader's "where it went wrong" for every mistake); earlier work in brief (counts + latest 12 mistakes). The prompt
   weighs recent work most but uses earlier work for context (praise a fixed habit, flag a recurring one). The app
   computes every number; Claude only writes.
+- The card is hidden until there are 10 graded answers (or earlier feedback exists). Study plans get
+  their own Teacher's feedback (below the skills panel), stored on the plan. "Practice time" is one definition
+  everywhere — every answer's active time: the chart's time axis, the line below it, and the feedback timer. Answers
+  that don't move the score (waiting, to check, challenge, hinted) still add time to the chart.
+- UI tests launch with `-freshStore` (DEBUG only): the app deletes its store and settings at launch, so no test
+  depends on data another test or a real-data screenshot run left behind.

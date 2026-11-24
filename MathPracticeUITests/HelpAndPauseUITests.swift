@@ -3,7 +3,7 @@ import XCTest
 final class HelpAndPauseUITests: XCTestCase {
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-openFirstChapter", "-fakeHelp"] + extra
+        app.launchArguments = ["-freshStore", "-seedSample", "-openFirstChapter", "-fakeHelp"] + extra
         app.launch()
         let practice = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Practice'")).firstMatch
         XCTAssertTrue(practice.waitForExistence(timeout: 15))
@@ -81,7 +81,7 @@ final class HelpAndPauseUITests: XCTestCase {
 final class EndSessionUITests: XCTestCase {
     func testEndAsksWithCenteredAlertAndKeepPracticingIsSafe() {
         let app = XCUIApplication()
-        app.launchArguments = ["-seedSample", "-openFirstChapter"]
+        app.launchArguments = ["-freshStore", "-seedSample", "-openFirstChapter"]
         app.launch()
         let practice = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Practice'")).firstMatch
         XCTAssertTrue(practice.waitForExistence(timeout: 15))
