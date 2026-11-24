@@ -183,12 +183,10 @@ final class LessonSession: VoiceTutor {
         run = playTask
     }
 
+    /// Always a pause for questions at the end of a part (Go on → her problem, or the next part if this one has
+    /// none), so a part never runs straight into the next one.
     private func narrationEnded() {
         pointer = nil
-        if script?.questionIDs.isEmpty ?? true {
-            completePart()
-            return
-        }
         phase = .questions
         listen()
     }

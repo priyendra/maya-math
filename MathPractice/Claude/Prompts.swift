@@ -272,7 +272,8 @@ enum Prompts {
     of a step, a sign, which term is the perfect square, a factor, what to do next in one word. Never a whole step \
     that needs working out. The board line shows everything except the answer, so the blank is the only missing piece.
     - Usually 10 to 25 SAY lines. Warm, clear, concrete; one idea per sentence.
-    - End with one sentence that sums up the idea, then: "Any questions before you try one?"
+    - End with one sentence that sums up the idea, then: "Any questions before you try one?" — or, when your_turn is \
+    empty, just "Any questions?"
 
     your_turn: one or two exercise ids (q…) that practise exactly what this part taught, the most typical first (the \
     second is used if she needs another try). Choose ones she can do with a pencil. When the part teaches only one of \

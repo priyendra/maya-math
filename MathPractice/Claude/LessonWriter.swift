@@ -61,17 +61,24 @@ enum LessonWriter {
         let questions = Dictionary(uniqueKeysWithValues: chapter.questions.map { ($0.id, $0) })
         var list = "Exercises from the book for this part:\n"
         var nq = 0
-        for sections in [Set(part.practiceSectionIDs), teach] {
-            for b in blocks where b.kind == "exercise" && sections.contains(b.sectionID) {
-                guard nq < 15, let qid = b.questionID, let q = questions[qid], q.isAvailable,
-                      !input.questions.values.contains(qid) else { continue }
-                nq += 1
-                input.questions["q\(nq)"] = qid
-                list += "\n[q\(nq)] \(b.printedNumber.isEmpty ? "" : "#\(b.printedNumber) ")\(q.text)\n"
-            }
+        for b in exerciseBlocks(chapter.sortedBlocks, part: part, taught: blocks) {
+            guard nq < 15, let qid = b.questionID, let q = questions[qid], q.isAvailable,
+                  !input.questions.values.contains(qid) else { continue }
+            nq += 1
+            input.questions["q\(nq)"] = qid
+            list += "\n[q\(nq)] \(b.printedNumber.isEmpty ? "" : "#\(b.printedNumber) ")\(q.text)\n"
         }
         input.content.append(.text(nq == 0 ? "There are no exercises for this part (your_turn must be empty)." : list))
         return input
+    }
+
+    /// The exercises a part can use for "your turn": its practice sections' first (from the whole chapter: books
+    /// usually keep exercises in their own sections), then any among the blocks it teaches.
+    static func exerciseBlocks(_ all: [ContentBlock], part: LessonPart, taught: [ContentBlock]) -> [ContentBlock] {
+        let practice = Set(part.practiceSectionIDs)
+        let fromPractice = all.filter { $0.kind == "exercise" && practice.contains($0.sectionID) }
+        let seen = Set(fromPractice.map(\.id))
+        return fromPractice + taught.filter { $0.kind == "exercise" && !seen.contains($0.id) }
     }
 
     /// The blocks a part teaches: for a part that covers examples f…t of a section, the explanation and figures

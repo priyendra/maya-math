@@ -295,3 +295,6 @@ Running record of product decisions and open discussion topics. Newest decisions
   carries on. No effect on mastery. Scripts ask at least one per worked example, about one every four to six
   sentences, mostly easy, one short unambiguous answer. Older scripts (a re-drawn copy of the book, no blanks) are
   written again when reached.
+- "Your turn" problems come from the part's practice sections first (taken from the whole chapter: books keep
+  exercises in their own sections), then exercises inside what it teaches. Every part ends with a pause for
+  questions; with no problem to try the script says "Any questions?" (not "before you try one") and Go on moves on.

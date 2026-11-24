@@ -108,6 +108,20 @@ final class LessonTests: XCTestCase {
         XCTAssertEqual(names(3, 3), ["text5", "example6", "text7"])
     }
 
+    /// "Your turn" problems come from the part's practice sections (books keep exercises apart from the teaching),
+    /// then from exercises inside what it teaches.
+    @MainActor
+    func testYourTurnUsesPracticeSectionExercises() throws {
+        let container = try ModelContainer(for: Chapter.self, ContentBlock.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let ctx = ModelContext(container)
+        let specs: [(String, Int)] = [("text", 1), ("example", 1), ("exercise", 1), ("exercise", 2), ("exercise", 3), ("exercise", 2)]
+        let all = specs.enumerated().map { i, sp in ContentBlock(order: i, kind: sp.0, markdown: "\(sp.0)\(i)", pageIndex: 0, sectionID: sp.1) }
+        all.forEach { ctx.insert($0) }
+        let part = LessonPart(title: "", sectionIDs: [1], practiceSectionIDs: [2])
+        let taught = all.filter { $0.sectionID == 1 }
+        XCTAssertEqual(LessonWriter.exerciseBlocks(all, part: part, taught: taught).map(\.markdown), ["exercise3", "exercise5", "exercise2"])
+    }
+
     func testRepeatedAndUnknownSectionsAreDropped() {
         let dto = LessonPlanDTO(lessons: [
             L(title: "A", summary: "", optional: false, parts: [
