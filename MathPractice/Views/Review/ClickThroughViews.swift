@@ -10,14 +10,14 @@ enum ResultFilter: Hashable {
 
     var label: String {
         switch self {
-        case .all: return "All"
-        case .right: return "No mistakes"
-        case .anyMistake: return "All mistakes"
+        case .all: return "All answers"
+        case .right: return "Correct answers"
+        case .anyMistake: return "Wrong answers"
         case .mistake(let m): return m.displayName
         }
     }
 
-    static var choices: [ResultFilter] { [.all, .right, .anyMistake] + MistakeType.allCases.map { .mistake($0) } }
+    static var main: [ResultFilter] { [.all, .right, .anyMistake] }
 }
 
 /// What the answers list shows: by skill, level and result, newest or oldest first.
@@ -168,62 +168,53 @@ struct AnswerFilterBar: View {
 
     var body: some View {
         let concepts = MasteryGrid.concepts(set)
-        VStack(alignment: .leading, spacing: 10) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(ResultFilter.choices, id: \.self) { r in
-                        Chip(text: r.label, selected: filter.result == r) { filter.result = r }
-                            .accessibilityIdentifier("result-\(r.label)")
-                        if r == .anyMistake { Divider().frame(height: 22) }
+        HStack(spacing: 8) {
+            Menu {
+                Picker("Answers", selection: $filter.result) {
+                    ForEach(ResultFilter.main, id: \.self) { r in Text(r.label).tag(r) }
+                }
+                Section("Wrong answers by kind of mistake") {
+                    Picker("Kind of mistake", selection: $filter.result) {
+                        ForEach(MistakeType.allCases, id: \.self) { m in Text(m.displayName).tag(ResultFilter.mistake(m)) }
                     }
                 }
+            } label: {
+                MenuPill(icon: "line.3.horizontal.decrease", text: filter.result.label, active: filter.result != .all, menu: true)
+                    .fixedSize()
             }
-            HStack(spacing: 8) {
-                Menu {
-                    Picker("Skill", selection: $filter.conceptID) {
-                        Text("All skills").tag(UUID?.none)
-                        ForEach(concepts) { c in Text(MathPlain.render(c.name)).tag(Optional(c.id)) }
-                    }
-                } label: {
-                    let name = concepts.first { $0.id == filter.conceptID }.map { MathPlain.render($0.name) }
-                    MenuPill(icon: "square.grid.2x2", text: name ?? "All skills", active: name != nil)
+            .layoutPriority(2)
+            .accessibilityIdentifier("resultFilter")
+            Menu {
+                Picker("Skill", selection: $filter.conceptID) {
+                    Text("All skills").tag(UUID?.none)
+                    ForEach(concepts) { c in Text(MathPlain.render(c.name)).tag(Optional(c.id)) }
                 }
-                ForEach([Int?.none, 1, 2, 3], id: \.self) { d in
-                    Chip(text: d.map { SkillBarsGrid.levels[$0 - 1] } ?? "All levels", selected: filter.level == d, small: true) {
-                        filter.level = d
-                    }
-                }
-                Spacer(minLength: 8)
-                Text("\(count) question\(count == 1 ? "" : "s")").font(theme.font(.caption).monospacedDigit()).foregroundStyle(.secondary)
-                Button { filter.newestFirst.toggle() } label: {
-                    MenuPill(icon: filter.newestFirst ? "arrow.down" : "arrow.up",
-                             text: filter.newestFirst ? "Newest first" : "Oldest first", active: false)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("sortOrder")
+            } label: {
+                let name = concepts.first { $0.id == filter.conceptID }.map { MathPlain.render($0.name) }
+                MenuPill(icon: "square.grid.2x2", text: name ?? "All skills", active: name != nil, menu: true)
             }
+            Menu {
+                Picker("Level", selection: $filter.level) {
+                    Text("All levels").tag(Int?.none)
+                    ForEach(1...3, id: \.self) { d in Text(SkillBarsGrid.levels[d - 1]).tag(Optional(d)) }
+                }
+            } label: {
+                MenuPill(icon: "chart.bar", text: filter.level.map { SkillBarsGrid.levels[$0 - 1] } ?? "All levels",
+                         active: filter.level != nil, menu: true)
+                    .fixedSize()
+            }
+            .layoutPriority(2)
+            Spacer(minLength: 8)
+            Text("\(count) question\(count == 1 ? "" : "s")").font(theme.font(.caption).monospacedDigit()).foregroundStyle(.secondary)
+                .fixedSize()
+            Button { filter.newestFirst.toggle() } label: {
+                MenuPill(icon: filter.newestFirst ? "arrow.down" : "arrow.up",
+                         text: filter.newestFirst ? "Newest first" : "Oldest first", active: false)
+                    .fixedSize()
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("sortOrder")
         }
-    }
-}
-
-private struct Chip: View {
-    let text: String
-    let selected: Bool
-    var small = false
-    let action: () -> Void
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        Button(action: action) {
-            Text(text)
-                .font((small ? theme.font(.caption) : theme.font(.label)).weight(.semibold))
-                .padding(.horizontal, small ? 11 : 14).padding(.vertical, small ? 6 : 8)
-                .background(Capsule().fill(selected ? theme.accent : Color(.secondarySystemGroupedBackground)))
-                .overlay(Capsule().stroke(selected ? Color.clear : Color.secondary.opacity(0.18)))
-                .foregroundStyle(selected ? Color.white : Color.primary)
-        }
-        .buttonStyle(.plain)
-        .animation(.snappy(duration: 0.15), value: selected)
     }
 }
 
@@ -231,13 +222,14 @@ private struct MenuPill: View {
     let icon: String
     let text: String
     let active: Bool
+    var menu = false
     @Environment(\.theme) private var theme
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon).font(.caption.weight(.semibold))
-            Text(text).lineLimit(1).frame(maxWidth: 260, alignment: .leading).fixedSize(horizontal: true, vertical: false)
-            if icon == "square.grid.2x2" { Image(systemName: "chevron.down").font(.caption2.weight(.bold)) }
+            Text(text).lineLimit(1).truncationMode(.tail).frame(maxWidth: 320, alignment: .leading)
+            if menu { Image(systemName: "chevron.down").font(.caption2.weight(.bold)) }
         }
         .font(theme.font(.caption).weight(.semibold))
         .padding(.horizontal, 12).padding(.vertical, 7)

@@ -230,5 +230,5 @@ Running record of product decisions and open discussion topics. Newest decisions
   math block made scrolling stutter, half-drew text, and (lazily rebuilt at a placeholder height) made the page jump in
   a loop. Full KaTeX stays on single-item pages (answer page, solution, lessons). `MathText` also remembers measured
   heights so rebuilt views don't resize. Unicode math spaces relations and top-level +/− ("3𝑥² − 41𝑥 = −60").
-- Result filter chips: All · No mistakes · All mistakes · each mistake type. Level chips, a skill menu, a
-  newest/oldest toggle. 25 cards at a time with "Show more".
+- One filter row: Answers menu (All / Correct / Wrong answers, then each kind of mistake), Skill menu, Level menu,
+  count, newest/oldest toggle. 25 cards at a time with "Show more".

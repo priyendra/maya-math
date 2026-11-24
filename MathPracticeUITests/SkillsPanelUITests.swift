@@ -25,7 +25,8 @@ final class SkillsPanelUITests: XCTestCase {
             for _ in 0..<8 { app.swipeDown(velocity: .fast) }
             sleep(2); save(app, dir, "7c-answers-up")
             sleep(3); save(app, dir, "7d-answers-settled")
-            app.buttons["result-All mistakes"].firstMatch.tap(); sleep(2); save(app, dir, "7e-all-mistakes")
+            app.buttons["resultFilter"].firstMatch.tap(); sleep(1); save(app, dir, "7e-result-menu")
+            app.buttons["Wrong answers"].firstMatch.tap(); sleep(2); save(app, dir, "7f-wrong")
             app.navigationBars.buttons.firstMatch.tap(); sleep(1)
         }
         let seeAll = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My progress'")).firstMatch
