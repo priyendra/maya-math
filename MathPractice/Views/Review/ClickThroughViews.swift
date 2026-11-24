@@ -422,7 +422,7 @@ struct SkillDetailView: View {
     static func levelLine(p: SkillProgress?, open: Bool, mastered: Bool, level: Int) -> String {
         if mastered { return "Mastered — a review question now and then." }
         guard let p, p.attemptCount > 0 else {
-            return open ? "Not started yet." : "Opens at 75 points on \(SkillBarsGrid.levels[max(0, level - 2)])."
+            return open ? "Not started yet." : "Opens at 100 points on \(SkillBarsGrid.levels[max(0, level - 2)])."
         }
         let n = MasteryModel.rightAnswersToMaster(p)
         return "\(n) more right in a row to master."

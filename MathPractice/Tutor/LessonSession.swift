@@ -38,6 +38,7 @@ final class LessonSession: VoiceTutor {
 
     let lesson: Lesson
     @Published private(set) var phase: Phase = .preparing
+    private var turnStartedAt: Date?
     @Published private(set) var elements: [Element] = []
     @Published private(set) var currentPart = 0
     /// Her answers in this lesson, by turn id.
@@ -205,6 +206,7 @@ final class LessonSession: VoiceTutor {
         pointer = id
         revealRequest = id + "_room"
         phase = .yourTurn
+        turnStartedAt = Date()
         run = Task {
             state = .speaking
             let line = tryNumber == 1 ? "Here's one for you to try. Write your answer under the problem, then tap Check."
@@ -226,6 +228,8 @@ final class LessonSession: VoiceTutor {
         speaker.stop()
         run?.cancel()
         let attempt = Attempt(mode: .lesson)
+        // Time from the problem appearing to Check (lesson answers used to save 0 s).
+        attempt.activeSeconds = turnStartedAt.map { Date().timeIntervalSince($0) } ?? 0
         attempt.inkData = work.ink
         attempt.renderedImage = work.image
         attempt.question = turn.question

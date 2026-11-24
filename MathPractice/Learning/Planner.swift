@@ -69,20 +69,25 @@ struct Planner {
     }
 
     /// Difficulty 1 of every concept is open (the book already taught them);
-    /// difficulty d+1 opens once difficulty d (or the nearest lower level that exists) reaches the unlock threshold.
+    /// difficulty d+1 opens only once difficulty d (or the nearest lower level that exists) is mastered (100 points).
     func isOpen(_ cell: CellKey) -> Bool {
         let lower = allCells.filter { $0.conceptID == cell.conceptID && $0.difficulty < cell.difficulty }
         guard let prev = lower.max(by: { $0.difficulty < $1.difficulty }) else { return true }
-        return progress(prev).mastery >= MasteryModel.unlockThreshold
+        return isMastered(prev)
     }
+
+    /// Her last answer on this level was wrong: repair it before anything else.
+    func lastWasWrong(_ cell: CellKey) -> Bool { progress(cell).recentResults.last == false }
 
     var weakCells: [CellKey] {
         allCells.filter { isOpen($0) && !isMastered($0) }
             .sorted { a, b in
-                // Lower mastery first, then book order, then easier first.
+                // Last answer wrong first, then fewer points, then easier level, then book order.
+                let wa = lastWasWrong(a), wb = lastWasWrong(b)
+                if wa != wb { return wa }
                 let ma = progress(a).mastery, mb = progress(b).mastery
                 if abs(ma - mb) > 0.05 { return ma < mb }
-                return (a.conceptOrder, a.difficulty) < (b.conceptOrder, b.difficulty)
+                return (a.difficulty, a.conceptOrder) < (b.difficulty, b.conceptOrder)
             }
     }
 
@@ -91,19 +96,9 @@ struct Planner {
             .sorted { (progress($0).nextDue ?? .distantPast) < (progress($1).nextDue ?? .distantPast) }
     }
 
-    /// The next locked level of a concept whose level below is making progress.
-    var stretchCells: [CellKey] {
-        allCells.filter { cell in
-            guard !isOpen(cell) else { return false }
-            let lower = allCells.filter { $0.conceptID == cell.conceptID && $0.difficulty < cell.difficulty }
-            guard let prev = lower.max(by: { $0.difficulty < $1.difficulty }) else { return false }
-            return progress(prev).mastery >= 0.4
-        }
-    }
-
     /// Cells with no unseen question left; the app generates variants for these.
     func cellsNeedingVariants(minUnseen: Int = 1) -> [CellKey] {
-        let targets = Set(weakCells + reviewCells + stretchCells)
+        let targets = Set(weakCells + reviewCells)
         return allCells.filter { cell in
             targets.contains(cell) && regular.filter { $0.cell == cell && $0.timesSeen == 0 }.count < minUnseen
         }
@@ -122,30 +117,31 @@ struct Planner {
             }
         }
 
-        // 2. Weighted choice between weak / review / stretch, falling back when a pool is empty.
+        // 2. Weighted choice between weak / review / challenge, falling back when a pool is empty.
+        //    No questions from locked levels: a level opens only when the one below is mastered.
         let r = random()
         var order: [PickCategory]
-        if r < Self.weakShare { order = [.weak, .review, .stretch] }
-        else if r < Self.weakShare + Self.reviewShare { order = [.review, .weak, .stretch] }
-        else { order = [.challenge, .stretch, .weak, .review] }
+        if r < Self.weakShare { order = [.weak, .review] }
+        else if r < Self.weakShare + Self.reviewShare { order = [.review, .weak] }
+        else { order = [.challenge, .weak, .review] }
 
         for category in order {
             let pool: [CellKey]
             switch category {
             case .weak: pool = weakCells
             case .review: pool = reviewCells
-            case .stretch: pool = stretchCells
-            case .reinforcement: pool = []
+            case .reinforcement, .stretch: pool = []
             case .challenge:
                 if let q = pickChallenge(session: session) {
                     return Pick(questionID: q.id, cell: q.cell, category: .challenge)
                 }
                 continue
             }
-            // Take from the top few, varying the cell so she doesn't get the same type back-to-back.
-            let lastCell = session.askedQuestionIDs.last.flatMap { id in questions.first { $0.id == id }?.cell }
+            // Take from the top few, never the same skill twice in a row when another is available.
+            let lastConcept = session.askedQuestionIDs.last.flatMap { id in questions.first { $0.id == id }?.cell.conceptID }
             let top = Array(pool.prefix(3))
-            let candidates = top.filter { $0 != lastCell } + top.filter { $0 == lastCell } + pool.dropFirst(3)
+            let candidates = top.filter { $0.conceptID != lastConcept } + pool.dropFirst(3).filter { $0.conceptID != lastConcept }
+                + pool.filter { $0.conceptID == lastConcept }
             for cell in candidates {
                 if let q = pickQuestion(in: cell, session: session) {
                     return Pick(questionID: q.id, cell: cell, category: category)

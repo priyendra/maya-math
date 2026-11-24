@@ -460,7 +460,9 @@ struct PracticeSessionView: View {
     /// Decides what comes after a question: an interruption, a check-in, the end, or the next question.
     private func advance() {
         let unrevealed = sessionAttempts.filter { $0.isGraded && !$0.revealed }
-        if let c = unrevealed.first(where: { $0.effectiveVerdict == .incorrect && $0.mistakeType == .conceptual }) {
+        if let (earlier, latest) = repeatedMistake() {
+            present([earlier, latest], kind: .repeated)
+        } else if let c = unrevealed.first(where: { $0.effectiveVerdict == .incorrect && $0.mistakeType == .conceptual }) {
             present([c], kind: .interruption)
         } else if sessionClock.elapsed() - lastCheckInAt >= Self.checkInSeconds, !unrevealed.isEmpty {
             lastCheckInAt = sessionClock.elapsed()
@@ -470,6 +472,17 @@ struct PracticeSessionView: View {
         } else {
             nextQuestion()
         }
+    }
+
+    /// The same kind of mistake twice on one skill this session, the newer one not yet shown.
+    private func repeatedMistake() -> (Attempt, Attempt)? {
+        let graded = sessionAttempts.filter(\.isGraded)
+        let answers = graded.enumerated().map { i, a in
+            RepeatedMistake.Answer(index: i, skill: a.question?.concept?.id, mistake: a.mistakeType,
+                                   wrong: a.effectiveVerdict == .incorrect, revealed: a.revealed)
+        }
+        guard let r = RepeatedMistake.find(answers) else { return nil }
+        return (graded[r.earlier], graded[r.latest])
     }
 
     private func present(_ items: [Attempt], kind: CheckInView.Kind) {

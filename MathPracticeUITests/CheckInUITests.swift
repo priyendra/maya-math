@@ -18,6 +18,19 @@ private func assertSolutionReadableToTheEnd(_ test: XCTestCase, _ app: XCUIAppli
 }
 
 final class CheckInUITests: XCTestCase {
+    /// The same kind of mistake twice on a skill: both answers, with a line naming the habit.
+    func testRepeatedMistakeShowsBothAndTheHabit() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-checkInLab", "-repeated"]
+        app.launch()
+        XCTAssertTrue(app.descendants(matching: .any)["repeatedMistake"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["Keep going"].exists)
+        let a = XCTAttachment(screenshot: app.screenshot()); a.name = "repeated-mistake"; a.lifetime = .keepAlways; add(a)
+        if let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"] {
+            try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir + "/repeated.png"))
+        }
+    }
+
     func testLongSolutionScrolls() {
         let app = XCUIApplication()
         app.launchArguments = ["-freshStore", "-seedSample", "-seedGraded", "-checkInLab"]

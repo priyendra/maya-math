@@ -69,9 +69,10 @@ Running record of product decisions and open discussion topics. Newest decisions
   "Keep going" (similar questions already queued for misses). Conceptual mistakes interrupt at the next
   question boundary with the same expanded view. Check-in time counts toward the session but not toward any
   question's time. Exam mode unchanged.
-- **Deferred (watch in real use):** also interrupt when the *same kind* of mistake repeats on a skill (e.g.
-  taking √(9a²) as 9a twice, graded "procedural" both times), since mistake categories are a judgment call.
-  Revisit if real sessions show repeated mistakes slipping through to check-ins.
+- **Same mistake twice interrupts.** A second wrong answer with the same kind of mistake on the same skill in a
+  session (careless slips included) is shown at the next question: both answers, each with "where it went wrong",
+  under one line naming the habit and the check to do. She then carries on with the same level. Real sessions
+  showed repeated "Incomplete" answers on slow word problems piling up for 15+ minutes before a check-in.
 
 - **Tutor: one grounded capability, two uses.** A tutor that talks about something specific on screen: a
   solution (first) and, later, a lesson section. Built once (conversation, voice, narrated "board"), used by both.
@@ -272,3 +273,11 @@ Running record of product decisions and open discussion topics. Newest decisions
   a hint (she is told before it opens, once per question): the answer doesn't move mastery, the check-in says so.
 - Waiting for grading shows progress: "x of y checked" with a bar (end of practice and after an exam).
 - The screen tour UI test is opt-in (TEST_RUNNER_TOUR=1). Bundled KaTeX and marked licences: THIRD_PARTY_NOTICES.md.
+- **Planner: finish levels before climbing.** A level opens only when the level below is mastered (100 points);
+  no questions come from locked levels (no "stretch"). Open, unmastered levels are ordered: last answer wrong first
+  (repair), then fewest points, then easier level, then book order — so every Basic is solid before Medium. Never
+  the same skill twice in a row when another is available. Why: with a 75-point opening and "weakest first", a
+  freshly opened level (0 points) always beat one at 82, so a student climbed every ladder to Hard at ~3 right
+  answers per level and mastered none. Levels with mistakes still get most of the time (each miss costs ~3 more
+  questions); check that levels with mistakes keep at least half the practice time.
+- Lesson "your turn" answers record time from the problem appearing to Check.

@@ -17,7 +17,6 @@ enum MasteryModel {
     static let lossRate = 0.4
     static let carelessLossRate = 0.2
     static let masteredThreshold = 0.8
-    static let unlockThreshold = 0.6
     static let recentWindow = 5
     static let timeWindow = 7
     static let intervals: [Double] = [1, 3, 7, 14]

@@ -43,6 +43,7 @@
 		511A7DDA9EB461F2F6FE0F87 /* MasteryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B2FD60C9EA822A5F8F2E7D /* MasteryModel.swift */; };
 		52E8BDC2D309C56480B4442D /* LessonPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9372EBC3923439A35CEAE84 /* LessonPage.swift */; };
 		5454BDB74C34B7B104C9E7C4 /* ChapterScoreChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA225F2DCADFCF67BE911E34 /* ChapterScoreChart.swift */; };
+		546016EDD0C4F4D7CDD66CFF /* RepeatedMistake.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A65F27E561C8C4538D3EED /* RepeatedMistake.swift */; };
 		575014BC4A385DA58CAD447A /* QuestionPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3036FE3260923B369E442F /* QuestionPanel.swift */; };
 		59217186A5DA715961A83A64 /* RetakeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9458FA16654054C29A418711 /* RetakeSheet.swift */; };
 		5C059E756AF170920DE53132 /* CanvasLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 605F34558094F3610E52AF83 /* CanvasLab.swift */; };
@@ -183,6 +184,7 @@
 		AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorLiveProbeUITests.swift; sourceTree = "<group>"; };
 		AC7907F8F17ECCF8B44BA369 /* MathPracticeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathPracticeApp.swift; sourceTree = "<group>"; };
 		ADAFD830DD75C79719F8BA99 /* ScreenTourUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTourUITests.swift; sourceTree = "<group>"; };
+		B0A65F27E561C8C4538D3EED /* RepeatedMistake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatedMistake.swift; sourceTree = "<group>"; };
 		B53ED8CD299C1B6CE50F185C /* ChapterScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterScore.swift; sourceTree = "<group>"; };
 		B55804A2BBA01524A634BFB1 /* ProblemReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProblemReport.swift; sourceTree = "<group>"; };
 		B886E03B5A5F3BE3219DFF3F /* Planner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planner.swift; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 				80B2FD60C9EA822A5F8F2E7D /* MasteryModel.swift */,
 				D2B936E8ECC8D9BDB7F5C85A /* Pace.swift */,
 				B886E03B5A5F3BE3219DFF3F /* Planner.swift */,
+				B0A65F27E561C8C4538D3EED /* RepeatedMistake.swift */,
 				B8F85BD6B0C88F20411BFB3C /* TeacherFeedback.swift */,
 			);
 			path = Learning;
@@ -589,6 +592,7 @@
 				068BA2E7A0C06960003E79E8 /* Prompts.swift in Sources */,
 				575014BC4A385DA58CAD447A /* QuestionPanel.swift in Sources */,
 				C0F906DCAAD9CB300CFA566D /* ReadChapterView.swift in Sources */,
+				546016EDD0C4F4D7CDD66CFF /* RepeatedMistake.swift in Sources */,
 				59217186A5DA715961A83A64 /* RetakeSheet.swift in Sources */,
 				7E2BE72BBA38C3631CFAF9AF /* SampleData.swift in Sources */,
 				21207726D1026BEE0D36A8BF /* ScanFixView.swift in Sources */,

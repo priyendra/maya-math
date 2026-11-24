@@ -61,13 +61,17 @@ final class PlannerTests: XCTestCase {
         XCTAssertFalse(ExamBuilder.build(questions: [regular, challenge], minutes: 30).contains(challenge.id))
     }
 
-    func testHigherDifficultyLockedUntilLowerProgresses() {
+    func testHigherLevelOpensOnlyWhenLowerIsMastered() {
         let a1 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 1)
         let a2 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 2)
         let planner = Planner(questions: [q(a1), q(a2)], skills: [:], now: now)
         XCTAssertTrue(planner.isOpen(a1))
         XCTAssertFalse(planner.isOpen(a2))
-        let unlocked = Planner(questions: [q(a1), q(a2)], skills: [a1: SkillProgress(mastery: 0.7)], now: now)
+        // 94 points (4 right in a row) is not enough; no questions from the locked level either.
+        let almost = Planner(questions: [q(a1), q(a2)], skills: [a1: SkillProgress(mastery: 0.76)], now: now)
+        XCTAssertFalse(almost.isOpen(a2))
+        for r in [0.0, 0.7, 0.9, 0.99] { XCTAssertEqual(almost.next(session: SessionState(), random: { r })?.cell, a1) }
+        let unlocked = Planner(questions: [q(a1), q(a2)], skills: [a1: SkillProgress(mastery: 0.8)], now: now)
         XCTAssertTrue(unlocked.isOpen(a2))
     }
 
@@ -76,6 +80,50 @@ final class PlannerTests: XCTestCase {
         let b = CellKey(conceptID: c2, conceptOrder: 1, difficulty: 1)
         let planner = Planner(questions: [q(a), q(b)], skills: [a: SkillProgress(mastery: 0.5), b: SkillProgress(mastery: 0.1)], now: now)
         XCTAssertEqual(planner.weakCells, [b, a])
+    }
+
+    /// A level whose last answer was wrong comes first; at equal points the easier level comes before book order.
+    func testWeakCellsRepairFirstThenEasierLevel() {
+        let a1 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 1)
+        let a2 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 2)
+        let b1 = CellKey(conceptID: c2, conceptOrder: 1, difficulty: 1)
+        let mastered = SkillProgress(mastery: 0.85)
+        let missed = SkillProgress(mastery: 0.6, recentResults: [true, true, false])
+        let even = Planner(questions: [q(a1), q(a2), q(b1)],
+                           skills: [a1: mastered, a2: SkillProgress(mastery: 0.3), b1: SkillProgress(mastery: 0.3)], now: now)
+        XCTAssertEqual(even.weakCells, [b1, a2])
+        let repair = Planner(questions: [q(a1), q(a2), q(b1)],
+                             skills: [a1: mastered, a2: missed, b1: SkillProgress(mastery: 0.3)], now: now)
+        XCTAssertEqual(repair.weakCells, [a2, b1])
+    }
+
+    func testNotTheSameSkillTwiceInARow() {
+        let a1 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 1)
+        let a2 = CellKey(conceptID: c1, conceptOrder: 0, difficulty: 2)
+        let b1 = CellKey(conceptID: c2, conceptOrder: 1, difficulty: 1)
+        let qs = [q(a1), q(a2), q(a2), q(b1)]
+        let planner = Planner(questions: qs, skills: [a1: SkillProgress(mastery: 0.85, nextDue: now.addingTimeInterval(86_400)),
+                                                      a2: SkillProgress(mastery: 0.1), b1: SkillProgress(mastery: 0.5)], now: now)
+        var s = SessionState()
+        Planner.record(questionID: qs[1].id, cell: a2, correct: true, in: &s)
+        XCTAssertEqual(planner.next(session: s, random: { 0 })?.cell, b1)
+    }
+
+    func testRepeatedMistakeSameKindSameSkill() {
+        typealias A = RepeatedMistake.Answer
+        let s1 = UUID(), s2 = UUID()
+        // Different kinds, or different skills: nothing.
+        XCTAssertNil(RepeatedMistake.find([A(index: 0, skill: s1, mistake: .incomplete, wrong: true, revealed: true),
+                                          A(index: 1, skill: s1, mistake: .procedural, wrong: true, revealed: false),
+                                          A(index: 2, skill: s2, mistake: .incomplete, wrong: true, revealed: false)]))
+        // Same kind on the same skill, newer not yet shown: both.
+        let r = RepeatedMistake.find([A(index: 0, skill: s1, mistake: .incomplete, wrong: true, revealed: true),
+                                      A(index: 1, skill: s1, mistake: nil, wrong: false, revealed: true),
+                                      A(index: 2, skill: s1, mistake: .incomplete, wrong: true, revealed: false)])
+        XCTAssertEqual(r?.earlier, 0); XCTAssertEqual(r?.latest, 2)
+        // Already shown: nothing more.
+        XCTAssertNil(RepeatedMistake.find([A(index: 0, skill: s1, mistake: .careless, wrong: true, revealed: true),
+                                          A(index: 1, skill: s1, mistake: .careless, wrong: true, revealed: true)]))
     }
 
     func testPrefersUnseenBookThenGenerated() {

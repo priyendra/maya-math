@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Shows background-graded results: a one-line summary, mistakes first (expanded), correct answers compact.
 struct CheckInView: View {
-    enum Kind { case regular, interruption, final }
+    enum Kind { case regular, interruption, repeated, final }
 
     let items: [Attempt]
     let pending: Int
@@ -69,6 +69,15 @@ struct CheckInView: View {
         case .interruption:
             Label("Before you go on, look at this one", systemImage: "hand.raised.fill")
                 .font(.title.bold()).foregroundStyle(Theme.classic.attention)
+        case .repeated:
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Same mistake twice", systemImage: "repeat")
+                    .font(.title.bold()).foregroundStyle(Theme.classic.attention)
+                    .accessibilityIdentifier("repeatedMistake")
+                if let m = items.last?.mistakeType {
+                    Text(RepeatedMistake.habit(m)).font(.title3)
+                }
+            }
         case .regular, .final:
             VStack(alignment: .leading, spacing: 6) {
                 Text(kind == .final ? "How you did" : "Check-in").font(.largeTitle.bold())

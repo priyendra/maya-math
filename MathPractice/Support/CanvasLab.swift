@@ -54,8 +54,10 @@ struct CheckInLab: View {
     @Query private var attempts: [Attempt]
     var body: some View {
         let stuckOnly = ProcessInfo.processInfo.arguments.contains("-stuckOnly")
-        CheckInView(items: attempts.filter { $0.mode == .practice && $0.isGraded && $0.effectiveVerdict == .incorrect && (!stuckOnly || $0.wasStuck) },
-                    pending: 0, kind: stuckOnly ? .interruption : .regular, onContinue: {})
+        let repeated = ProcessInfo.processInfo.arguments.contains("-repeated")
+        let wrong = attempts.filter { $0.mode == .practice && $0.isGraded && $0.effectiveVerdict == .incorrect && (!stuckOnly || $0.wasStuck) }
+        CheckInView(items: repeated ? Array(wrong.prefix(2)) : wrong,
+                    pending: 0, kind: repeated ? .repeated : stuckOnly ? .interruption : .regular, onContinue: {})
     }
 }
 #endif
