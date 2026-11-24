@@ -54,6 +54,16 @@ struct StudySet {
     }
 
     var allAttempts: [Attempt] { questions.flatMap(\.attempts) }
+
+    /// The skills in this set, in book order (chapter by chapter).
+    var concepts: [Concept] {
+        var seen = Set<UUID>(); var out: [Concept] = []
+        let chapterOrder = Dictionary(uniqueKeysWithValues: chapters.enumerated().map { ($1.id, $0) })
+        for q in questions where !q.isChallenge {
+            if let c = q.concept, seen.insert(c.id).inserted { out.append(c) }
+        }
+        return out.sorted { (chapterOrder[$0.chapter?.id ?? UUID()] ?? 0, $0.bookOrder) < (chapterOrder[$1.chapter?.id ?? UUID()] ?? 0, $1.bookOrder) }
+    }
 }
 
 /// Bridges SwiftData models and the pure learning engine.

@@ -167,7 +167,7 @@ struct AnswerFilterBar: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let concepts = MasteryGrid.concepts(set)
+        let concepts = set.concepts
         HStack(spacing: 8) {
             Menu {
                 Section {
@@ -310,7 +310,7 @@ private struct AnswerRow: View {
                             }
                         }
                         Text(a.startedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
-                             + " · " + ProgressSummaryBar.duration(a.activeSeconds)
+                             + " · " + Fmt.duration(a.activeSeconds)
                              + (a.gradingError != nil && !a.isGraded ? " · waiting to retry" : ""))
                             .font(theme.font(.caption)).foregroundStyle(.secondary)
                     }

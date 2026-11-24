@@ -12,6 +12,7 @@
 		068BA2E7A0C06960003E79E8 /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC840C4F982E6476B362357 /* Prompts.swift */; };
 		0712AB854D02F3FD6EA8AA06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C166E836241E4FB197025AEC /* Assets.xcassets */; };
 		0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44CD57438440D0BE6E0745E /* LibraryUITests.swift */; };
+		10C22342EB84B8C13226688F /* Fmt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CB076330F9EE5BDC18871E /* Fmt.swift */; };
 		13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F231E9BAE8BE9B8CC0ED4760 /* PracticeSessionView.swift */; };
 		16D59697D7A3D274E1515F07 /* AttemptReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */; };
 		1B47F8B62D1FAAA7A1B370E7 /* TapRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0033308F811C8F2DA0AA5AC8 /* TapRow.swift */; };
@@ -48,7 +49,6 @@
 		6BC3A89C98ECE9D5D90CD3EC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */; };
 		6F1CAA2621E34F010342925A /* TutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4CA4157E303F14CC5F0D81 /* TutorTests.swift */; };
 		743305947D8715F10D8149F4 /* CanvasUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B999A7ABD5D4DA91C34E1141 /* CanvasUITests.swift */; };
-		792D0564732E64C31AED6712 /* SkillsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */; };
 		7E2BE72BBA38C3631CFAF9AF /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0393C8469B25A370A297 /* SampleData.swift */; };
 		80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */; };
 		81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */; };
@@ -60,15 +60,14 @@
 		8C47E904189098B59EBFD292 /* TutorSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D5EC6D81F11332A69D4823 /* TutorSession.swift */; };
 		8D4046D904350CAD81AA7CF4 /* SkillDisplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174EA3609106B963A98A310F /* SkillDisplayTests.swift */; };
 		8E7A2EBCC2EF4C9E9C1B867E /* LessonSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377F6A4A3700AD0523696B3F /* LessonSession.swift */; };
-		8FFFD4E62188E33567B8EC62 /* ConceptPathViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE45E28F3A284A23BFA4393 /* ConceptPathViews.swift */; };
 		971105E4ADFA1BDDBE90991A /* FeedbackSummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57A2780C8C840176E7A7791 /* FeedbackSummaryTests.swift */; };
 		9A0CAD1C881B882613C489D7 /* ScanReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E69D628F248F571268EAA0 /* ScanReport.swift */; };
 		9A7952402D3D35B34E80DCCE /* TeacherFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F85BD6B0C88F20411BFB3C /* TeacherFeedback.swift */; };
 		9B0022A8FD25F3C3AA9042FE /* NewChapterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A290B7BCA132EBA8AB7FD2AF /* NewChapterView.swift */; };
 		9B4C0777C9D509F3117D50F0 /* HelpAndPauseUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */; };
-		A01FE7B1B93184544C6809CC /* ProgressSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2824029D7571FD8AEECAB925 /* ProgressSummary.swift */; };
 		A03AB31335605891567B4841 /* MathText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1CDC9394B9629E2AEAF5FB /* MathText.swift */; };
 		A5C1CC211AEB7365B7EF3DA3 /* ProblemReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55804A2BBA01524A634BFB1 /* ProblemReport.swift */; };
+		A69828115DBE4F68B0EBE268 /* ProgressGlance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 344B7F8F0D741AEBA5314E9F /* ProgressGlance.swift */; };
 		AE552D07DFDE0CB0C6527DEB /* Schemas.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC5BBD6E47EBFF3DAACA0B1 /* Schemas.swift */; };
 		AE7A026EA0FD47E14E085FF0 /* PipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F82F02D874D1DA98548E7D9 /* PipelineTests.swift */; };
 		B3C65C0C5E767EF1DF62F33D /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D256DEF3FCE3F340EA0475B /* Speech.swift */; };
@@ -87,7 +86,6 @@
 		CC9CAAFBBE05499BD6F34B64 /* ClaudeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC42C56EAF9BE0D0E30CA94 /* ClaudeServices.swift */; };
 		D003A678215210C677EECF6E /* LearningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFEA599FF608A11C79131F6 /* LearningTests.swift */; };
 		D6CB12D480EF27DEBA4DB4E5 /* RegradeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA941616DD5E93DD1699AF11 /* RegradeUITests.swift */; };
-		E1F911CB48CC2A3349235C17 /* ConceptPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522359F6EA0EBEE54210C57F /* ConceptPath.swift */; };
 		E8CA688ECF4C09DF64F66CCB /* LessonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EDDEEFC3356461554AEFFC /* LessonsView.swift */; };
 		E8CB7C833A1146DF4D3300A5 /* ClickThroughViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6F1D48CE6E8EBC758B6BDF /* ClickThroughViews.swift */; };
 		EDAD19C0E01133D964C70366 /* CanvasLabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39A1B0FD6DA9CA55459FBDE /* CanvasLabUITests.swift */; };
@@ -135,12 +133,11 @@
 		204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVoice.swift; sourceTree = "<group>"; };
 		2367536848D11C1D8BAF5268 /* HelpAndPauseUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpAndPauseUITests.swift; sourceTree = "<group>"; };
 		23C04733293AB6BC3B01BDA9 /* LessonWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonWriter.swift; sourceTree = "<group>"; };
-		2824029D7571FD8AEECAB925 /* ProgressSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummary.swift; sourceTree = "<group>"; };
 		29EDDEEFC3356461554AEFFC /* LessonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonsView.swift; sourceTree = "<group>"; };
 		2D3036FE3260923B369E442F /* QuestionPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionPanel.swift; sourceTree = "<group>"; };
 		2F82F02D874D1DA98548E7D9 /* PipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineTests.swift; sourceTree = "<group>"; };
-		304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsViews.swift; sourceTree = "<group>"; };
 		3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeacherFeedbackView.swift; sourceTree = "<group>"; };
+		344B7F8F0D741AEBA5314E9F /* ProgressGlance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressGlance.swift; sourceTree = "<group>"; };
 		377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		377F6A4A3700AD0523696B3F /* LessonSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonSession.swift; sourceTree = "<group>"; };
 		383690AEDDFF682EF655AE92 /* SkillBarsGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillBarsGrid.swift; sourceTree = "<group>"; };
@@ -148,7 +145,6 @@
 		47532A0C491289D637FD2620 /* ChapterHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterHomeView.swift; sourceTree = "<group>"; };
 		4827F8EF5EF188862466590F /* VariantGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariantGenerator.swift; sourceTree = "<group>"; };
 		4CDC08D495F22FAF745D4927 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
-		522359F6EA0EBEE54210C57F /* ConceptPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConceptPath.swift; sourceTree = "<group>"; };
 		53E69D628F248F571268EAA0 /* ScanReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanReport.swift; sourceTree = "<group>"; };
 		5B4AB5FDE2DD41A5217B1614 /* ExamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamView.swift; sourceTree = "<group>"; };
 		5FC840C4F982E6476B362357 /* Prompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompts.swift; sourceTree = "<group>"; };
@@ -157,7 +153,6 @@
 		665991869AC6129844A96D03 /* ClaudeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeClient.swift; sourceTree = "<group>"; };
 		69AD3512B5009E2D88B32F68 /* CallLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallLog.swift; sourceTree = "<group>"; };
 		6DCE0AFF579E0ADA5742DEE3 /* MyAnswersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAnswersView.swift; sourceTree = "<group>"; };
-		6DE45E28F3A284A23BFA4393 /* ConceptPathViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConceptPathViews.swift; sourceTree = "<group>"; };
 		6ED67685E937EC514E30ED7F /* ProgressReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressReportView.swift; sourceTree = "<group>"; };
 		715129D145F487DFA2575D5F /* MathPlain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathPlain.swift; sourceTree = "<group>"; };
 		743FCCE53E1AC4308EAFE1AD /* ScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanTests.swift; sourceTree = "<group>"; };
@@ -176,6 +171,7 @@
 		A290B7BCA132EBA8AB7FD2AF /* NewChapterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChapterView.swift; sourceTree = "<group>"; };
 		A44CD57438440D0BE6E0745E /* LibraryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryUITests.swift; sourceTree = "<group>"; };
 		A9372EBC3923439A35CEAE84 /* LessonPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonPage.swift; sourceTree = "<group>"; };
+		A9CB076330F9EE5BDC18871E /* Fmt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fmt.swift; sourceTree = "<group>"; };
 		AA2BF32A956DCCF46BBB260E /* SkillsPanelUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsPanelUITests.swift; sourceTree = "<group>"; };
 		AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorLiveProbeUITests.swift; sourceTree = "<group>"; };
 		AC7907F8F17ECCF8B44BA369 /* MathPracticeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathPracticeApp.swift; sourceTree = "<group>"; };
@@ -216,14 +212,12 @@
 			isa = PBXGroup;
 			children = (
 				B53ED8CD299C1B6CE50F185C /* ChapterScore.swift */,
-				522359F6EA0EBEE54210C57F /* ConceptPath.swift */,
 				0A2F6CFA61910BB216F96012 /* FeedbackSummary.swift */,
 				763D8DFC380CFEE7821043C2 /* GradingQueue.swift */,
 				039A3E5074D38B1C5691F340 /* HelpProvider.swift */,
 				D4C9162F6823FD48063CB394 /* LearningStore.swift */,
 				80B2FD60C9EA822A5F8F2E7D /* MasteryModel.swift */,
 				B886E03B5A5F3BE3219DFF3F /* Planner.swift */,
-				2824029D7571FD8AEECAB925 /* ProgressSummary.swift */,
 				B8F85BD6B0C88F20411BFB3C /* TeacherFeedback.swift */,
 			);
 			path = Learning;
@@ -325,12 +319,12 @@
 				47532A0C491289D637FD2620 /* ChapterHomeView.swift */,
 				BA225F2DCADFCF67BE911E34 /* ChapterScoreChart.swift */,
 				DC8971D46DCC5A0A5B86F734 /* CheckInView.swift */,
-				6DE45E28F3A284A23BFA4393 /* ConceptPathViews.swift */,
 				5B4AB5FDE2DD41A5217B1614 /* ExamView.swift */,
 				29EDDEEFC3356461554AEFFC /* LessonsView.swift */,
 				CE8FEC8B73BD5C71E909B655 /* LibraryView.swift */,
 				A290B7BCA132EBA8AB7FD2AF /* NewChapterView.swift */,
 				F231E9BAE8BE9B8CC0ED4760 /* PracticeSessionView.swift */,
+				344B7F8F0D741AEBA5314E9F /* ProgressGlance.swift */,
 				2D3036FE3260923B369E442F /* QuestionPanel.swift */,
 				0311F8682A7570D87C58B443 /* ReadChapterView.swift */,
 				9458FA16654054C29A418711 /* RetakeSheet.swift */,
@@ -338,7 +332,6 @@
 				971C199434CE906947C61BA7 /* ScopeViews.swift */,
 				377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */,
 				383690AEDDFF682EF655AE92 /* SkillBarsGrid.swift */,
-				304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */,
 				0033308F811C8F2DA0AA5AC8 /* TapRow.swift */,
 				3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */,
 				0E188F46B3AB7A984271D2AB /* WritingCanvas.swift */,
@@ -395,6 +388,7 @@
 			children = (
 				605F34558094F3610E52AF83 /* CanvasLab.swift */,
 				1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */,
+				A9CB076330F9EE5BDC18871E /* Fmt.swift */,
 				D20F101DFF6614D81E98D398 /* ImageUtils.swift */,
 				4CDC08D495F22FAF745D4927 /* KeychainStore.swift */,
 				715129D145F487DFA2575D5F /* MathPlain.swift */,
@@ -546,11 +540,10 @@
 				CC9CAAFBBE05499BD6F34B64 /* ClaudeServices.swift in Sources */,
 				E8CB7C833A1146DF4D3300A5 /* ClickThroughViews.swift in Sources */,
 				81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */,
-				E1F911CB48CC2A3349235C17 /* ConceptPath.swift in Sources */,
-				8FFFD4E62188E33567B8EC62 /* ConceptPathViews.swift in Sources */,
 				80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */,
 				1F28EF65C31C87942E6A464E /* ExamView.swift in Sources */,
 				39742F9F05764141F35B6AB7 /* FeedbackSummary.swift in Sources */,
+				10C22342EB84B8C13226688F /* Fmt.swift in Sources */,
 				297A67F5ED5BE2B258B95095 /* GradingQueue.swift in Sources */,
 				3089A521B9EE14DD7F6E3567 /* HelpProvider.swift in Sources */,
 				31145991F07C4C964B38827F /* ImageUtils.swift in Sources */,
@@ -573,8 +566,8 @@
 				260DEB3ED0DD4617B0DD110A /* Planner.swift in Sources */,
 				13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */,
 				A5C1CC211AEB7365B7EF3DA3 /* ProblemReport.swift in Sources */,
+				A69828115DBE4F68B0EBE268 /* ProgressGlance.swift in Sources */,
 				4A2818BFF345BF2C31262559 /* ProgressReportView.swift in Sources */,
-				A01FE7B1B93184544C6809CC /* ProgressSummary.swift in Sources */,
 				068BA2E7A0C06960003E79E8 /* Prompts.swift in Sources */,
 				575014BC4A385DA58CAD447A /* QuestionPanel.swift in Sources */,
 				C0F906DCAAD9CB300CFA566D /* ReadChapterView.swift in Sources */,
@@ -587,7 +580,6 @@
 				5F6BABF6127EC431F724EB4C /* ScopeViews.swift in Sources */,
 				6BC3A89C98ECE9D5D90CD3EC /* SettingsView.swift in Sources */,
 				C06243529F8E1E4F84672E48 /* SkillBarsGrid.swift in Sources */,
-				792D0564732E64C31AED6712 /* SkillsViews.swift in Sources */,
 				F4309CD596A6C40EF24D4273 /* SolutionPage.swift in Sources */,
 				B3C65C0C5E767EF1DF62F33D /* Speech.swift in Sources */,
 				1B47F8B62D1FAAA7A1B370E7 /* TapRow.swift in Sources */,

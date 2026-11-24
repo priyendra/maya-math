@@ -3,7 +3,8 @@ import SwiftUI
 /// My progress: skills × levels; each cell is a bar of its mastery points, coloured by value.
 struct SkillBarsGrid: View {
     let set: StudySet
-    var onSelect: (Concept) -> Void = { _ in }
+    /// Opens a skill's page; without it (session summary) rows are not tappable.
+    var onSelect: ((Concept) -> Void)? = nil
     @Environment(\.theme) private var theme
     static let levels = ["Basic", "Medium", "Hard"]
 
@@ -13,23 +14,24 @@ struct SkillBarsGrid: View {
 
     var body: some View {
         let planner = LearningStore.planner(set)
-        let concepts = MasteryGrid.concepts(set)
+        let concepts = set.concepts
         let present = Set(set.questions.filter { !$0.isChallenge }.compactMap { q in q.concept.map { "\($0.id)|\(q.difficulty)" } })
         VStack(alignment: .leading, spacing: 12) {
             Text("Your skills").font(theme.font(.section))
-            Text("Each bar fills as you earn the level's mastery points; 100 = mastered. Tap a skill to see its questions and your answers.")
+            Text("Each bar fills as you earn the level's mastery points; 100 = mastered."
+                 + (onSelect == nil ? "" : " Tap a skill to see its questions and your answers."))
                 .font(theme.font(.caption)).foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 Spacer()
                 ForEach(Self.levels, id: \.self) { l in
                     Text(l).font(theme.font(.label)).foregroundStyle(.secondary).frame(width: 150)
                 }
-                Color.clear.frame(width: 32, height: 1)
+                if onSelect != nil { Color.clear.frame(width: 32, height: 1) }
             }
             .padding(.horizontal, 10)
             VStack(spacing: 2) {
                 ForEach(concepts) { c in
-                    Button { onSelect(c) } label: {
+                    Button { onSelect?(c) } label: {
                         HStack(spacing: 12) {
                             Text(MathPlain.render(c.name)).font(theme.font(.body)).foregroundStyle(.primary)
                                 .multilineTextAlignment(.leading)
@@ -42,10 +44,11 @@ struct SkillBarsGrid: View {
                                         points: Self.points(p), mastered: planner.isMastered(key))
                                     .frame(width: 150)
                             }
-                            GoChevron()
+                            if onSelect != nil { GoChevron() }
                         }
                     }
                     .buttonStyle(TapRowStyle())
+                    .disabled(onSelect == nil)
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("skill-\(c.bookOrder)")
                     if c.id != concepts.last?.id { Divider().padding(.leading, 10) }

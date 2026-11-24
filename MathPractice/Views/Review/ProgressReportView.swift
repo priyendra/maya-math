@@ -3,21 +3,25 @@ import Charts
 
 /// Your progress: mastery grid, mistake patterns, speed, and daily activity.
 struct ProgressReportView: View {
-    let chapter: Chapter
+    let set: StudySet
     @State private var skill: Concept?
     @State private var mistake: MistakeType?
 
     private var graded: [Attempt] {
-        chapter.allAttempts.filter { $0.isGraded && $0.effectiveVerdict != .needsReview }.sorted { $0.startedAt < $1.startedAt }
+        self.set.allAttempts.filter { $0.isGraded && $0.effectiveVerdict != .needsReview }.sorted { $0.startedAt < $1.startedAt }
     }
 
     var body: some View {
         let graded = self.graded
         let mistakes = graded.compactMap { $0.effectiveVerdict == .incorrect ? $0.mistakeType : nil }
-        let exams = chapter.exams.filter { $0.finishedAt != nil }.sorted { $0.startedAt < $1.startedAt }
+        let ids = Set(set.questions.map(\.id))
+        // A study plan shows the exams taken on (mostly) its own questions.
+        let exams = set.chapters.flatMap(\.exams).filter { e in
+            e.finishedAt != nil && e.questionIDs.filter(ids.contains).count * 2 >= max(e.questionIDs.count, 1)
+        }.sorted { $0.startedAt < $1.startedAt }
         return List {
             Section {
-                SkillBarsGrid(set: .chapter(chapter)) { skill = $0 }.padding(.vertical)
+                SkillBarsGrid(set: set) { skill = $0 }.padding(.vertical)
             }
             if !mistakes.isEmpty {
                 Section("Mistake types") { MistakeChart(mistakes: mistakes) { mistake = $0 } }
@@ -27,13 +31,13 @@ struct ProgressReportView: View {
             }
             if !exams.isEmpty {
                 Section("Exams") {
-                    ForEach(exams) { exam in ExamRow(exam: exam, attempts: chapter.allAttempts.filter { $0.examSessionID == exam.id }) }
+                    ForEach(exams) { exam in ExamRow(exam: exam, attempts: set.allAttempts.filter { $0.examSessionID == exam.id }) }
                 }
             }
         }
         .navigationTitle("My progress")
-        .navigationDestination(item: $skill) { SkillDetailView(set: .chapter(chapter), concept: $0) }
-        .navigationDestination(item: $mistake) { MistakeDetailView(set: .chapter(chapter), mistake: $0) }
+        .navigationDestination(item: $skill) { SkillDetailView(set: set, concept: $0) }
+        .navigationDestination(item: $mistake) { MistakeDetailView(set: set, mistake: $0) }
     }
 }
 

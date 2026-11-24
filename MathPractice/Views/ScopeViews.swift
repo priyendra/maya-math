@@ -6,6 +6,7 @@ struct ScopeHomeView: View {
     @Bindable var scope: StudyScope
     @Query(sort: \Chapter.createdAt) private var chapters: [Chapter]
     @State private var editing = false
+    @Environment(\.theme) private var theme
 
     static func countdown(to date: Date) -> String {
         let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()),
@@ -28,20 +29,32 @@ struct ScopeHomeView: View {
                 }
                 Text(summary(set)).foregroundStyle(.secondary)
                 StudyActions(set: set)
-                HStack(spacing: 12) {
+                // The same tiles and sections as a chapter page (no lessons or reading: those belong to a chapter).
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                     NavigationLink { MyAnswersView(set: set) } label: {
-                        LinkTile(title: "My answers", subtitle: "Your work and how it was graded", icon: "list.bullet.rectangle")
+                        let toCheck = set.allAttempts.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.count
+                        LinkTile(title: "My answers", subtitle: toCheck > 0 ? "\(toCheck) to check" : "Your work and how it was graded",
+                                 icon: "list.bullet.rectangle.fill", highlight: toCheck > 0, color: theme.board)
                     }
+                    NavigationLink { ProgressReportView(set: set) } label: {
+                        LinkTile(title: "My progress", subtitle: "Skills, mistake patterns, practice days", icon: "chart.bar.fill", color: theme.done)
+                    }
+                    .accessibilityIdentifier("scopeProgress")
                     Button { editing = true } label: {
-                        LinkTile(title: "Edit study plan", subtitle: "What's on the test, date, exam length", icon: "slider.horizontal.3")
+                        LinkTile(title: "Edit study plan", subtitle: "What's on the test, date, exam length", icon: "slider.horizontal.3", color: theme.accent2)
                     }
                 }
                 .buttonStyle(.plain)
-                SkillsPanel(set: set)
+                PathGlance(set: set)
+                    .padding(20)
+                    .card(theme)
                 TeacherFeedbackCard(set: set, holder: scope)
             }
             .padding(24)
+            .frame(maxWidth: 980)
+            .frame(maxWidth: .infinity)
         }
+        .themedBackground(theme)
         .navigationTitle(scope.name)
         .sheet(isPresented: $editing) { ScopeEditorView(scope: scope, folder: scope.folder) }
     }

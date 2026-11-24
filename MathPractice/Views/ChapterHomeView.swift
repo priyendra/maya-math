@@ -134,14 +134,14 @@ struct ChapterHomeView: View {
                         LinkTile(title: "My answers", subtitle: toCheck > 0 ? "\(toCheck) to check" : "Your work and how it was graded",
                                  icon: "list.bullet.rectangle.fill", highlight: toCheck > 0, color: theme.board)
                     }
-                    NavigationLink { ProgressReportView(chapter: chapter) } label: {
-                        LinkTile(title: "My progress", subtitle: "Mistake patterns, speed, practice days", icon: "chart.bar.fill", color: theme.done)
+                    NavigationLink { ProgressReportView(set: set) } label: {
+                        LinkTile(title: "My progress", subtitle: "Skills, mistake patterns, practice days", icon: "chart.bar.fill", color: theme.done)
                     }
                 }
                 .buttonStyle(.plain)
 
                 if !chapter.needsRereading {
-                    PathGlance(chapter: chapter)
+                    PathGlance(set: set)
                         .padding(20)
                         .card(theme)
                     TeacherFeedbackCard(set: .chapter(chapter), holder: chapter)
@@ -247,78 +247,4 @@ struct SessionStats {
         correct = counted.filter { $0.effectiveVerdict == .correct }.count
         minutes = Int(attempts.map(\.activeSeconds).reduce(0, +) / 60)
     }
-}
-
-/// Concept × difficulty grid colored by mastery, for a chapter or scope.
-struct MasteryGrid: View {
-    let set: StudySet
-    @Environment(\.theme) private var theme
-
-    init(set: StudySet) { self.set = set }
-    init(chapter: Chapter) { self.set = .chapter(chapter) }
-
-    private var concepts: [Concept] { Self.concepts(set) }
-
-    static func concepts(_ set: StudySet) -> [Concept] {
-        var seen = Set<UUID>(); var out: [Concept] = []
-        let chapterOrder = Dictionary(uniqueKeysWithValues: set.chapters.enumerated().map { ($1.id, $0) })
-        for q in set.questions where !q.isChallenge {
-            if let c = q.concept, seen.insert(c.id).inserted { out.append(c) }
-        }
-        return out.sorted { (chapterOrder[$0.chapter?.id ?? UUID()] ?? 0, $0.bookOrder) < (chapterOrder[$1.chapter?.id ?? UUID()] ?? 0, $1.bookOrder) }
-    }
-
-    var body: some View {
-        let planner = LearningStore.planner(set)
-        let present = Set(set.questions.filter { !$0.isChallenge }.compactMap { q in q.concept.map { "\($0.id)|\(q.difficulty)" } })
-        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 10) {
-            GridRow {
-                Text("")
-                ForEach(1...3, id: \.self) { d in
-                    Text(Self.levels[d - 1]).font(theme.font(.label)).foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-            }
-            ForEach(concepts) { concept in
-                GridRow {
-                    Text(MathPlain.render(concept.name)).font(theme.font(.body)).lineLimit(2).frame(maxWidth: 280, alignment: .leading)
-                    ForEach(1...3, id: \.self) { d in
-                        cell(concept: concept, difficulty: d, planner: planner, has: present.contains("\(concept.id)|\(d)"))
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func cell(concept: Concept, difficulty: Int, planner: Planner, has: Bool) -> some View {
-        let key = CellKey(conceptID: concept.id, conceptOrder: concept.bookOrder, difficulty: difficulty)
-        let r = min(theme.radius * 0.5, 10)
-        if !has {
-            RoundedRectangle(cornerRadius: r).strokeBorder(Color.secondary.opacity(0.12), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                .frame(height: 46)
-                .accessibilityLabel("No \(Self.levels[difficulty - 1]) questions")
-        } else {
-            let open = planner.isOpen(key)
-            let look = SkillCellLook(progress: planner.progress(key), mastered: planner.isMastered(key), estimate: planner.estimate(key))
-            RoundedRectangle(cornerRadius: r, style: .continuous)
-                .fill(open ? theme.skillColor(look.stage) : Color.secondary.opacity(0.13))
-                .frame(height: 46)
-                .overlay {
-                    if !open {
-                        // Locked again after the level below dipped: keep her earlier work visible.
-                        HStack(spacing: 6) {
-                            Image(systemName: "lock.fill")
-                            if planner.progress(key).attemptCount > 0 { SkillDots(filled: look.dots, color: .secondary) }
-                        }
-                        .foregroundStyle(.secondary)
-                    }
-                    else { SkillCellContent(look: look) }
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(MathPlain.render(concept.name)), \(Self.levels[difficulty - 1]): \(open ? look.spoken : look.stage == .new ? "Locked" : "Locked until the level below is Almost; \(look.dots) of 5 steps")")
-        }
-    }
-
-    static let levels = ["Basic", "Medium", "Hard"]
 }

@@ -102,34 +102,6 @@ extension SkillState {
     }
 }
 
-/// How a skill cell is shown to the student: a named stage plus steps (dots) toward the star.
-/// Display only; the mastery rule itself lives in `MasteryModel`.
-enum SkillStage: Int, CaseIterable, Comparable {
-    case new, learning, gettingThere, almost, mastered
-
-    static func < (a: SkillStage, b: SkillStage) -> Bool { a.rawValue < b.rawValue }
-
-    var name: String {
-        switch self {
-        case .new: return "Not started"
-        case .learning: return "Learning"
-        case .gettingThere: return "Getting there"
-        case .almost: return "Almost"
-        case .mastered: return "Mastered"
-        }
-    }
-
-    static func of(_ p: SkillProgress, mastered: Bool) -> SkillStage {
-        if mastered { return .mastered }
-        if p.attemptCount == 0 { return .new }
-        switch p.mastery {
-        case ..<0.3: return .learning
-        case ..<0.6: return .gettingThere
-        default: return .almost
-        }
-    }
-}
-
 extension MasteryModel {
     /// Number of dots shown toward the star.
     static let steps = 5

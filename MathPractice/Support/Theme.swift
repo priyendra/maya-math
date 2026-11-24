@@ -24,20 +24,6 @@ struct Theme {
     let notQuite: Color     // a wrong answer (kind, not alarming)
     let board: Color        // the tutor's board
 
-    /// Skill mastery colours: not tried, weak, getting there, nearly, mastered.
-    func skillColor(_ stage: SkillStage) -> Color {
-        switch stage {
-        case .new: return learn.opacity(0.14)
-        case .learning: return notQuite
-        case .gettingThere: return attention
-        case .almost: return Color(red: 1, green: 0.86, blue: 0.35)
-        case .mastered: return done
-        }
-    }
-
-    /// Dots and icons drawn on a skill colour.
-    func skillInk(_ stage: SkillStage) -> Color { stage == .almost ? .black.opacity(0.75) : .white }
-
     // MARK: Type scale (six roles)
 
     func font(_ role: TypeRole) -> Font {

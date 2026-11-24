@@ -237,3 +237,7 @@ Running record of product decisions and open discussion topics. Newest decisions
   Answers menu groups "Mistake categories". "See in chapter" is also on the answer page and the solution page.
 - The answer page offers only the other grade: a correct answer can be marked wrong (choosing its kind of
   mistake), a wrong one marked correct. Mistake types never show on correct answers (also not to the lesson tutor).
+- Study plan pages match chapter pages: Practice / Exam, then tiles (My answers, My progress, Edit
+  study plan), the Progress summary card (mastery points chart + practice line) and Teacher's feedback. My progress
+  works for any study set; a plan shows the exams taken mostly on its own questions. The session summary shows the
+  skill bars (not tappable). The old coloured grid, its stages/legend/help, the path views and their summaries are gone.

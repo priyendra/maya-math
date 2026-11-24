@@ -52,4 +52,20 @@ final class SkillsPanelUITests: XCTestCase {
     private func save(_ app: XCUIApplication, _ dir: String, _ name: String) {
         try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
     }
+
+    /// A study plan page and its My progress (design review only, on real data with a plan named in PLAN_NAME).
+    func testStudyPlanShots() throws {
+        guard let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"],
+              let plan = ProcessInfo.processInfo.environment["PLAN_NAME"] else { throw XCTSkip("Set SHOTS_DIR and PLAN_NAME") }
+        let app = XCUIApplication()
+        app.launch()
+        sleep(2); save(app, dir, "p0-home")
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", plan)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap(); sleep(3); save(app, dir, "p1-plan-top")
+        app.swipeUp(); sleep(1); save(app, dir, "p2-plan-bottom")
+        app.swipeDown(); app.swipeDown(); sleep(1)
+        app.buttons["scopeProgress"].firstMatch.tap(); sleep(2); save(app, dir, "p3-plan-progress")
+    }
+
 }

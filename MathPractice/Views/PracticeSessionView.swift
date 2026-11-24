@@ -550,7 +550,7 @@ struct SessionSummaryView: View {
                     }
                     .frame(maxWidth: 600, alignment: .leading)
                 }
-                VStack(alignment: .leading, spacing: 12) { MasteryGrid(set: set); SkillLegend() }.frame(maxWidth: 700)
+                SkillBarsGrid(set: set).frame(maxWidth: 820)
                 Button("Done", action: onDone).buttonStyle(.borderedProminent).controlSize(.large)
             }
             .padding(32)
