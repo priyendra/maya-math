@@ -15,7 +15,7 @@ struct ProgressReportView: View {
         let exams = chapter.exams.filter { $0.finishedAt != nil }.sorted { $0.startedAt < $1.startedAt }
         return List {
             Section {
-                SkillsPanel(set: .chapter(chapter)).padding(.vertical)
+                PathPanel(set: .chapter(chapter)).padding(.vertical)
             }
             if !mistakes.isEmpty {
                 Section("Mistake types") { MistakeChart(mistakes: mistakes) }

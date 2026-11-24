@@ -76,3 +76,31 @@ final class SkillDisplayTests: XCTestCase {
         XCTAssertEqual(s.reviewDueToday, 1)
     }
 }
+
+final class ChapterScoreTests: XCTestCase {
+    func testHistoryHasAPointEveryThirtyMinutes() {
+        let cell = CellKey(conceptID: UUID(), conceptOrder: 0, difficulty: 1)
+        let other = CellKey(conceptID: UUID(), conceptOrder: 1, difficulty: 1)
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        // 10 right answers of 10 minutes each = 100 minutes.
+        let answers = (0..<10).map { i in
+            ChapterScore.Answer(date: start.addingTimeInterval(Double(i) * 600), cell: cell, correct: true, mistake: nil, seconds: 600)
+        }
+        let points = ChapterScore.history(answers, cells: [cell, other])
+        XCTAssertEqual(points.map(\.hours), [0, 0.5, 1, 1.5, 100.0 / 60])
+        XCTAssertEqual(points[1].score, 100 * MasteryModel.scoreAfter(rightInARow: 3) / 0.8 / 2, accuracy: 1e-9)
+        XCTAssertEqual(points.last!.score, 50, accuracy: 1e-9)   // one level at star level (capped), the other untried
+    }
+}
+
+extension ChapterScoreTests {
+    func testScoreBeforeADateIgnoresLaterAnswers() {
+        let cell = CellKey(conceptID: UUID(), conceptOrder: 0, difficulty: 1)
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let answers = (0..<4).map { i in
+            ChapterScore.Answer(date: start.addingTimeInterval(Double(i) * 600), cell: cell, correct: true, mistake: nil, seconds: 60)
+        }
+        XCTAssertEqual(ChapterScore.score(answers, cells: [cell], before: start.addingTimeInterval(1_000)),
+                       100 * MasteryModel.scoreAfter(rightInARow: 2) / 0.8, accuracy: 1e-9)
+    }
+}

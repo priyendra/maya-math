@@ -141,7 +141,7 @@ struct ChapterHomeView: View {
                 .buttonStyle(.plain)
 
                 if !chapter.needsRereading {
-                    SkillsPanel(set: set)
+                    PathGlance(chapter: chapter)
                         .padding(20)
                         .card(theme)
                 }
@@ -256,7 +256,9 @@ struct MasteryGrid: View {
     init(set: StudySet) { self.set = set }
     init(chapter: Chapter) { self.set = .chapter(chapter) }
 
-    private var concepts: [Concept] {
+    private var concepts: [Concept] { Self.concepts(set) }
+
+    static func concepts(_ set: StudySet) -> [Concept] {
         var seen = Set<UUID>(); var out: [Concept] = []
         let chapterOrder = Dictionary(uniqueKeysWithValues: set.chapters.enumerated().map { ($1.id, $0) })
         for q in set.questions where !q.isChallenge {

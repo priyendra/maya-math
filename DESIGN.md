@@ -175,3 +175,18 @@ Running record of product decisions and open discussion topics. Newest decisions
   still to discuss).
 - The "Up next" lesson card was removed from the chapter page; the next lesson is reached from Lessons
   (which marks it "Up next" / "In progress").
+
+## Progress summary and mastery points
+- **Mastery points (0–100)** are the chapter's (or study plan's) one number. Each skill level (concept × Basic/Medium/
+  Hard) earns up to 100 as its score climbs to star level (80%); points = the average, untried or locked levels = 0.
+  So 100 = every level at star level, for any book. Not a percentage (kids read % as "fraction right").
+  Points can drop after wrong answers.
+- **Chapter page "Progress summary"**: points as the headline with "+N today" (vs the end of yesterday), a line chart of
+  points over **practice time** (x = cumulative active time, a point every 30 min, rebuilt by replaying answers; no
+  dots or grid, bold line, dashed "★ 100" goal line), and one line: answered · % right · practice time · answers to
+  check. Removed from the chapter page: the full grid, the small map, "Focus next", "See all" (the My progress tile
+  goes there). Clock time / test date on the axis was tried and dropped.
+- **My progress (interim, under discussion next)**: one path per skill (Basic → Medium → Hard → ★, 5 steps per level;
+  mastered = top level mastered) with the summary tiles. Known issues: passed levels show full though only ~3 steps
+  were earned; a level that re-locked isn't shown; "Per concept" still below.
+- Known: the chart's time axis counts only answers that moved a score, so it ends slightly short of total practice time.

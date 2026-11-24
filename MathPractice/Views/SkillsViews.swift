@@ -92,6 +92,8 @@ struct SkillsPanel: View {
 struct ProgressSummaryBar: View {
     let set: StudySet
     var testDate: Date? = nil
+    /// Chapter page: answered, right, mastered only.
+    var compact = false
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -114,9 +116,9 @@ struct ProgressSummaryBar: View {
                     if let acc = s.accuracy {
                         tile(Self.percent(acc), s.accuracyToday.map { "right · \(Self.percent($0)) today" } ?? "right")
                     }
-                    tile(Self.duration(s.seconds), s.days == 1 ? "practice · 1 day" : "practice · \(s.days) days")
+                    if !compact { tile(Self.duration(s.seconds), s.days == 1 ? "practice · 1 day" : "practice · \(s.days) days") }
                     tile("\(s.masteredCells) of \(s.totalCells)", "mastered · \(s.almostCells) almost", icon: "star.fill")
-                    if s.masteredCells > 0 {
+                    if s.masteredCells > 0 && !compact {
                         tile("\(s.reviewDueToday)", s.reviewDueTomorrow > 0 ? "to review today · \(s.reviewDueTomorrow) tomorrow" : "to review today",
                              icon: "arrow.clockwise")
                     }
