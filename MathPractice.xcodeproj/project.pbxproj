@@ -14,6 +14,7 @@
 		0D0090B8E7E8BAC9D76088C8 /* LibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44CD57438440D0BE6E0745E /* LibraryUITests.swift */; };
 		13CF8E0903510BCBADEBFCD6 /* PracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F231E9BAE8BE9B8CC0ED4760 /* PracticeSessionView.swift */; };
 		16D59697D7A3D274E1515F07 /* AttemptReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC5B3BBBD6DFCB9AEE46214 /* AttemptReviewView.swift */; };
+		1B47F8B62D1FAAA7A1B370E7 /* TapRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0033308F811C8F2DA0AA5AC8 /* TapRow.swift */; };
 		1F28EF65C31C87942E6A464E /* ExamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4AB5FDE2DD41A5217B1614 /* ExamView.swift */; };
 		21207726D1026BEE0D36A8BF /* ScanFixView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8393FD9C190CD55EF1AAE2 /* ScanFixView.swift */; };
 		260DEB3ED0DD4617B0DD110A /* Planner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B886E03B5A5F3BE3219DFF3F /* Planner.swift */; };
@@ -115,6 +116,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0033308F811C8F2DA0AA5AC8 /* TapRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapRow.swift; sourceTree = "<group>"; };
 		0311F8682A7570D87C58B443 /* ReadChapterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadChapterView.swift; sourceTree = "<group>"; };
 		039A3E5074D38B1C5691F340 /* HelpProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpProvider.swift; sourceTree = "<group>"; };
 		07F4CF90DCA0E731483BB305 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -337,6 +339,7 @@
 				377D5D8A04E22E74FA5A7B35 /* SettingsView.swift */,
 				383690AEDDFF682EF655AE92 /* SkillBarsGrid.swift */,
 				304E7E03AEC58A8AD0B82165 /* SkillsViews.swift */,
+				0033308F811C8F2DA0AA5AC8 /* TapRow.swift */,
 				3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */,
 				0E188F46B3AB7A984271D2AB /* WritingCanvas.swift */,
 				81788D58E5C7914840E2F5CD /* Review */,
@@ -587,6 +590,7 @@
 				792D0564732E64C31AED6712 /* SkillsViews.swift in Sources */,
 				F4309CD596A6C40EF24D4273 /* SolutionPage.swift in Sources */,
 				B3C65C0C5E767EF1DF62F33D /* Speech.swift in Sources */,
+				1B47F8B62D1FAAA7A1B370E7 /* TapRow.swift in Sources */,
 				9A7952402D3D35B34E80DCCE /* TeacherFeedback.swift in Sources */,
 				CBD0105A791DCBF8C3EBBEBF /* TeacherFeedbackView.swift in Sources */,
 				63176AF6CA27B2306788850A /* Theme.swift in Sources */,

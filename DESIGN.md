@@ -232,3 +232,8 @@ Running record of product decisions and open discussion topics. Newest decisions
   heights so rebuilt views don't resize. Unicode math spaces relations and top-level +/− ("3𝑥² − 41𝑥 = −60").
 - One filter row: Answers menu (All / Correct / Wrong answers, then each kind of mistake), Skill menu, Level menu,
   count, newest/oldest toggle. 25 cards at a time with "Show more".
+- Tappable rows look tappable: whole-row buttons that highlight when pressed, ending in a blue › in a
+  circle (skills grid, mistake types). Filter pills are 44 pt tall chips; an active filter is filled blue. The
+  Answers menu groups "Mistake categories". "See in chapter" is also on the answer page and the solution page.
+- The answer page offers only the other grade: a correct answer can be marked wrong (choosing its kind of
+  mistake), a wrong one marked correct. Mistake types never show on correct answers (also not to the lesson tutor).

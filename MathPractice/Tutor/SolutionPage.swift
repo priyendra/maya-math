@@ -23,6 +23,9 @@ struct SolutionPage: View {
                 .navigationTitle(attempt.wasStuck ? "Solution" : "Your answer")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    if let q = attempt.question {
+                        ToolbarItem(placement: .topBarLeading) { ChapterLink(question: q) }
+                    }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { tutor.end(); dismiss() }
                     }

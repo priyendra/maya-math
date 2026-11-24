@@ -15,38 +15,40 @@ struct SkillBarsGrid: View {
         let planner = LearningStore.planner(set)
         let concepts = MasteryGrid.concepts(set)
         let present = Set(set.questions.filter { !$0.isChallenge }.compactMap { q in q.concept.map { "\($0.id)|\(q.difficulty)" } })
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Your skills").font(theme.font(.section))
-            Text("Each bar fills as you earn the level's mastery points; 100 = mastered.")
+            Text("Each bar fills as you earn the level's mastery points; 100 = mastered. Tap a skill to see its questions and your answers.")
                 .font(theme.font(.caption)).foregroundStyle(.secondary)
-            Grid(alignment: .center, horizontalSpacing: 12, verticalSpacing: 6) {
-                GridRow {
-                    Text("").gridColumnAlignment(.leading)
-                    ForEach(Self.levels, id: \.self) { l in
-                        Text(l).font(theme.font(.label)).foregroundStyle(.secondary).frame(width: 150)
-                    }
-                    Text("")
+            HStack(spacing: 12) {
+                Spacer()
+                ForEach(Self.levels, id: \.self) { l in
+                    Text(l).font(theme.font(.label)).foregroundStyle(.secondary).frame(width: 150)
                 }
+                Color.clear.frame(width: 32, height: 1)
+            }
+            .padding(.horizontal, 10)
+            VStack(spacing: 2) {
                 ForEach(concepts) { c in
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                    GridRow {
-                        Text(MathPlain.render(c.name)).font(theme.font(.body))
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        ForEach(1...3, id: \.self) { d in
-                            let key = CellKey(conceptID: c.id, conceptOrder: c.bookOrder, difficulty: d)
-                            let p = planner.skills[key]
-                            BarCell(has: present.contains("\(c.id)|\(d)"), open: planner.isOpen(key), tried: (p?.attemptCount ?? 0) > 0,
-                                    points: Self.points(p), mastered: planner.isMastered(key))
-                                .frame(width: 150)
+                    Button { onSelect(c) } label: {
+                        HStack(spacing: 12) {
+                            Text(MathPlain.render(c.name)).font(theme.font(.body)).foregroundStyle(.primary)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            ForEach(1...3, id: \.self) { d in
+                                let key = CellKey(conceptID: c.id, conceptOrder: c.bookOrder, difficulty: d)
+                                let p = planner.skills[key]
+                                BarCell(has: present.contains("\(c.id)|\(d)"), open: planner.isOpen(key), tried: (p?.attemptCount ?? 0) > 0,
+                                        points: Self.points(p), mastered: planner.isMastered(key))
+                                    .frame(width: 150)
+                            }
+                            GoChevron()
                         }
-                        Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture { onSelect(c) }
+                    .buttonStyle(TapRowStyle())
                     .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
                     .accessibilityIdentifier("skill-\(c.bookOrder)")
+                    if c.id != concepts.last?.id { Divider().padding(.leading, 10) }
                 }
             }
         }

@@ -170,13 +170,11 @@ struct AnswerFilterBar: View {
         let concepts = MasteryGrid.concepts(set)
         HStack(spacing: 8) {
             Menu {
-                Picker("Answers", selection: $filter.result) {
-                    ForEach(ResultFilter.main, id: \.self) { r in Text(r.label).tag(r) }
+                Section {
+                    ForEach(ResultFilter.main, id: \.self) { r in choice(r) }
                 }
-                Section("Wrong answers by kind of mistake") {
-                    Picker("Kind of mistake", selection: $filter.result) {
-                        ForEach(MistakeType.allCases, id: \.self) { m in Text(m.displayName).tag(ResultFilter.mistake(m)) }
-                    }
+                Section("Mistake categories") {
+                    ForEach(MistakeType.allCases, id: \.self) { m in choice(.mistake(m)) }
                 }
             } label: {
                 MenuPill(icon: "line.3.horizontal.decrease", text: filter.result.label, active: filter.result != .all, menu: true)
@@ -218,6 +216,15 @@ struct AnswerFilterBar: View {
     }
 }
 
+extension AnswerFilterBar {
+    /// A menu item that selects a result filter, ticked when it's the current one.
+    fileprivate func choice(_ r: ResultFilter) -> some View {
+        Button { filter.result = r } label: {
+            if filter.result == r { Label(r.label, systemImage: "checkmark") } else { Text(r.label) }
+        }
+    }
+}
+
 private struct MenuPill: View {
     let icon: String
     let text: String
@@ -226,16 +233,19 @@ private struct MenuPill: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon).font(.caption.weight(.semibold))
+        HStack(spacing: 8) {
+            Image(systemName: icon).font(.subheadline.weight(.semibold))
             Text(text).lineLimit(1).truncationMode(.tail).frame(maxWidth: 320, alignment: .leading)
-            if menu { Image(systemName: "chevron.down").font(.caption2.weight(.bold)) }
+            if menu { Image(systemName: "chevron.down").font(.caption.weight(.bold)) }
         }
-        .font(theme.font(.caption).weight(.semibold))
-        .padding(.horizontal, 12).padding(.vertical, 7)
-        .background(Capsule().fill(active ? theme.accent.opacity(0.14) : Color(.secondarySystemGroupedBackground)))
-        .overlay(Capsule().stroke(active ? theme.accent.opacity(0.5) : Color.secondary.opacity(0.18)))
-        .foregroundStyle(active ? theme.accent : Color.primary)
+        .font(theme.font(.label).weight(.semibold))
+        .padding(.horizontal, 16).padding(.vertical, 11)
+        .frame(minHeight: 44)
+        .background(Capsule().fill(active ? theme.accent : Color(.secondarySystemGroupedBackground)))
+        .overlay(Capsule().stroke(active ? Color.clear : Color.secondary.opacity(0.22)))
+        .foregroundStyle(active ? Color.white : Color.primary)
+        .shadow(color: .black.opacity(active ? 0.12 : 0.04), radius: 3, y: 1)
+        .contentShape(Capsule())
     }
 }
 

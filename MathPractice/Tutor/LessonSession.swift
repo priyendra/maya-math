@@ -278,7 +278,7 @@ final class LessonSession: VoiceTutor {
             text("She answered the \"your turn\" problem [turn] (try \(tryNumber) of 2):\n\(a.question?.text ?? "")")
             if let img = a.renderedImage { text("Her work:"); content.append(ClaudeClient.Block.png(img).json) }
             var g = "Grading: not correct"
-            if let m = a.mistakeType { g += " (mistake type: \(m.displayName.lowercased()))" }
+            if let m = a.mistakeType, a.effectiveVerdict == .incorrect { g += " (mistake type: \(m.displayName.lowercased()))" }
             if !a.transcribedAnswer.isEmpty { g += "\nHer answer read as: \(a.transcribedAnswer)" }
             if !a.errorStep.isEmpty { g += "\nWhere it went wrong: \(a.errorStep)" }
             if !a.feedback.isEmpty { g += "\nFeedback: \(a.feedback)" }

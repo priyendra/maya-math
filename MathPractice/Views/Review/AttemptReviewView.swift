@@ -14,6 +14,7 @@ struct AttemptReviewView: View {
             if let q = attempt.question {
                 Section("Question") {
                     MathText(markdown: q.text, fontSize: 18)
+                    ChapterLink(question: q)
                     if let fig = q.figureData, let img = UIImage(data: fig) {
                         Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 220)
                     }
@@ -45,7 +46,7 @@ struct AttemptReviewView: View {
                 HStack { VerdictBadge(verdict: attempt.verdict); Text(attempt.verdict.label) }
                 if !attempt.transcribedAnswer.isEmpty { MathRow(label: "Claude read your answer as", value: attempt.transcribedAnswer) }
                 if !attempt.ownAnswer.isEmpty { MathRow(label: "Claude's own answer", value: attempt.ownAnswer) }
-                if let m = attempt.mistakeType { LabeledContent("Mistake type", value: m.displayName) }
+                if attempt.verdict == .incorrect, let m = attempt.mistakeType { LabeledContent("Mistake type", value: m.displayName) }
                 if !attempt.errorStep.isEmpty { MathText(markdown: "**Where it went wrong:** \(attempt.errorStep)", fontSize: 16) }
                 if !attempt.feedback.isEmpty { MathText(markdown: attempt.feedback, fontSize: 16) }
                 LabeledContent("Confidence", value: String(format: "%.0f%%", attempt.graderConfidence * 100))
@@ -68,11 +69,17 @@ struct AttemptReviewView: View {
                     HStack { Text("You changed the grade to:"); VerdictBadge(verdict: override); Text(override.label) }
                     Button("Undo my change") { setCorrection(nil) }
                 }
-                Button("My answer was actually correct") { setCorrection(.correct) }
-                Picker("Mistake type", selection: $mistake) {
-                    ForEach(MistakeType.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                // Offer only the other grade: a right answer can be marked wrong (with its kind of mistake), a wrong one right.
+                let current = attempt.effectiveVerdict
+                if current != .correct {
+                    Button("My answer was actually correct") { setCorrection(.correct) }
                 }
-                Button("My answer was actually wrong") { setCorrection(.incorrect) }
+                if current != .incorrect {
+                    Picker("Kind of mistake", selection: $mistake) {
+                        ForEach(MistakeType.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    }
+                    Button("My answer was actually wrong") { setCorrection(.incorrect) }
+                }
             } header: {
                 Text("Disagree with the grade?")
             } footer: {

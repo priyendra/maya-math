@@ -47,22 +47,23 @@ private struct MistakeChart: View {
         let top = max(1, counts.map(\.1).max() ?? 1)
         let carelessShare = Double(mistakes.filter { $0 == .careless }.count) / Double(max(mistakes.count, 1))
         VStack(alignment: .leading, spacing: 10) {
+            Text("Tap a mistake type to see those answers.").font(.caption).foregroundStyle(.secondary)
             ForEach(counts, id: \.0) { m, n in
+                Button { onSelect(m) } label: {
                 HStack(spacing: 12) {
-                    Text(m.displayName).font(.subheadline).frame(width: 130, alignment: .leading)
+                    Text(m.displayName).font(.body).foregroundStyle(.primary).frame(width: 150, alignment: .leading)
                     GeometryReader { g in
                         Capsule().fill(Theme.classic.notQuite.opacity(0.75))
                             .frame(width: max(10, g.size.width * CGFloat(n) / CGFloat(top)), height: 12)
                             .frame(maxHeight: .infinity, alignment: .center)
                     }
                     .frame(height: 20)
-                    Text("\(n)").font(.subheadline.monospacedDigit().weight(.semibold)).frame(width: 28, alignment: .trailing)
-                    Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                    Text("\(n)").font(.body.monospacedDigit().weight(.semibold)).foregroundStyle(.primary).frame(width: 34, alignment: .trailing)
+                    GoChevron()
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { onSelect(m) }
+                }
+                .buttonStyle(TapRowStyle())
                 .accessibilityElement(children: .combine)
-                .accessibilityAddTraits(.isButton)
                 .accessibilityIdentifier("mistake-\(m.rawValue)")
             }
             if carelessShare >= 0.4 {
