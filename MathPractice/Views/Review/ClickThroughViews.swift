@@ -1,104 +1,42 @@
 import SwiftUI
 import UIKit
 
-/// One question with her answers to it (newest first). Each answer opens the answer page.
-struct QuestionAnswersCard: View {
-    let question: Question
-    let attempts: [Attempt]
-    @Environment(\.theme) private var theme
+// MARK: - Filter
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            MathText(markdown: question.text, fontSize: 17)
-            ChapterLink(question: question)
-            if let fig = question.figureData, let img = UIImage(data: fig) {
-                Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 140)
-            }
-            if attempts.isEmpty {
-                Text("You haven't answered this one yet.").font(theme.font(.caption)).foregroundStyle(.secondary)
-            }
-            ForEach(attempts) { a in
-                Divider()
-                VStack(alignment: .leading, spacing: 6) {
-                    NavigationLink { AttemptReviewView(attempt: a) } label: {
-                        HStack(spacing: 10) {
-                            if a.isGraded { VerdictBadge(verdict: a.effectiveVerdict).font(.title3) } else { ProgressView() }
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(a.isGraded ? a.effectiveVerdict.label : "Being checked").font(theme.font(.label).weight(.semibold))
-                                Text(a.startedAt.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().hour().minute())
-                                     + " · " + ProgressSummaryBar.duration(a.activeSeconds)
-                                     + (a.isGraded && a.effectiveVerdict == .incorrect ? (a.mistakeType.map { " · \($0.displayName)" } ?? "") : "")
-                                     + (a.gradingError != nil && !a.isGraded ? " · waiting to retry" : ""))
-                                    .font(theme.font(.caption)).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if let data = a.renderedImage, let img = UIImage(data: data) {
-                                Image(uiImage: img).resizable().scaledToFit()
-                                    .frame(maxWidth: 340, maxHeight: 130)
-                                    .background(Color.white)
-                                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.2)))
-                            }
-                            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    if a.effectiveVerdict == .incorrect, a.correction == nil, !a.errorStep.isEmpty {
-                        MathText(markdown: a.errorStep, fontSize: 15)
-                    }
-                }
-            }
-        }
-        .padding(18)
-        .card(theme)
-    }
-}
+/// Which answers to show by result: all, right ones, any mistake, or one kind of mistake.
+enum ResultFilter: Hashable {
+    case all, right, anyMistake
+    case mistake(MistakeType)
 
-
-/// "See in chapter": the exercise's place in the book (for a generated question, the exercise it was made from).
-struct ChapterLink: View {
-    let question: Question
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        let chapter = question.chapter
-        let base = question.parentQuestionID.flatMap { id in chapter?.questions.first { $0.id == id } } ?? question
-        if let chapter {
-            NavigationLink { ReadChapterView(chapter: chapter, focus: base) } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "book")
-                    Text(Self.label(question: question, base: base))
-                }
-                .font(theme.font(.caption).weight(.semibold))
-            }
-            .buttonStyle(.borderless)
-            .accessibilityIdentifier("seeInChapter")
+    var label: String {
+        switch self {
+        case .all: return "All"
+        case .right: return "No mistakes"
+        case .anyMistake: return "All mistakes"
+        case .mistake(let m): return m.displayName
         }
     }
 
-    static func label(question: Question, base: Question) -> String {
-        var place = base.printedNumber.isEmpty ? "the exercise" : "exercise \(base.printedNumber)"
-        if let page = base.printedPage { place += ", page \(page)" }
-        return base.id == question.id ? "See in chapter · \(place)" : "Made from \(place) · See in chapter"
-    }
+    static var choices: [ResultFilter] { [.all, .right, .anyMistake] + MistakeType.allCases.map { .mistake($0) } }
 }
 
-/// What the answers list shows: by skill, level and mistake type, newest or oldest first.
+/// What the answers list shows: by skill, level and result, newest or oldest first.
 struct AnswerFilter: Equatable {
     var conceptID: UUID?
     var level: Int?
-    var mistake: MistakeType?
+    var result: ResultFilter = .all
     var newestFirst = true
 
     func matches(_ a: Attempt) -> Bool {
         guard let q = a.question else { return false }
         if let conceptID, q.concept?.id != conceptID { return false }
         if let level, q.difficulty != level { return false }
-        if let mistake {
-            guard a.isGraded, a.effectiveVerdict == .incorrect, a.mistakeType == mistake else { return false }
+        switch result {
+        case .all: return true
+        case .right: return a.isGraded && a.effectiveVerdict == .correct
+        case .anyMistake: return a.isGraded && a.effectiveVerdict == .incorrect
+        case .mistake(let m): return a.isGraded && a.effectiveVerdict == .incorrect && a.mistakeType == m
         }
-        return true
     }
 
     /// One card per question with a matching answer; the card shows all her answers to it.
@@ -112,11 +50,9 @@ struct AnswerFilter: Equatable {
             let d = a.startedAt
             if let old = keyDate[q.id] { keyDate[q.id] = newestFirst ? max(old, d) : min(old, d) } else { keyDate[q.id] = d }
         }
-        let ids = Set(questions.keys)
         var answers: [UUID: [Attempt]] = [:]
-        for a in attempts { if let id = a.question?.id, ids.contains(id) { answers[id, default: []].append(a) } }
-        let order = Self.order(keyDate, newestFirst: newestFirst)
-        return order.compactMap { id in
+        for a in attempts { if let id = a.question?.id, questions[id] != nil { answers[id, default: []].append(a) } }
+        return Self.order(keyDate, newestFirst: newestFirst).compactMap { id in
             questions[id].map { q in
                 (q, (answers[id] ?? []).sorted { newestFirst ? $0.startedAt > $1.startedAt : $0.startedAt < $1.startedAt })
             }
@@ -128,6 +64,8 @@ struct AnswerFilter: Equatable {
     }
 }
 
+// MARK: - Browser
+
 /// The one way answers are shown: My answers, a skill's page and a mistake's page all use it,
 /// starting from different filters. My answers also pins what needs her (to check, still being checked).
 struct AnswersBrowser<Header: View>: View {
@@ -135,99 +73,303 @@ struct AnswersBrowser<Header: View>: View {
     var showInbox = false
     @State var filter: AnswerFilter
     @ViewBuilder var header: () -> Header
+    @State private var shown = Self.page
     @Environment(\.theme) private var theme
     @ObservedObject private var grading = GradingQueue.shared
+
+    static var page: Int { 25 }
 
     var body: some View {
         let _ = grading.version
         let all = set.allAttempts
         let cards = filter.cards(all)
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
+            // Cards use native text (MathPlainText), not web views: dozens of web views made scrolling stutter and jump.
+            LazyVStack(alignment: .leading, spacing: 14) {
                 header()
                 if showInbox { inbox(all) }
-                AnswerFilterBar(set: set, filter: $filter)
-                Text(cards.isEmpty ? "No answers match." : "\(cards.count) question\(cards.count == 1 ? "" : "s")")
-                    .font(theme.font(.caption)).foregroundStyle(.secondary)
-                ForEach(cards, id: \.0.id) { q, answers in
+                AnswerFilterBar(set: set, filter: $filter, count: cards.count)
+                    .padding(.top, 4)
+                if cards.isEmpty {
+                    Text("No answers match these filters.")
+                        .font(theme.font(.body)).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity).padding(.vertical, 40)
+                }
+                ForEach(cards.prefix(shown), id: \.0.id) { q, answers in
                     QuestionAnswersCard(question: q, attempts: answers)
+                }
+                if cards.count > shown {
+                    Button { shown += Self.page } label: {
+                        Text("Show \(min(Self.page, cards.count - shown)) more of \(cards.count - shown)")
+                            .font(theme.font(.label).weight(.semibold))
+                            .frame(maxWidth: .infinity).padding(.vertical, 14)
+                    }
+                    .buttonStyle(.bordered).buttonBorderShape(.capsule)
                 }
             }
             .padding(24)
-            .frame(maxWidth: 980, alignment: .leading)
+            .frame(maxWidth: 900, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
         .background(Color(.systemGroupedBackground))
+        .onChange(of: filter) { shown = Self.page }
     }
 
     @ViewBuilder
     private func inbox(_ all: [Attempt]) -> some View {
-        let toCheck = all.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }.sorted { $0.startedAt > $1.startedAt }
+        let toCheck = all.filter { $0.isGraded && $0.effectiveVerdict == .needsReview }
         let pending = all.filter { !$0.isGraded }
         if !toCheck.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("To check (\(toCheck.count))").font(theme.font(.section))
-                Text("Claude wasn't sure how to grade these. Open one and decide whether your answer was right, or grade it again.")
-                    .font(theme.font(.caption)).foregroundStyle(.secondary)
-            }
+            SectionTitle(title: "To check", count: toCheck.count,
+                         note: "Claude wasn't sure how to grade these. Open one to decide, or grade it again.")
             ForEach(AnswerFilter().cards(toCheck), id: \.0.id) { q, answers in
                 QuestionAnswersCard(question: q, attempts: answers)
             }
         }
         if !pending.isEmpty {
-            Text("Still being checked: \(pending.count) answer\(pending.count == 1 ? "" : "s"). They'll appear below when graded.")
+            Label("\(pending.count) answer\(pending.count == 1 ? " is" : "s are") still being checked", systemImage: "hourglass")
                 .font(theme.font(.caption)).foregroundStyle(.secondary)
         }
-        if !toCheck.isEmpty || !pending.isEmpty {
-            Text("All answers").font(theme.font(.section)).padding(.top, 8)
+        if !toCheck.isEmpty {
+            SectionTitle(title: "All answers", count: nil, note: nil).padding(.top, 10)
         }
     }
 }
 
+private struct SectionTitle: View {
+    let title: String
+    let count: Int?
+    let note: String?
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(title).font(theme.font(.section))
+                if let count {
+                    Text("\(count)").font(theme.font(.label).weight(.bold).monospacedDigit())
+                        .padding(.horizontal, 9).padding(.vertical, 2)
+                        .background(Capsule().fill(theme.attention.opacity(0.18)))
+                        .foregroundStyle(theme.attention)
+                }
+            }
+            if let note { Text(note).font(theme.font(.caption)).foregroundStyle(.secondary) }
+        }
+    }
+}
+
+// MARK: - Filter bar
+
 struct AnswerFilterBar: View {
     let set: StudySet
     @Binding var filter: AnswerFilter
+    let count: Int
     @Environment(\.theme) private var theme
 
     var body: some View {
         let concepts = MasteryGrid.concepts(set)
-        HStack(spacing: 10) {
-            chip(icon: "square.grid.2x2") {
-                Picker("Skill", selection: $filter.conceptID) {
-                    Text("All skills").tag(UUID?.none)
-                    ForEach(concepts) { c in Text(MathPlain.render(c.name)).tag(Optional(c.id)) }
+        VStack(alignment: .leading, spacing: 10) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(ResultFilter.choices, id: \.self) { r in
+                        Chip(text: r.label, selected: filter.result == r) { filter.result = r }
+                            .accessibilityIdentifier("result-\(r.label)")
+                        if r == .anyMistake { Divider().frame(height: 22) }
+                    }
                 }
             }
-            chip(icon: "chart.bar") {
-                Picker("Level", selection: $filter.level) {
-                    Text("All levels").tag(Int?.none)
-                    ForEach(1...3, id: \.self) { d in Text(SkillBarsGrid.levels[d - 1]).tag(Optional(d)) }
+            HStack(spacing: 8) {
+                Menu {
+                    Picker("Skill", selection: $filter.conceptID) {
+                        Text("All skills").tag(UUID?.none)
+                        ForEach(concepts) { c in Text(MathPlain.render(c.name)).tag(Optional(c.id)) }
+                    }
+                } label: {
+                    let name = concepts.first { $0.id == filter.conceptID }.map { MathPlain.render($0.name) }
+                    MenuPill(icon: "square.grid.2x2", text: name ?? "All skills", active: name != nil)
                 }
-            }
-            chip(icon: "exclamationmark.triangle") {
-                Picker("Mistake", selection: $filter.mistake) {
-                    Text("All answers").tag(MistakeType?.none)
-                    ForEach(MistakeType.allCases, id: \.self) { m in Text(m.displayName).tag(Optional(m)) }
+                ForEach([Int?.none, 1, 2, 3], id: \.self) { d in
+                    Chip(text: d.map { SkillBarsGrid.levels[$0 - 1] } ?? "All levels", selected: filter.level == d, small: true) {
+                        filter.level = d
+                    }
                 }
-            }
-            chip(icon: "arrow.up.arrow.down") {
-                Picker("Order", selection: $filter.newestFirst) {
-                    Text("Newest first").tag(true)
-                    Text("Oldest first").tag(false)
+                Spacer(minLength: 8)
+                Text("\(count) question\(count == 1 ? "" : "s")").font(theme.font(.caption).monospacedDigit()).foregroundStyle(.secondary)
+                Button { filter.newestFirst.toggle() } label: {
+                    MenuPill(icon: filter.newestFirst ? "arrow.down" : "arrow.up",
+                             text: filter.newestFirst ? "Newest first" : "Oldest first", active: false)
                 }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("sortOrder")
             }
-            Spacer(minLength: 0)
+        }
+    }
+}
+
+private struct Chip: View {
+    let text: String
+    let selected: Bool
+    var small = false
+    let action: () -> Void
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Button(action: action) {
+            Text(text)
+                .font((small ? theme.font(.caption) : theme.font(.label)).weight(.semibold))
+                .padding(.horizontal, small ? 11 : 14).padding(.vertical, small ? 6 : 8)
+                .background(Capsule().fill(selected ? theme.accent : Color(.secondarySystemGroupedBackground)))
+                .overlay(Capsule().stroke(selected ? Color.clear : Color.secondary.opacity(0.18)))
+                .foregroundStyle(selected ? Color.white : Color.primary)
+        }
+        .buttonStyle(.plain)
+        .animation(.snappy(duration: 0.15), value: selected)
+    }
+}
+
+private struct MenuPill: View {
+    let icon: String
+    let text: String
+    let active: Bool
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).font(.caption.weight(.semibold))
+            Text(text).lineLimit(1).frame(maxWidth: 260, alignment: .leading).fixedSize(horizontal: true, vertical: false)
+            if icon == "square.grid.2x2" { Image(systemName: "chevron.down").font(.caption2.weight(.bold)) }
+        }
+        .font(theme.font(.caption).weight(.semibold))
+        .padding(.horizontal, 12).padding(.vertical, 7)
+        .background(Capsule().fill(active ? theme.accent.opacity(0.14) : Color(.secondarySystemGroupedBackground)))
+        .overlay(Capsule().stroke(active ? theme.accent.opacity(0.5) : Color.secondary.opacity(0.18)))
+        .foregroundStyle(active ? theme.accent : Color.primary)
+    }
+}
+
+// MARK: - Card
+
+/// One question with her answers to it. Each answer opens the answer page.
+struct QuestionAnswersCard: View {
+    let question: Question
+    let attempts: [Attempt]
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text(SkillBarsGrid.levels[max(0, min(2, question.difficulty - 1))].uppercased())
+                    .font(.system(size: 11, weight: .bold)).tracking(0.6)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Capsule().fill(theme.accent.opacity(0.12)))
+                    .foregroundStyle(theme.accent)
+                if let c = question.concept {
+                    Text(MathPlain.render(c.name)).font(theme.font(.caption)).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                ChapterLink(question: question)
+            }
+            MathPlainText(markdown: question.text).font(.system(size: 18)).fixedSize(horizontal: false, vertical: true)
+            if let fig = question.figureData, let img = UIImage(data: fig) {
+                Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 140)
+            }
+            if attempts.isEmpty {
+                Text("You haven't answered this one yet.").font(theme.font(.caption)).foregroundStyle(.secondary)
+            }
+            VStack(spacing: 8) {
+                ForEach(attempts) { a in AnswerRow(attempt: a) }
+            }
+        }
+        .padding(20)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color(.secondarySystemGroupedBackground)))
+        .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+    }
+}
+
+private struct AnswerRow: View {
+    let attempt: Attempt
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let a = attempt
+        let tone: Color = !a.isGraded ? .secondary
+            : a.effectiveVerdict == .correct ? theme.done : a.effectiveVerdict == .incorrect ? theme.notQuite : theme.attention
+        VStack(alignment: .leading, spacing: 8) {
+            NavigationLink { AttemptReviewView(attempt: a) } label: {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Text(!a.isGraded ? "Being checked" : a.effectiveVerdict.label)
+                                .font(theme.font(.label).weight(.bold)).foregroundStyle(tone)
+                            if a.isGraded, a.effectiveVerdict == .incorrect, let m = a.mistakeType {
+                                Text(m.displayName).font(theme.font(.caption).weight(.semibold))
+                                    .padding(.horizontal, 7).padding(.vertical, 2)
+                                    .background(Capsule().fill(tone.opacity(0.12))).foregroundStyle(tone)
+                            }
+                        }
+                        Text(a.startedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+                             + " · " + ProgressSummaryBar.duration(a.activeSeconds)
+                             + (a.gradingError != nil && !a.isGraded ? " · waiting to retry" : ""))
+                            .font(theme.font(.caption)).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 8)
+                    if let data = a.renderedImage, let img = UIImage(data: data) {
+                        Image(uiImage: img).resizable().scaledToFit()
+                            .frame(width: 300, height: 150)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.secondary.opacity(0.15)))
+                    }
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if a.isGraded, a.effectiveVerdict == .incorrect, a.correction == nil, !a.errorStep.isEmpty {
+                MathPlainText(markdown: a.errorStep).font(.system(size: 15))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(theme.notQuite.opacity(0.07)))
+            }
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(.systemGroupedBackground)))
+        .overlay(alignment: .leading) {
+            UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 12, style: .continuous)
+                .fill(tone).frame(width: 4)
+        }
+    }
+}
+
+/// The exercise's place in the book (for a generated question, the exercise it was made from).
+struct ChapterLink: View {
+    let question: Question
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let chapter = question.chapter
+        let base = question.parentQuestionID.flatMap { id in chapter?.questions.first { $0.id == id } } ?? question
+        if let chapter {
+            NavigationLink { ReadChapterView(chapter: chapter, focus: base) } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "book.pages")
+                    Text(Self.label(question: question, base: base))
+                }
+                .font(theme.font(.caption).weight(.semibold))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Capsule().fill(theme.accent.opacity(0.10)))
+                .foregroundStyle(theme.accent)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("seeInChapter")
         }
     }
 
-    private func chip<C: View>(icon: String, @ViewBuilder _ content: () -> C) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: icon).foregroundStyle(.secondary).font(.caption)
-            content().pickerStyle(.menu).lineLimit(1)
-        }
-        .padding(.leading, 10).padding(.trailing, 2)
-        .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
-        .frame(maxWidth: 300)
+    static func label(question: Question, base: Question) -> String {
+        var place = base.printedNumber.isEmpty ? "In chapter" : "Ex. \(base.printedNumber)"
+        if let page = base.printedPage { place += " · p. \(page)" }
+        return base.id == question.id ? place : "From " + place.replacingOccurrences(of: "Ex.", with: "ex.")
     }
 }
 
@@ -307,7 +449,7 @@ struct MistakeDetailView: View {
     }
 
     var body: some View {
-        AnswersBrowser(set: set, filter: AnswerFilter(mistake: mistake)) {
+        AnswersBrowser(set: set, filter: AnswerFilter(result: .mistake(mistake))) {
             Text(Self.meaning(mistake)).font(theme.font(.body)).foregroundStyle(.secondary)
         }
         .navigationTitle(mistake.displayName)

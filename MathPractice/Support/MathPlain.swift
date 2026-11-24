@@ -19,7 +19,7 @@ enum MathPlain {
                 continue
             }
             if c == "$" {
-                if inMath { out += convert(math); math = "" }
+                if inMath { out += spaced(convert(math)); math = "" }
                 inMath.toggle()
             } else if inMath {
                 math.append(c)
@@ -71,6 +71,30 @@ enum MathPlain {
             j += 1
         }
         return (String(a[(i + 1)..<min(j, a.count)]), min(j + 1, a.count))
+    }
+
+    /// Spaces around relations (=, <, ≤ …) and around + and − between terms at the top level, as typeset math
+    /// does: "3𝑥²−41𝑥=−60" → "3𝑥² − 41𝑥 = −60". Inside brackets stays compact: "(𝑎+𝑏)".
+    static func spaced(_ s: String) -> String {
+        let relations: Set<Character> = ["=", "<", ">", "≤", "≥", "≠", "≈"]
+        var out = ""
+        var depth = 0
+        for c in s {
+            if "([".contains(c) { depth += 1 }
+            if ")]".contains(c) { depth = max(0, depth - 1) }
+            let prev = out.last(where: { $0 != " " })
+            let binary = (c == "+" || c == "−") && depth == 0 && prev != nil
+                && !relations.contains(prev!) && !"+−·×÷±(,".contains(prev!)
+            if relations.contains(c) || binary {
+                while out.last == " " { out.removeLast() }
+                out += " \(c) "
+            } else if c == " " && out.last == " " {
+                continue
+            } else {
+                out.append(c)
+            }
+        }
+        return out.trimmingCharacters(in: .whitespaces)
     }
 
     static func convert(_ tex: String) -> String {
@@ -128,5 +152,23 @@ enum MathPlain {
             }
         }
         return out
+    }
+}
+
+import SwiftUI
+
+/// Markdown with math as native text (Unicode math, no web view): for lists, where many web views would make
+/// scrolling stutter. Full typesetting (MathText) is for single-item pages.
+struct MathPlainText: View {
+    let markdown: String
+
+    var body: some View {
+        Text(Self.attributed(markdown))
+    }
+
+    static func attributed(_ markdown: String) -> AttributedString {
+        let plain = MathPlain.render(markdown)
+        return (try? AttributedString(markdown: plain, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+            ?? AttributedString(plain)
     }
 }

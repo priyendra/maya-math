@@ -43,3 +43,18 @@ final class AnswerFilterTests: XCTestCase {
         XCTAssertEqual(AnswerFilter.order(dates, newestFirst: false), [b, c, a])
     }
 }
+
+
+final class MathPlainTextTests: XCTestCase {
+    func testMarkdownAndMathBecomeNativeText() {
+        let s = String(MathPlainText.attributed("In **minutes**, $x^2 - \\frac{3}{2}$").characters)
+        XCTAssertEqual(s, "In minutes, 𝑥² − 3/2")
+    }
+}
+
+extension MathPlainTextTests {
+    func testOperatorsAreSpacedLikeTypesetMath() {
+        XCTAssertEqual(MathPlain.render("Solve: $3x^2-41x=-60$"), "Solve: 3𝑥² − 41𝑥 = −60")
+        XCTAssertEqual(MathPlain.render("$x=-13, x=8$"), "𝑥 = −13, 𝑥 = 8")
+    }
+}

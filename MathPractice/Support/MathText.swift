@@ -10,7 +10,19 @@ struct MathText: View {
     var fontSize: CGFloat = 20
     var maxHeight: CGFloat? = nil
     var fill = false
-    @State private var height: CGFloat = 40
+    @State private var height: CGFloat
+
+    /// Measured heights, so a view rebuilt while scrolling starts at its real size (no jumps, no layout loops).
+    @MainActor static var measured: [String: CGFloat] = [:]
+    static func key(_ markdown: String, _ fontSize: CGFloat) -> String { "\(fontSize)|\(markdown)" }
+
+    init(markdown: String, fontSize: CGFloat = 20, maxHeight: CGFloat? = nil, fill: Bool = false) {
+        self.markdown = markdown
+        self.fontSize = fontSize
+        self.maxHeight = maxHeight
+        self.fill = fill
+        _height = State(initialValue: MainActor.assumeIsolated { Self.measured[Self.key(markdown, fontSize)] } ?? 40)
+    }
 
     var body: some View {
         let scrolls = fill || maxHeight != nil
@@ -125,7 +137,11 @@ private struct MathWebView: UIViewRepresentable {
 
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let h = message.body as? Double, h > 0 else { return }
-            DispatchQueue.main.async { self.height.wrappedValue = CGFloat(h) }
+            let key = loadedKey
+            DispatchQueue.main.async {
+                if let key { MathText.measured[key] = CGFloat(h) }
+                if abs(self.height.wrappedValue - CGFloat(h)) > 0.5 { self.height.wrappedValue = CGFloat(h) }
+            }
         }
     }
 }

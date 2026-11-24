@@ -16,6 +16,18 @@ final class SkillsPanelUITests: XCTestCase {
         app.swipeUp(); sleep(1); save(app, dir, "2-chapter-bottom")
         app.swipeUp(); sleep(1); save(app, dir, "2c-feedback-more")
         app.swipeDown(); app.swipeDown(); sleep(1)
+        let answers = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My answers'")).firstMatch
+        if answers.waitForExistence(timeout: 3) {
+            answers.tap(); sleep(3); save(app, dir, "7-answers")
+            // Scroll hard both ways: the page must settle (no jumping loop).
+            for _ in 0..<8 { app.swipeUp(velocity: .fast) }
+            sleep(2); save(app, dir, "7b-answers-down")
+            for _ in 0..<8 { app.swipeDown(velocity: .fast) }
+            sleep(2); save(app, dir, "7c-answers-up")
+            sleep(3); save(app, dir, "7d-answers-settled")
+            app.buttons["result-All mistakes"].firstMatch.tap(); sleep(2); save(app, dir, "7e-all-mistakes")
+            app.navigationBars.buttons.firstMatch.tap(); sleep(1)
+        }
         let seeAll = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My progress'")).firstMatch
         if seeAll.waitForExistence(timeout: 3) {
             seeAll.tap(); sleep(2); save(app, dir, "3-progress")
