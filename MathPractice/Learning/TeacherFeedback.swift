@@ -37,20 +37,18 @@ final class TeacherFeedback: ObservableObject {
         !holder.feedbackText.isEmpty || gradedCount(set) >= FeedbackSummary.minimumAnswers
     }
 
-    /// The summary Claude sees, with progress toward the star per skill level.
+    /// The summary Claude sees, with mastery points per skill level.
     static func summary(_ set: StudySet) -> String {
         let planner = LearningStore.planner(set)
         var names: [UUID: String] = [:]
         for ch in set.chapters { for c in ch.concepts { names[c.id] = MathPlain.render(c.name) } }
-        var steps: [String: Int] = [:]
-        var mastered: Set<String> = []
+        var points: [String: Int] = [:]
         for cell in planner.allCells {
             guard let name = names[cell.conceptID] else { continue }
             let key = "\(name)|\(cell.difficulty)"
-            steps[key] = MasteryModel.dots(planner.skills[cell]?.mastery ?? 0)
-            if planner.isMastered(cell) { mastered.insert(key) }
+            points[key] = Int(SkillBarsGrid.points(planner.skills[cell]))
         }
-        return FeedbackSummary.text(answers(set), steps: steps, mastered: mastered)
+        return FeedbackSummary.text(answers(set), points: points)
     }
 
     func refreshIfDue(_ set: StudySet, _ holder: FeedbackHolder, context: ModelContext) {

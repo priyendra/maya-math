@@ -41,7 +41,7 @@ struct ChapterScoreChart: View {
                         .foregroundStyle(theme.done)
                         .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                         .annotation(position: .bottom, alignment: .leading) {
-                            Text("★ 100 = every skill mastered").font(theme.font(.caption)).foregroundStyle(theme.done)
+                            Text("100 = every skill mastered").font(theme.font(.caption)).foregroundStyle(theme.done)
                         }
                     ForEach(points) { p in
                         AreaMark(x: .value("Practice", p.hours), y: .value("Points", p.score))

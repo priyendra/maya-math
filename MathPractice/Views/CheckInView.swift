@@ -13,9 +13,6 @@ struct CheckInView: View {
     private var mistakes: [Attempt] { items.filter { $0.effectiveVerdict == .incorrect } }
     private var unsure: [Attempt] { items.filter { $0.effectiveVerdict == .needsReview } }
     private var correct: [Attempt] { items.filter { $0.effectiveVerdict == .correct } }
-    private var fast: Int {
-        correct.filter { a in a.question.map { a.activeSeconds <= LearningStore.targetSeconds(for: $0) } ?? false }.count
-    }
 
     var body: some View {
         ScrollView {
@@ -76,7 +73,7 @@ struct CheckInView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(kind == .final ? "How you did" : "Check-in").font(.largeTitle.bold())
                 let counted = items.filter { $0.effectiveVerdict != .needsReview }.count
-                Text("\(counted) done · \(correct.count) right" + (fast > 0 ? " · \(fast) faster than your target" : ""))
+                Text("\(counted) done · \(correct.count) right")
                     .font(.title3).foregroundStyle(.secondary)
             }
         }

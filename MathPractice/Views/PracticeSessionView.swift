@@ -147,7 +147,6 @@ struct PracticeSessionView: View {
                         chip("Like an earlier one", Theme.classic.learn, icon: "arrow.triangle.2.circlepath")
                     }
                     Spacer()
-                    timerView(q).font(Theme.classic.font(.label).monospacedDigit()).foregroundStyle(.secondary)
                 }
                 QuestionPanel(question: q)
                 helpPanel
@@ -244,10 +243,6 @@ struct PracticeSessionView: View {
         .foregroundStyle(color)
         .padding(.horizontal, 10).padding(.vertical, 4)
         .background(color.opacity(0.12), in: Capsule())
-    }
-
-    private func timerView(_ q: Question) -> some View {
-        ClockLabel(clock: questionClock, target: LearningStore.inSpeedStage(q) ? LearningStore.targetSeconds(for: q) : nil)
     }
 
     /// Sits at the top of the canvas so the PencilKit tool picker never covers it.

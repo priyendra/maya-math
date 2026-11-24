@@ -137,9 +137,4 @@ enum LearningStore {
         return MasteryModel.targetSeconds(estimate: Double(q.estimatedSeconds), progress: s.progress)
     }
 
-    static func inSpeedStage(_ q: Question) -> Bool {
-        guard !q.isChallenge, let chapter = q.chapter, let concept = q.concept,
-              let s = chapter.skill(concept: concept, difficulty: q.difficulty) else { return false }
-        return MasteryModel.inSpeedStage(s.progress)
-    }
 }

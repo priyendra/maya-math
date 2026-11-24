@@ -43,8 +43,8 @@ enum FeedbackSummary {
         return (Array(sorted[..<cut]), Array(sorted[cut...]))
     }
 
-    /// `steps`: dots toward the star per skill level ("skill|level" → 0…5), `mastered`: those with a star.
-    static func text(_ answers: [Answer], steps: [String: Int] = [:], mastered: Set<String> = []) -> String {
+    /// `points`: mastery points per skill level ("skill|level" → 0…100; 100 = mastered).
+    static func text(_ answers: [Answer], points: [String: Int] = [:]) -> String {
         let graded = answers.filter { $0.verdict != .needsReview }
         let (earlier, recent) = split(graded)
         var out: [String] = []
@@ -63,12 +63,13 @@ enum FeedbackSummary {
             let key = "\(a.skill)|\(a.level)"
             if bySkill[key] == nil { order.append(key); bySkill[key] = (a.skill, a.level) }
         }
-        out.append("\nSKILLS (skill — level: recent right/answered; earlier right/answered; progress toward the star):")
+        out.append("\nSKILLS (skill — level: recent right/answered; earlier right/answered; mastery points, 100 = mastered):")
         for key in order {
             guard let s = bySkill[key] else { continue }
             let r = recent.filter { $0.skill == s.skill && $0.level == s.level }
             let e = earlier.filter { $0.skill == s.skill && $0.level == s.level }
-            let progress = mastered.contains(key) ? "★ mastered" : "\(steps[key] ?? 0) of 5 steps"
+            let pts = points[key] ?? 0
+            let progress = pts >= 100 ? "mastered (100 points)" : "\(pts) points"
             out.append("- \(s.skill) — \(levelNames[max(0, min(2, s.level - 1))]): recent \(right(r))/\(r.count); earlier \(right(e))/\(e.count); \(progress)")
         }
 

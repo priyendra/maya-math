@@ -405,8 +405,7 @@ struct SkillDetailView: View {
                     Text(SkillBarsGrid.levels[d - 1]).font(theme.font(.label).weight(.semibold)).frame(width: 80, alignment: .leading)
                     BarCell(has: true, open: open, tried: (p?.attemptCount ?? 0) > 0, points: SkillBarsGrid.points(p), mastered: mastered)
                         .frame(width: 200)
-                    Text(Self.levelLine(p: p, open: open, mastered: mastered, level: d,
-                                        estimate: Self.median(questions.filter { $0.difficulty == d }.map { Double($0.estimatedSeconds) })))
+                    Text(Self.levelLine(p: p, open: open, mastered: mastered, level: d))
                         .font(theme.font(.body)).foregroundStyle(.secondary)
                 }
             }
@@ -415,21 +414,12 @@ struct SkillDetailView: View {
         .card(theme)
     }
 
-    static func median(_ xs: [Double]) -> Double {
-        let s = xs.sorted()
-        guard !s.isEmpty else { return 120 }
-        return s.count.isMultiple(of: 2) ? (s[s.count / 2 - 1] + s[s.count / 2]) / 2 : s[s.count / 2]
-    }
-
-    static func levelLine(p: SkillProgress?, open: Bool, mastered: Bool, level: Int, estimate: Double) -> String {
-        if mastered { return "Mastered ★ — a review question now and then." }
+    static func levelLine(p: SkillProgress?, open: Bool, mastered: Bool, level: Int) -> String {
+        if mastered { return "Mastered — a review question now and then." }
         guard let p, p.attemptCount > 0 else {
             return open ? "Not started yet." : "Opens at 75 points on \(SkillBarsGrid.levels[max(0, level - 2)])."
         }
-        if MasteryModel.heldBackBySpeed(p, estimate: estimate) {
-            return "Getting these right — now a little quicker for the ★."
-        }
-        let n = MasteryModel.rightAnswersToStar(p)
+        let n = MasteryModel.rightAnswersToMaster(p)
         return "\(n) more right in a row to master."
     }
 }

@@ -19,10 +19,10 @@ final class FeedbackSummaryTests: XCTestCase {
     func testTextCountsRecentAndEarlierSeparately() {
         var answers = (0..<4).map { answer($0 * 10, right: false, mistake: .careless, step: "old slip \($0)") }
         answers += (4..<10).map { answer($0 * 10, right: $0 % 2 == 0, mistake: .incomplete, step: "stopped early \($0)") }
-        let text = FeedbackSummary.text(answers, steps: ["Factoring|2": 2])
+        let text = FeedbackSummary.text(answers, points: ["Factoring|2": 51])
         XCTAssertTrue(text.contains("RECENT WORK (her last 60 minutes of practice): 6 answers, 3 right."))
         XCTAssertTrue(text.contains("EARLIER WORK: 4 answers, 0 right."))
-        XCTAssertTrue(text.contains("- Factoring — Medium: recent 3/6; earlier 0/4; 2 of 5 steps"))
+        XCTAssertTrue(text.contains("- Factoring — Medium: recent 3/6; earlier 0/4; 51 points"))
         XCTAssertTrue(text.contains("[Factoring — Medium; Incomplete] stopped early 5"))
         XCTAssertTrue(text.contains("[Factoring — Medium; Careless slip] old slip 0"))
     }

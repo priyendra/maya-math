@@ -25,20 +25,19 @@ final class MasteryModelTests: XCTestCase {
         XCTAssertEqual(conceptual.nextDue, now.addingTimeInterval(86_400))
     }
 
-    func testMasteryNeedsAccuracyAttemptsAndSpeed() {
+    func testMasteryIsAccuracyOnly() {
         var p = SkillProgress()
-        for _ in 0..<6 { p = MasteryModel.apply(correct: true, mistake: nil, seconds: 100, to: p, now: now) }
-        XCTAssertTrue(MasteryModel.isMastered(p, estimate: 100))
-        // Same accuracy but far slower than expected → not mastered yet.
-        XCTAssertFalse(MasteryModel.isMastered(p, estimate: 50))
+        for _ in 0..<4 { p = MasteryModel.apply(correct: true, mistake: nil, seconds: 900, to: p, now: now) }
+        XCTAssertFalse(MasteryModel.isMastered(p))
+        p = MasteryModel.apply(correct: true, mistake: nil, seconds: 900, to: p, now: now)
+        XCTAssertTrue(MasteryModel.isMastered(p))          // 5 right in a row, however slow
+        p = MasteryModel.apply(correct: false, mistake: .careless, seconds: nil, to: p, now: now)
+        XCTAssertFalse(MasteryModel.isMastered(p))         // any wrong answer drops below 100
     }
 
-    func testSpeedStageAndTarget() {
+    func testExamTarget() {
         var p = SkillProgress()
-        for s in [200.0, 180, 160] { p = MasteryModel.apply(correct: true, mistake: nil, seconds: s, to: p, now: now) }
-        XCTAssertFalse(MasteryModel.inSpeedStage(p))
-        p = MasteryModel.apply(correct: true, mistake: nil, seconds: 150, to: p, now: now)
-        XCTAssertTrue(MasteryModel.inSpeedStage(p))
+        for s in [200.0, 180, 160, 150] { p = MasteryModel.apply(correct: true, mistake: nil, seconds: s, to: p, now: now) }
         // Slower than estimate → target is the estimate.
         XCTAssertEqual(MasteryModel.targetSeconds(estimate: 120, progress: p), 120)
         // Faster than estimate → target tightens to 90% of her median.

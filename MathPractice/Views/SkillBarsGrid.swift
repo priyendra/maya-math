@@ -58,7 +58,7 @@ struct SkillBarsGrid: View {
     }
 }
 
-/// A progress bar per level, coloured by its points: red (low) → amber → yellow-green; green once mastered.
+/// A progress bar per level, coloured by its points: red (low) → amber → yellow-green; green at 100 (mastered).
 struct BarCell: View {
     let has: Bool
     let open: Bool
@@ -87,9 +87,8 @@ struct BarCell: View {
                 }
                 .frame(height: 12)
                 Group {
-                    if mastered { Image(systemName: "star.fill").foregroundStyle(c) }
-                    else if !open && !tried { Image(systemName: "lock.fill").foregroundStyle(.secondary) }
-                    else if tried { Text("\(Int(points.rounded()))").foregroundStyle(c) }
+                    if !open && !tried { Image(systemName: "lock.fill").foregroundStyle(.secondary) }
+                    else if tried { Text("\(Int(points))").foregroundStyle(c) }
                     else { Text("0").foregroundStyle(.tertiary) }
                 }
                 .font(theme.font(.label).monospacedDigit().weight(.semibold))

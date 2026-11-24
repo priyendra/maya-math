@@ -1,8 +1,8 @@
 import Foundation
 
 /// mastery points (0–100) for a chapter (or study plan) and their history.
-/// Each skill level (concept × level) earns up to 100 as its score climbs to the star threshold (80%); points = the average,
-/// so 100 means every level has reached star level. Untried or locked levels count 0.
+/// Each skill level (concept × level) earns up to 100 as its score climbs to the mastery threshold (80%); points = the average,
+/// so 100 means every level is mastered. Untried or locked levels count 0.
 /// History is rebuilt by replaying answers in order with the same rules as `LearningStore.apply`.
 enum ChapterScore {
     struct Answer {

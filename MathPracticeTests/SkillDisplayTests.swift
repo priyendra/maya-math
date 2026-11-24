@@ -10,27 +10,20 @@ final class SkillDisplayTests: XCTestCase {
         return p
     }
 
-    func testDotsCountRightAnswersInARow() {
-        for n in 0...5 { XCTAssertEqual(MasteryModel.dots(rightInARow(n).mastery), n) }
-        XCTAssertEqual(MasteryModel.dots(0.66), 3)   // stored values are rounded on the device
-        XCTAssertEqual(MasteryModel.dots(0.6), 2)
-    }
-
-    func testRightAnswersToStar() {
-        XCTAssertEqual(MasteryModel.rightAnswersToStar(SkillProgress()), 5)
-        XCTAssertEqual(MasteryModel.rightAnswersToStar(rightInARow(3)), 2)
-        XCTAssertEqual(MasteryModel.rightAnswersToStar(rightInARow(5)), 0)
-        // Last answer wrong: never 0, even with a high score.
+    func testRightAnswersToMaster() {
+        XCTAssertEqual(MasteryModel.rightAnswersToMaster(SkillProgress()), 5)
+        XCTAssertEqual(MasteryModel.rightAnswersToMaster(rightInARow(3)), 2)
+        XCTAssertEqual(MasteryModel.rightAnswersToMaster(rightInARow(5)), 0)
         var p = rightInARow(8)
         p = MasteryModel.apply(correct: false, mistake: .careless, seconds: nil, to: p, now: now)
-        XCTAssertGreaterThan(MasteryModel.rightAnswersToStar(p), 0)
+        XCTAssertGreaterThan(MasteryModel.rightAnswersToMaster(p), 0)
     }
 
-    func testSlowIsHeldBackBySpeed() {
-        let p = rightInARow(5, seconds: 200)
-        XCTAssertTrue(MasteryModel.heldBackBySpeed(p, estimate: 60))
-        XCTAssertFalse(MasteryModel.heldBackBySpeed(p, estimate: 200))
-        XCTAssertFalse(MasteryModel.heldBackBySpeed(rightInARow(3, seconds: 200), estimate: 60))
+    func testBarShowsOneHundredOnlyWhenMastered() {
+        XCTAssertEqual(Int(SkillBarsGrid.points(rightInARow(4))), 94)
+        XCTAssertEqual(Int(SkillBarsGrid.points(rightInARow(5))), 100)
+        var almost = SkillProgress(); almost.mastery = 0.7999
+        XCTAssertLessThan(Int(SkillBarsGrid.points(almost)), 100)
     }
 }
 

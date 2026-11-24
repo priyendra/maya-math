@@ -61,24 +61,17 @@ enum MasteryModel {
         return s.count % 2 == 0 ? (s[mid - 1] + s[mid]) / 2 : s[mid]
     }
 
-    /// Accuracy is solid enough to start pushing on time: ≥4 of the last 5 correct.
-    static func inSpeedStage(_ p: SkillProgress) -> Bool {
-        p.recentResults.count >= 4 && p.recentResults.filter { $0 }.count >= 4
-    }
-
-    /// Target time for a question: start from Claude's estimate, then tighten toward her own pace.
+    /// Target time for an exam question: start from Claude's estimate, then tighten toward her own pace.
+    /// Time is only an exam concept; it never affects mastery.
     static func targetSeconds(estimate: Double, progress p: SkillProgress) -> Double {
         guard p.recentCorrectSeconds.count >= 3, let median = medianCorrectSeconds(p) else { return estimate }
         return max(0.5 * estimate, min(estimate, 0.9 * median))
     }
 
-    /// Mastered = accurate, practiced enough, last one right, and not far slower than the estimate.
-    static func isMastered(_ p: SkillProgress, estimate: Double) -> Bool {
-        guard p.mastery >= masteredThreshold, p.attemptCount >= 3, p.recentResults.last == true else { return false }
-        if p.recentCorrectSeconds.count >= 3, let median = medianCorrectSeconds(p) {
-            return median <= 1.3 * estimate
-        }
-        return true
+    /// Mastered = 100 mastery points (score at the mastery threshold). Accuracy only: time plays no part.
+    /// A wrong answer always drops the score below the threshold, and reaching it takes at least 5 right answers.
+    static func isMastered(_ p: SkillProgress) -> Bool {
+        p.mastery >= masteredThreshold
     }
 }
 
@@ -103,30 +96,16 @@ extension SkillState {
 }
 
 extension MasteryModel {
-    /// Number of dots shown toward the star.
-    static let steps = 5
-
     /// Score after `n` right answers in a row from a fresh start.
     static func scoreAfter(rightInARow n: Int) -> Double { 1 - pow(1 - gainRate, Double(n)) }
 
-    /// The score shown as dots: how many right-in-a-row answers it is worth (0…5).
-    static func dots(_ mastery: Double) -> Int {
-        (1...steps).filter { scoreAfter(rightInARow: $0) <= mastery + 0.005 }.count
-    }
-
-    /// More right answers in a row needed for the star (ignoring speed). 0 when the score is already there.
-    static func rightAnswersToStar(_ p: SkillProgress) -> Int {
+    /// More right answers in a row needed to reach 100 points (mastered). 0 when already there.
+    static func rightAnswersToMaster(_ p: SkillProgress) -> Int {
         var p = p, n = 0
-        while n < 20 {
-            if p.mastery >= masteredThreshold, p.attemptCount >= 3, p.recentResults.last == true { return n }
+        while n < 20 && !isMastered(p) {
             p = apply(correct: true, mistake: nil, seconds: nil, to: p)
             n += 1
         }
         return n
-    }
-
-    /// Accurate enough for the star but held back because she's slower than expected.
-    static func heldBackBySpeed(_ p: SkillProgress, estimate: Double) -> Bool {
-        rightAnswersToStar(p) == 0 && !isMastered(p, estimate: estimate)
     }
 }

@@ -241,3 +241,6 @@ Running record of product decisions and open discussion topics. Newest decisions
   study plan), the Progress summary card (mastery points chart + practice line) and Teacher's feedback. My progress
   works for any study set; a plan shows the exams taken mostly on its own questions. The session summary shows the
   skill bars (not tappable). The old coloured grid, its stages/legend/help, the path views and their summaries are gone.
+- Mastery is accuracy only: a level is mastered at 100 mastery points (score 0.8, about 5 right in a row). No star,
+  no speed condition: time never raises or lowers mastery. Practice still records each answer's time (her baseline
+  pace per skill level), but shows no per-question clock or targets. Time pressure belongs to exam mode only.

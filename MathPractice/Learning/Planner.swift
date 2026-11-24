@@ -65,7 +65,7 @@ struct Planner {
     }
 
     func isMastered(_ cell: CellKey) -> Bool {
-        MasteryModel.isMastered(progress(cell), estimate: estimate(cell))
+        MasteryModel.isMastered(progress(cell))
     }
 
     /// Difficulty 1 of every concept is open (the book already taught them);
