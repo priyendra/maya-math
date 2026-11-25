@@ -30,6 +30,8 @@ enum RepeatedMistake {
             return "Twice now you stopped before the final answer. Before you move on, reread the question and check you've written exactly what it asks for."
         case .careless:
             return "Two slips on this skill. Slow down on the last steps and check each line against the one before it."
+        case .units:
+            return "Twice now the unit was missing or wrong. Before you move on, check that your answer says what it measures, like m, min or $."
         case .misread:
             return "Twice now the question said something different from what you solved. Underline what it gives and what it asks before you start."
         case .procedural:

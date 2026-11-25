@@ -25,6 +25,14 @@ final class MasteryModelTests: XCTestCase {
         XCTAssertEqual(conceptual.nextDue, now.addingTimeInterval(86_400))
     }
 
+    func testUnitMistakeCostsSameAsCareless() {
+        let base = SkillProgress(mastery: 0.8)
+        let careless = MasteryModel.apply(correct: false, mistake: .careless, seconds: nil, to: base, now: now)
+        let units = MasteryModel.apply(correct: false, mistake: .units, seconds: nil, to: base, now: now)
+        XCTAssertEqual(units.mastery, careless.mastery, accuracy: 1e-9)
+        XCTAssertEqual(units.nextDue, careless.nextDue)
+    }
+
     func testMasteryIsAccuracyOnly() {
         var p = SkillProgress()
         for _ in 0..<4 { p = MasteryModel.apply(correct: true, mistake: nil, seconds: 900, to: p, now: now) }

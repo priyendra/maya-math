@@ -634,6 +634,7 @@ struct SessionSummaryView: View {
         case .conceptual: return "review the worked example before the next session."
         case .procedural: return "slow down on that step and write it out fully."
         case .careless: return "check each line once before moving on."
+        case .units: return "write the unit with your answer."
         case .misread: return "underline what the question asks before starting."
         case .incomplete: return "make sure you answer every part."
         }

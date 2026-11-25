@@ -30,13 +30,14 @@ enum Verdict: String, Codable {
 }
 
 enum MistakeType: String, Codable, CaseIterable {
-    case conceptual, procedural, careless, misread, incomplete
+    case conceptual, procedural, careless, units, misread, incomplete
 
     var displayName: String {
         switch self {
         case .conceptual: return "Concept"
         case .procedural: return "Method step"
         case .careless: return "Careless slip"
+        case .units: return "Missing or wrong unit"
         case .misread: return "Misread question"
         case .incomplete: return "Incomplete"
         }

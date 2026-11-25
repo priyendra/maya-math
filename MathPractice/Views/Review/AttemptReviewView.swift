@@ -13,6 +13,7 @@ struct AttemptReviewView: View {
         Form {
             if let q = attempt.question {
                 Section("Question") {
+                    if q.source == .generated { AIGeneratedTag() }
                     MathText(markdown: q.text, fontSize: 18)
                     ChapterLink(question: q)
                     if let fig = q.figureData, let img = UIImage(data: fig) {

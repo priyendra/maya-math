@@ -24,6 +24,8 @@ enum ResultFilter: Hashable {
 struct AnswerFilter: Equatable {
     var conceptID: UUID?
     var level: Int?
+    /// Book questions or AI-generated ones; nil = both.
+    var source: QuestionSource?
     var result: ResultFilter = .all
     var newestFirst = true
 
@@ -31,6 +33,7 @@ struct AnswerFilter: Equatable {
         guard let q = a.question else { return false }
         if let conceptID, q.concept?.id != conceptID { return false }
         if let level, q.difficulty != level { return false }
+        if let source, q.source != source { return false }
         switch result {
         case .all: return true
         case .right: return a.isGraded && a.effectiveVerdict == .correct
@@ -190,6 +193,7 @@ struct AnswerFilterBar: View {
             } label: {
                 let name = concepts.first { $0.id == filter.conceptID }.map { MathPlain.render($0.name) }
                 MenuPill(icon: "square.grid.2x2", text: name ?? "All skills", active: name != nil, menu: true)
+                    .frame(minWidth: 150, alignment: .leading)
             }
             Menu {
                 Picker("Level", selection: $filter.level) {
@@ -202,6 +206,19 @@ struct AnswerFilterBar: View {
                     .fixedSize()
             }
             .layoutPriority(2)
+            Menu {
+                Picker("Questions", selection: $filter.source) {
+                    Text("Book + AI").tag(QuestionSource?.none)
+                    Text("Book only").tag(Optional(QuestionSource.book))
+                    Text(AIGeneratedTag.text).tag(Optional(QuestionSource.generated))
+                }
+            } label: {
+                MenuPill(icon: "book", text: filter.source.map { $0 == .book ? "Book only" : AIGeneratedTag.text } ?? "Book + AI",
+                         active: filter.source != nil, menu: true)
+                    .fixedSize()
+            }
+            .layoutPriority(2)
+            .accessibilityIdentifier("sourceFilter")
             Spacer(minLength: 8)
             Text("\(count) question\(count == 1 ? "" : "s")").font(theme.font(.caption).monospacedDigit()).foregroundStyle(.secondary)
                 .fixedSize()
@@ -251,6 +268,23 @@ private struct MenuPill: View {
 
 // MARK: - Card
 
+/// Marks a question the app wrote (not from the book), so it's easy to spot and to check its quality.
+struct AIGeneratedTag: View {
+    static let text = "AI Generated"
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "sparkles")
+            Text(Self.text.uppercased())
+        }
+            .font(.system(size: 11, weight: .bold)).tracking(0.6)
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Capsule().fill(Color.purple.opacity(0.12)))
+            .foregroundStyle(Color.purple)
+            .accessibilityIdentifier("aiGeneratedTag")
+    }
+}
+
 /// One question with her answers to it. Each answer opens the answer page.
 struct QuestionAnswersCard: View {
     let question: Question
@@ -265,6 +299,7 @@ struct QuestionAnswersCard: View {
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Capsule().fill(theme.accent.opacity(0.12)))
                     .foregroundStyle(theme.accent)
+                if question.source == .generated { AIGeneratedTag() }
                 if let c = question.concept {
                     Text(MathPlain.render(c.name)).font(theme.font(.caption)).foregroundStyle(.secondary).lineLimit(1)
                 }
@@ -440,6 +475,7 @@ struct MistakeDetailView: View {
         case .incomplete: return "You stopped before the final answer."
         case .procedural: return "A step in the method went wrong."
         case .careless: return "A small slip: a sign, an arithmetic step, or copying a number."
+        case .units: return "The number was right, but the unit was missing or wrong."
         case .conceptual: return "The idea behind a step was off. Worth re-reading that part of the chapter."
         case .misread: return "The question asked for something different from what you answered."
         }

@@ -345,11 +345,15 @@ enum Prompts {
     method is fine: different order of steps, different but valid approach, equivalent forms of the answer. Do not \
     require a particular method. A right answer reached through invalid steps is "incorrect". If her answer is not \
     equivalent to yours, say "correct" only if re-checking shows that your own solution was wrong and hers is \
-    right (then lower confidence). If you can't read her work well enough, "unreadable".
+    right (then lower confidence). If you can't read her work well enough, "unreadable". Units: if the answer is a \
+    quantity with units (a length, area, volume, time, speed, money, weight, temperature…, given in the question or \
+    asked for), her final answer must carry the right unit; a right number with the unit missing or wrong is \
+    "incorrect" (mistake_type units). Answers that are pure numbers, or questions with no units, need none.
     5. mistake_type (if incorrect): conceptual (misunderstands the idea / wrong method entirely), procedural (right \
-    approach, a rule applied wrongly), careless (arithmetic slip or copying error in sound work), misread (answered a \
-    different question than asked), incomplete (stopped early or left out part). Otherwise "none". If she was stuck: \
-    conceptual.
+    approach, a rule applied wrongly), careless (arithmetic slip or copying error in sound work), units (the only \
+    problem is a missing or wrong unit on the final answer), misread (answered a different question than asked), \
+    incomplete (stopped early or left out part). Otherwise "none". If she was stuck: conceptual. If a unit problem \
+    comes with another mistake, choose the other mistake.
     6. error_step: the first line where it went wrong, addressed to her as "you" (e.g. "In your second line, you…"); \
     empty if correct.
     7. feedback: 1–3 short, warm, specific sentences addressed to her ("you"). If correct, say briefly what was good. \

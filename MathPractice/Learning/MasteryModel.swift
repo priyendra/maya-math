@@ -15,6 +15,7 @@ struct SkillProgress: Equatable {
 enum MasteryModel {
     static let gainRate = 0.3
     static let lossRate = 0.4
+    /// Careless slips and unit mistakes (a missing or wrong unit) cost less than other mistakes.
     static let carelessLossRate = 0.2
     static let masteredThreshold = 0.8
     static let recentWindow = 5
@@ -43,7 +44,7 @@ enum MasteryModel {
             p.intervalDays = nextStep
             p.nextDue = now.addingTimeInterval(nextStep * 86_400)
         } else {
-            let rate = mistake == .careless ? carelessLossRate : lossRate
+            let rate = mistake == .careless || mistake == .units ? carelessLossRate : lossRate
             p.mastery -= rate * p.mastery
             if mistake == .careless { p.careless += 1 }
             p.intervalDays = 0

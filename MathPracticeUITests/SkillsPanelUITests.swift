@@ -49,6 +49,23 @@ final class SkillsPanelUITests: XCTestCase {
         }
     }
 
+    /// My answers filtered to AI-generated questions, and one of their answer pages (design review only, real data).
+    func testAIGeneratedShots() throws {
+        guard let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"] else { throw XCTSkip("Set SHOTS_DIR") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-openFirstChapter"]
+        app.launch()
+        let answers = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My answers'")).firstMatch
+        XCTAssertTrue(answers.waitForExistence(timeout: 15))
+        answers.tap(); sleep(3); save(app, dir, "g1-answers")
+        app.buttons["sourceFilter"].firstMatch.tap(); sleep(1); save(app, dir, "g2-source-menu")
+        app.buttons["AI Generated"].firstMatch.tap(); sleep(2); save(app, dir, "g3-generated")
+        app.swipeUp(); sleep(1); save(app, dir, "g3b-generated-more")
+        app.swipeDown(); sleep(1)
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Correct' OR label BEGINSWITH 'Not quite'")).firstMatch
+        if row.waitForExistence(timeout: 3) { row.tap(); sleep(2); save(app, dir, "g4-answer-page") }
+    }
+
     private func save(_ app: XCUIApplication, _ dir: String, _ name: String) {
         try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
     }

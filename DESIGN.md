@@ -26,6 +26,11 @@ Running record of product decisions and open discussion topics. Newest decisions
   wrong. The book's answer key, when present, goes into the grading request. Safeguards: the existing high-effort
   recheck for uncertain grades, and periodic audits of stored attempts (incl. math-library checks); bring back
   a separate solve if audits show false "correct" verdicts.
+- **Units count.** When the answer is a quantity with units, a right number with the unit missing or wrong is
+  graded wrong, with its own mistake type, "Missing or wrong unit". It costs the same mastery as a careless slip.
+  Pure-number answers need no unit.
+- **AI Generated label.** Questions the app writes carry an "AI Generated" tag on their answer card and answer page,
+  and My answers has a Book + AI / Book only / AI Generated filter, so their quality is easy to review.
 - **Generated questions get extra validation:** an independent check when a question is created, and
   stricter grading for attempts on generated questions.
 - **No page dewarping.** Text is re-typeset; only diagram crops use the scan, and distortion there is minor.
