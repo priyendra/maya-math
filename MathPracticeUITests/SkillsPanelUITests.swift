@@ -58,6 +58,13 @@ final class SkillsPanelUITests: XCTestCase {
         let answers = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My answers'")).firstMatch
         XCTAssertTrue(answers.waitForExistence(timeout: 15))
         answers.tap(); sleep(3); save(app, dir, "g1-answers")
+        // Scroll slowly in small steps: a To check card must not vanish when its twin in All answers comes into view.
+        for i in 1...4 {
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+            start.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55)))
+            sleep(1); save(app, dir, "g0-scroll-\(i)")
+        }
+        for _ in 0..<3 { app.swipeDown() }; sleep(1)
         app.buttons["sourceFilter"].firstMatch.tap(); sleep(1); save(app, dir, "g2-source-menu")
         app.buttons["AI Generated"].firstMatch.tap(); sleep(2); save(app, dir, "g3-generated")
         app.swipeUp(); sleep(1); save(app, dir, "g3b-generated-more")

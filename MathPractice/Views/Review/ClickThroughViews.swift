@@ -125,8 +125,11 @@ struct AnswersBrowser<Header: View>: View {
         if !toCheck.isEmpty {
             SectionTitle(title: "To check", count: toCheck.count,
                          note: "Claude wasn't sure how to grade these. Open one to decide, or grade it again.")
+            // Its own ids: the same question can also be in the list below, and two children with one id in a
+            // lazy stack make one of them vanish while scrolling.
             ForEach(AnswerFilter().cards(toCheck), id: \.0.id) { q, answers in
                 QuestionAnswersCard(question: q, attempts: answers)
+                    .id("toCheck-\(q.id)")
             }
         }
         if !pending.isEmpty {
