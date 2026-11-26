@@ -383,7 +383,8 @@ final class StudyScope {
     var createdAt: Date = Date()
     var testDate: Date?
     var examMinutes: Int = 30
-    /// Selections: "c|<chapterID>", "s|<chapterID>|<sectionID>", "p|<chapterID>|<from>|<to>".
+    /// Selections: "c|<chapterID>", "s|<chapterID>|<sectionID>" (with everything under it), "n|<chapterID>|<sectionID>"
+    /// (only the section's own questions), "p|<chapterID>|<from>|<to>". See ScopeSelection.
     var items: [String] = []
     var folder: Folder?
     /// "Teacher's feedback" for this study plan (see Chapter).

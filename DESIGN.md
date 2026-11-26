@@ -29,6 +29,12 @@ Running record of product decisions and open discussion topics. Newest decisions
 - **Units count.** When the answer is a quantity with units, a right number with the unit missing or wrong is
   graded wrong, with its own mistake type, "Missing or wrong unit". It costs the same mastery as a careless slip.
   Pure-number answers need no unit.
+- **Study plan editor:** each chapter is a foldable tree (units → lessons → exercise sets) with all / some / none
+  checkboxes and a one-line summary. Ticking a section includes everything under it; ticking every part of a
+  section counts as the section. Unticking one part keeps its siblings and the section's own questions (saved as
+  "only this section's own questions"). The plan page shows what's in the plan; tapping it opens the editor.
+  Editing later is safe: mastery belongs to the chapter's skills, the plan's numbers are recomputed from its
+  contents, and the teacher's feedback is rewritten after the contents change.
 - **AI Generated label.** Questions the app writes carry an "AI Generated" tag on their answer card and answer page,
   and My answers has a Book + AI / Book only / AI Generated filter, so their quality is easy to review.
 - **Generated questions get extra validation:** an independent check when a question is created, and

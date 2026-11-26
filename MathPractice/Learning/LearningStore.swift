@@ -33,6 +33,7 @@ struct StudySet {
                     switch parts.first {
                     case "c": return true
                     case "s": return parts.count == 3 && Int(parts[2]).map { Self.isWithin(base.sectionID, $0, nodes) } == true
+                    case "n": return parts.count == 3 && Int(parts[2]) == base.sectionID
                     case "p":
                         guard parts.count == 4, let from = Int(parts[2]), let to = Int(parts[3]), let page = base.printedPage else { return false }
                         return page >= from && page <= to

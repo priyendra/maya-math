@@ -58,6 +58,7 @@
 		7E2BE72BBA38C3631CFAF9AF /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0393C8469B25A370A297 /* SampleData.swift */; };
 		80B2EBCAE0CE7F6799448695 /* DocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD800CE8EA6EF9BE9E000C9 /* DocumentScanner.swift */; };
 		81D1D415D491D3930F6A1E5D /* CloudVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204B4C05AB481FDEF1E86A73 /* CloudVoice.swift */; };
+		828A5D013F1DF14975281BB9 /* ScopeSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5576F5C6DA3DA5366BA4DD4A /* ScopeSelection.swift */; };
 		828D0BE10F2E539503EC24BC /* TutorScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 412564532B12602F38109EFE /* TutorScript.swift */; };
 		84EBA12E93881CBE230ABD07 /* SkillsPanelUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2BF32A956DCCF46BBB260E /* SkillsPanelUITests.swift */; };
 		86D316C7E1DC9EACB871F4CB /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8FEC8B73BD5C71E909B655 /* LibraryView.swift */; };
@@ -88,6 +89,7 @@
 		C5E88D1B3963BA6AB97A9D40 /* ClaudeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665991869AC6129844A96D03 /* ClaudeClient.swift */; };
 		C793E5EA00A54165677A1161 /* LessonWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C04733293AB6BC3B01BDA9 /* LessonWriter.swift */; };
 		C9121E4B2CBE646909447359 /* TutorLiveProbeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB193BF34989FB67FCA80B47 /* TutorLiveProbeUITests.swift */; };
+		CB600B049985C00E88ACA2E5 /* ScopeSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986AB8F42E3F4B082A64A1E8 /* ScopeSelectionTests.swift */; };
 		CBD0105A791DCBF8C3EBBEBF /* TeacherFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3301716DB635F3B78FACF0D9 /* TeacherFeedbackView.swift */; };
 		CC9CAAFBBE05499BD6F34B64 /* ClaudeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC42C56EAF9BE0D0E30CA94 /* ClaudeServices.swift */; };
 		D003A678215210C677EECF6E /* LearningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFEA599FF608A11C79131F6 /* LearningTests.swift */; };
@@ -156,6 +158,7 @@
 		4827F8EF5EF188862466590F /* VariantGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariantGenerator.swift; sourceTree = "<group>"; };
 		4CDC08D495F22FAF745D4927 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		53E69D628F248F571268EAA0 /* ScanReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanReport.swift; sourceTree = "<group>"; };
+		5576F5C6DA3DA5366BA4DD4A /* ScopeSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeSelection.swift; sourceTree = "<group>"; };
 		5B4AB5FDE2DD41A5217B1614 /* ExamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamView.swift; sourceTree = "<group>"; };
 		5FC840C4F982E6476B362357 /* Prompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompts.swift; sourceTree = "<group>"; };
 		605F34558094F3610E52AF83 /* CanvasLab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasLab.swift; sourceTree = "<group>"; };
@@ -177,6 +180,7 @@
 		8DEE1DCBC1CE0D86F9632344 /* BlankChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlankChecker.swift; sourceTree = "<group>"; };
 		9458FA16654054C29A418711 /* RetakeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetakeSheet.swift; sourceTree = "<group>"; };
 		971C199434CE906947C61BA7 /* ScopeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeViews.swift; sourceTree = "<group>"; };
+		986AB8F42E3F4B082A64A1E8 /* ScopeSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeSelectionTests.swift; sourceTree = "<group>"; };
 		9A1CDC9394B9629E2AEAF5FB /* MathText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathText.swift; sourceTree = "<group>"; };
 		9ABDC763B9CB199D4590C26B /* MathPractice.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MathPractice.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E7D4897343A4B9D7D9DAFBC /* LessonPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonPlanner.swift; sourceTree = "<group>"; };
@@ -236,6 +240,7 @@
 				D2B936E8ECC8D9BDB7F5C85A /* Pace.swift */,
 				B886E03B5A5F3BE3219DFF3F /* Planner.swift */,
 				B0A65F27E561C8C4538D3EED /* RepeatedMistake.swift */,
+				5576F5C6DA3DA5366BA4DD4A /* ScopeSelection.swift */,
 				B8F85BD6B0C88F20411BFB3C /* TeacherFeedback.swift */,
 			);
 			path = Learning;
@@ -291,6 +296,7 @@
 				2F82F02D874D1DA98548E7D9 /* PipelineTests.swift */,
 				168B63D915F655325F6E11A2 /* ProblemReportTests.swift */,
 				743FCCE53E1AC4308EAFE1AD /* ScanTests.swift */,
+				986AB8F42E3F4B082A64A1E8 /* ScopeSelectionTests.swift */,
 				174EA3609106B963A98A310F /* SkillDisplayTests.swift */,
 				BF4CA4157E303F14CC5F0D81 /* TutorTests.swift */,
 			);
@@ -607,6 +613,7 @@
 				F240A1EE9C69CD8FC387AD09 /* ScanQuality.swift in Sources */,
 				9A0CAD1C881B882613C489D7 /* ScanReport.swift in Sources */,
 				AE552D07DFDE0CB0C6527DEB /* Schemas.swift in Sources */,
+				828A5D013F1DF14975281BB9 /* ScopeSelection.swift in Sources */,
 				5F6BABF6127EC431F724EB4C /* ScopeViews.swift in Sources */,
 				6BC3A89C98ECE9D5D90CD3EC /* SettingsView.swift in Sources */,
 				C06243529F8E1E4F84672E48 /* SkillBarsGrid.swift in Sources */,
@@ -657,6 +664,7 @@
 				AE7A026EA0FD47E14E085FF0 /* PipelineTests.swift in Sources */,
 				46280A64A1CC27AECCD42653 /* ProblemReportTests.swift in Sources */,
 				2A8CCA9CE28CB5DC082F8E8A /* ScanTests.swift in Sources */,
+				CB600B049985C00E88ACA2E5 /* ScopeSelectionTests.swift in Sources */,
 				8D4046D904350CAD81AA7CF4 /* SkillDisplayTests.swift in Sources */,
 				6F1CAA2621E34F010342925A /* TutorTests.swift in Sources */,
 			);

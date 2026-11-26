@@ -73,6 +73,36 @@ final class SkillsPanelUITests: XCTestCase {
         if row.waitForExistence(timeout: 3) { row.tap(); sleep(2); save(app, dir, "g4-answer-page") }
     }
 
+    /// The study plan editor's foldable section tree (design review only, real data with a plan named in PLAN_NAME).
+    func testStudyPlanEditorShots() throws {
+        guard let dir = ProcessInfo.processInfo.environment["SHOTS_DIR"],
+              let plan = ProcessInfo.processInfo.environment["PLAN_NAME"] else { throw XCTSkip("Set SHOTS_DIR and PLAN_NAME") }
+        let app = XCUIApplication()
+        app.launch()
+        // Folders to open first, "A/B" (from the environment: real folder names stay out of the repo).
+        for folder in (ProcessInfo.processInfo.environment["FOLDERS"] ?? "").split(separator: "/") {
+            let f = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", String(folder))).firstMatch
+            if f.waitForExistence(timeout: 10) { f.tap(); sleep(2) }
+        }
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", plan)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap(); sleep(2)
+        save(app, dir, "e0-plan-page")
+        app.buttons["planContents"].firstMatch.tap(); sleep(2)
+        save(app, dir, "e1-folded")
+        func open(_ prefix: String) {
+            let r = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "scopeRow-" + prefix)).firstMatch
+            if r.waitForExistence(timeout: 3) { r.tap(); sleep(1) }
+        }
+        open("Factoring Polynomials"); save(app, dir, "e2-chapter-open")
+        open("Factoring Patterns"); save(app, dir, "e3-unit-open")
+        open("5-8"); save(app, dir, "e4-lesson-open")
+        // Untick one lesson of the ticked chapter: its siblings stay in.
+        let check = app.buttons.matching(NSPredicate(format: "label == 'Included'")).element(boundBy: 2)
+        if check.exists { check.tap(); sleep(1); save(app, dir, "e5-one-unticked") }
+        open("Factoring Patterns"); open("Factoring Polynomials"); save(app, dir, "e6-folded-summary")
+    }
+
     private func save(_ app: XCUIApplication, _ dir: String, _ name: String) {
         try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
     }

@@ -27,7 +27,9 @@ struct ScopeHomeView: View {
                 if let date = scope.testDate {
                     Label(Self.countdown(to: date), systemImage: "calendar").font(.title3.weight(.semibold))
                 }
-                Text(summary(set)).foregroundStyle(.secondary)
+                Button { editing = true } label: { contents(set) }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("planContents")
                 StudyActions(set: set)
                 // The same tiles and sections as a chapter page (no lessons or reading: those belong to a chapter).
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
@@ -59,10 +61,28 @@ struct ScopeHomeView: View {
         .sheet(isPresented: $editing) { ScopeEditorView(scope: scope, folder: scope.folder) }
     }
 
-    private func summary(_ set: StudySet) -> String {
+    /// What's in the plan, chapter by chapter (the top-most included sections); tapping it opens the editor.
+    private func contents(_ set: StudySet) -> some View {
         let book = set.questions.filter { $0.source == .book }.count
-        let names = set.chapters.map { MathPlain.render($0.title) }.joined(separator: ", ")
-        return "\(book) questions from \(names.isEmpty ? "no chapters yet" : names)"
+        let items = Set(scope.items)
+        let picked = chapters.filter { c in items.contains { $0.hasSuffix("|\(c.id.uuidString)") || $0.contains("|\(c.id.uuidString)|") } }
+        return HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("What's in it · \(book) questions").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                if picked.isEmpty { Text("Nothing yet").foregroundStyle(.secondary) }
+                ForEach(picked) { c in
+                    (Text(MathPlain.render(c.title)).fontWeight(.semibold)
+                     + Text(" — " + ScopeChapterPicker(chapter: c, items: .constant(items)).summary).foregroundStyle(.secondary))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary).padding(.top, 4)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card(theme)
+        .contentShape(Rectangle())
     }
 }
 
@@ -79,8 +99,6 @@ struct ScopeEditorView: View {
     @State private var date = Date().addingTimeInterval(14 * 86_400)
     @State private var minutes = 30
     @State private var items: Set<String> = []
-    @State private var pageFrom: [UUID: String] = [:]
-    @State private var pageTo: [UUID: String] = [:]
     @State private var loaded = false
 
     var body: some View {
@@ -91,8 +109,14 @@ struct ScopeEditorView: View {
                     Toggle("Test date", isOn: $hasDate)
                     if hasDate { DatePicker("Date", selection: $date, displayedComponents: .date) }
                 }
-                ForEach(chapters.filter { $0.status == .ready && !$0.needsRereading }) { chapter in
-                    Section(MathPlain.render(chapter.title)) { chapterPicker(chapter) }
+                Section {
+                    ForEach(chapters.filter { $0.status == .ready && !$0.needsRereading }) { chapter in
+                        ScopeChapterPicker(chapter: chapter, items: $items)
+                    }
+                } header: {
+                    Text("What's in it")
+                } footer: {
+                    Text("Tick a chapter or any of its sections. Tap a row to open it.")
                 }
                 if chapters.contains(where: \.needsRereading) {
                     Section { Text("Chapters that haven't been re-read with the new reader can't be split by section yet.").font(.caption) }
@@ -107,60 +131,7 @@ struct ScopeEditorView: View {
             }
             .onAppear(perform: load)
         }
-    }
-
-    @ViewBuilder
-    private func chapterPicker(_ chapter: Chapter) -> some View {
-        let id = chapter.id.uuidString
-        let whole = "c|\(id)"
-        Toggle("Whole chapter", isOn: binding(whole))
-        if !items.contains(whole) {
-            ForEach(chapter.outline) { node in
-                let key = "s|\(id)|\(node.id)"
-                Toggle(isOn: binding(key)) {
-                    Text(MathPlain.render(node.title)).font(node.level == 1 ? .body.weight(.semibold) : .body)
-                }
-                .padding(.leading, CGFloat(node.level - 1) * 24)
-                .disabled(ancestorSelected(node, chapter))
-            }
-            ForEach(Array(items.filter { $0.hasPrefix("p|\(id)|") }).sorted(), id: \.self) { item in
-                let parts = item.split(separator: "|")
-                HStack {
-                    Text("Pages \(parts[2])–\(parts[3])")
-                    Spacer()
-                    Button(role: .destructive) { items.remove(item) } label: { Image(systemName: "minus.circle.fill") }
-                }
-            }
-            HStack {
-                Text("Pages")
-                TextField("from", text: Binding(get: { pageFrom[chapter.id] ?? "" }, set: { pageFrom[chapter.id] = $0 }))
-                    .keyboardType(.numberPad).frame(width: 70).textFieldStyle(.roundedBorder)
-                Text("to")
-                TextField("to", text: Binding(get: { pageTo[chapter.id] ?? "" }, set: { pageTo[chapter.id] = $0 }))
-                    .keyboardType(.numberPad).frame(width: 70).textFieldStyle(.roundedBorder)
-                Button("Add range") {
-                    if let a = Int(pageFrom[chapter.id] ?? ""), let b = Int(pageTo[chapter.id] ?? "") {
-                        items.insert("p|\(id)|\(min(a, b))|\(max(a, b))")
-                        pageFrom[chapter.id] = nil; pageTo[chapter.id] = nil
-                    }
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-    }
-
-    private func ancestorSelected(_ node: SectionNode, _ chapter: Chapter) -> Bool {
-        var cur = node.parent
-        let nodes = chapter.outline
-        while nodes.indices.contains(cur) {
-            if items.contains("s|\(chapter.id.uuidString)|\(cur)") { return true }
-            cur = nodes[cur].parent
-        }
-        return false
-    }
-
-    private func binding(_ key: String) -> Binding<Bool> {
-        Binding(get: { items.contains(key) }, set: { on in if on { items.insert(key) } else { items.remove(key) } })
+        .largeSheet()
     }
 
     private func load() {
@@ -184,8 +155,135 @@ struct ScopeEditorView: View {
         target.name = name.trimmingCharacters(in: .whitespaces)
         target.testDate = hasDate ? date : nil
         target.examMinutes = minutes
-        target.items = Array(items).sorted()
+        let newItems = Array(items).sorted()
+        // Different material: the teacher's feedback is written again on the next visit (the old one shows until then).
+        if scope != nil && target.items != newItems { target.feedbackAtSeconds = -1 }
+        target.items = newItems
         try? context.save()
         dismiss()
+    }
+}
+
+/// One chapter in the study plan editor: a foldable section tree with checkboxes (all / some / none).
+/// The selection rules live in ScopeSelection.
+struct ScopeChapterPicker: View {
+    let chapter: Chapter
+    @Binding var items: Set<String>
+    @State private var expanded: Set<Int> = []
+    @State private var open = false
+    @State private var pagesOpen = false
+    @State private var pageFrom = ""
+    @State private var pageTo = ""
+
+    typealias Mark = ScopeSelection.Mark
+
+    private var cid: String { chapter.id.uuidString }
+    private var sel: ScopeSelection { ScopeSelection(chapterID: cid, nodes: chapter.outline, items: items) }
+    var summary: String { sel.summary }
+
+    var body: some View {
+        let s = sel
+        row(title: MathPlain.render(chapter.title), subtitle: s.summary, level: 0, mark: s.chapterMark,
+            canOpen: true, isOpen: open, bold: true,
+            toggleOpen: { withAnimation { open.toggle() } }, toggleMark: { change { $0.toggleChapter() } })
+        if open {
+            ForEach(visible(s), id: \.id) { n in
+                let kids = !s.children(n.id).isEmpty
+                row(title: MathPlain.render(n.title), subtitle: nil, level: s.depth(n), mark: s.mark(n),
+                    canOpen: kids, isOpen: expanded.contains(n.id), bold: kids,
+                    toggleOpen: { withAnimation { if expanded.contains(n.id) { expanded.remove(n.id) } else { expanded.insert(n.id) } } },
+                    toggleMark: { change { $0.toggle(n) } })
+            }
+            pagesRow(s.ranges)
+        }
+    }
+
+    private func change(_ f: (inout ScopeSelection) -> Void) {
+        var s = sel
+        f(&s)
+        items = s.items
+    }
+
+    /// Nodes shown: roots, plus the children of every open node (in book order).
+    private func visible(_ s: ScopeSelection) -> [SectionNode] {
+        var out: [SectionNode] = []
+        func walk(_ list: [SectionNode]) {
+            for n in list {
+                out.append(n)
+                if expanded.contains(n.id) { walk(s.children(n.id)) }
+            }
+        }
+        walk(s.roots)
+        return out
+    }
+
+    // MARK: Rows
+
+    private func row(title: String, subtitle: String?, level: Int, mark: Mark, canOpen: Bool, isOpen: Bool, bold: Bool,
+                     toggleOpen: @escaping () -> Void, toggleMark: @escaping () -> Void) -> some View {
+        HStack(spacing: 10) {
+            Button(action: toggleMark) {
+                Image(systemName: mark == .all ? "checkmark.circle.fill" : mark == .some ? "minus.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(mark == .none ? Color.secondary : Color.accentColor)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(mark == .all ? "Included" : mark == .some ? "Partly included" : "Not included")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(bold ? .body.weight(.semibold) : .body)
+                    .accessibilityIdentifier("scopeRow-\(title)")
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            if canOpen {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(isOpen ? 90 : 0))
+            }
+        }
+        .padding(.leading, CGFloat(level) * 28)
+        .contentShape(Rectangle())
+        .onTapGesture { if canOpen { toggleOpen() } else { toggleMark() } }
+    }
+
+    @ViewBuilder
+    private func pagesRow(_ ranges: [String]) -> some View {
+        row(title: "Page ranges", subtitle: ranges.isEmpty ? nil : ranges.map(ScopeSelection.rangeLabel).joined(separator: ", "),
+            level: 1, mark: ranges.isEmpty ? .none : .all, canOpen: true, isOpen: pagesOpen, bold: false,
+            toggleOpen: { withAnimation { pagesOpen.toggle() } }, toggleMark: { withAnimation { pagesOpen.toggle() } })
+        if pagesOpen {
+            ForEach(ranges, id: \.self) { item in
+                HStack {
+                    Text(ScopeSelection.rangeLabel(item))
+                    Spacer()
+                    Button(role: .destructive) { items.remove(item) } label: { Image(systemName: "minus.circle.fill") }
+                        .buttonStyle(.borderless)
+                }
+                .padding(.leading, 56)
+            }
+            HStack {
+                Text("Pages")
+                TextField("from", text: $pageFrom).keyboardType(.numberPad).frame(width: 70).textFieldStyle(.roundedBorder)
+                Text("to")
+                TextField("to", text: $pageTo).keyboardType(.numberPad).frame(width: 70).textFieldStyle(.roundedBorder)
+                Button("Add range") {
+                    if let a = Int(pageFrom), let b = Int(pageTo) {
+                        items.insert("p|\(cid)|\(min(a, b))|\(max(a, b))")
+                        pageFrom = ""; pageTo = ""
+                    }
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.leading, 56)
+        }
+    }
+}
+
+extension View {
+    /// A tall sheet on iPad (page-sized where available) so long lists don't scroll inside a small window.
+    @ViewBuilder func largeSheet() -> some View {
+        if #available(iOS 18.0, *) { presentationSizing(.page) } else { self }
     }
 }
