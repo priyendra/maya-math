@@ -126,7 +126,7 @@ struct ClaudeServices: Sendable {
             return r
         }
         let suspicious = first.verdict == "unreadable" || first.confidence < 0.7
-            || (first.verdict == "correct") != first.answers_equivalent
+            || !Self.verdictMatchesAnswer(first)
             || first.question_flawed
             || (strict && first.verdict == "incorrect")
         guard suspicious else {
@@ -139,7 +139,7 @@ struct ClaudeServices: Sendable {
         var result = Self.result(from: second, stuck: false)
         let stillUnsure = second.verdict == "unreadable" || second.confidence < 0.6
             || second.verdict != first.verdict
-            || ((second.verdict == "correct") != second.answers_equivalent && second.confidence < 0.85)
+            || (!Self.verdictMatchesAnswer(second) && second.confidence < 0.85)
         if stillUnsure && !second.question_flawed {
             result = GradeResult(verdict: .needsReview, mistake: result.mistake, transcribedAnswer: result.transcribedAnswer,
                                  ownAnswer: result.ownAnswer, errorStep: result.errorStep, feedback: result.feedback,
@@ -148,6 +148,13 @@ struct ClaudeServices: Sendable {
         result.graderLog = Self.log(["pass1 (effort medium)": first, "pass2 recheck (effort high)": second,
                                      "outcome": stillUnsure ? "saved for review" : "pass2 verdict used"])
         return result
+    }
+
+    /// A verdict agrees with the answer check: right answers are "correct" and different answers "incorrect".
+    /// A unit mistake is the one honest exception: the number matches, but the answer is still wrong.
+    static func verdictMatchesAnswer(_ g: GradeDTO) -> Bool {
+        if g.verdict == "incorrect" && g.mistake_type == MistakeType.units.rawValue { return true }
+        return (g.verdict == "correct") == g.answers_equivalent
     }
 
     /// "Teacher's feedback" from a summary of her answers (see FeedbackSummary).

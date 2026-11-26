@@ -3,6 +3,21 @@ import XCTest
 
 @MainActor
 final class PipelineTests: XCTestCase {
+    func testUnitMistakeIsNotAContradiction() {
+        func g(_ verdict: String, equivalent: Bool, mistake: String) -> GradeDTO {
+            GradeDTO(own_solution: "", own_final_answer: "8 m by 13 m", transcribed_work: "", transcribed_final_answer: "8, 13",
+                     answers_equivalent: equivalent, verdict: verdict, mistake_type: mistake, error_step: "", feedback: "",
+                     worked_solution: "", question_flawed: false, confidence: 0.8)
+        }
+        // Right number, missing unit: wrong, but consistent (no recheck, no "to check").
+        XCTAssertTrue(ClaudeServices.verdictMatchesAnswer(g("incorrect", equivalent: true, mistake: "units")))
+        // Same answer marked wrong for any other reason is still a contradiction worth a second look.
+        XCTAssertFalse(ClaudeServices.verdictMatchesAnswer(g("incorrect", equivalent: true, mistake: "careless")))
+        XCTAssertFalse(ClaudeServices.verdictMatchesAnswer(g("correct", equivalent: false, mistake: "none")))
+        XCTAssertTrue(ClaudeServices.verdictMatchesAnswer(g("correct", equivalent: true, mistake: "none")))
+        XCTAssertTrue(ClaudeServices.verdictMatchesAnswer(g("incorrect", equivalent: false, mistake: "procedural")))
+    }
+
     func testGradeSchemaSolvesFirstAndRequiresAllFields() throws {
         let schema = GradeDTO.schema
         XCTAssertEqual(schema["additionalProperties"] as? Bool, false)
